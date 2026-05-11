@@ -3,54 +3,54 @@ set -euo pipefail
 
 # cambot.sh
 #
+# Top-level CamBot command.
+#
 # Usage:
-#   ./cambot.sh pod local-deploy
-#   ./cambot.sh vm create
-#   ./cambot.sh vm destroy
-#   ./cambot.sh pod push
-#   ./cambot.sh secrets push
+#   ./cambot.sh local-run
+#   ./cambot.sh create-domain
+#   ./cambot.sh create-vultr-envs
+#   ./cambot.sh destroy-vultr-envs
 #
 # Environment:
-#   ENVIRONMENT=dev|prod
+#   ENVIRONMENT=dev|prod only applies to local-run.
 #
-# Examples:
-#   ENVIRONMENT=dev ./cambot.sh pod local-deploy
-#   ENVIRONMENT=dev ./cambot.sh vm create
-#   ENVIRONMENT=dev ./cambot.sh pod push
-#   ENVIRONMENT=dev ./cambot.sh secrets push
-#   ENVIRONMENT=dev ./cambot.sh vm destroy
-
-ENVIRONMENT="${ENVIRONMENT:-dev}"
+# Notes:
+#   create-domain creates the shared root Vultr DNS domain once using ENVIRONMENT=global.
+#   create-vultr-envs creates both dev and prod Vultr environments.
+#   destroy-vultr-envs destroys prod and dev Vultr environments.
+#   GitHub Actions owns remote application deployment.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 
-COMMAND_GROUP="${1:-}"
-COMMAND_ACTION="${2:-}"
+COMMAND="${1:-}"
 
 show_usage() {
   cat <<EOF
 CamBot command orchestrator
 
 Usage:
-  ENVIRONMENT=dev ./cambot.sh pod local-deploy
-  ENVIRONMENT=dev ./cambot.sh vm create
-  ENVIRONMENT=dev ./cambot.sh vm destroy
-  ENVIRONMENT=dev ./cambot.sh pod push
-  ENVIRONMENT=dev ./cambot.sh secrets push
+  ./cambot.sh local-run
+  ./cambot.sh create-domain
+  ./cambot.sh create-vultr-envs
+  ./cambot.sh destroy-vultr-envs
 
 Commands:
-  pod local-deploy  Run the Podman pod locally using infra/pod/podman-run.sh
-  pod push          Push the pod/app files to the VM
-
-  secrets push      Push secrets/\$ENVIRONMENT to the VM
-
-  vm create         Create the Vultr VM and install base Podman requirements
-  vm destroy        Destroy the Vultr VM
-  vm delete         Alias for vm destroy
+  local-run            Run the CamBot pod locally using ENVIRONMENT=dev by default
+  create-domain        Create the shared Vultr DNS domain once using secrets/global
+  create-vultr-envs    Create dev and prod Vultr environments
+  destroy-vultr-envs   Destroy prod and dev Vultr environments
 
 Environment:
-  ENVIRONMENT       dev by default; controls secrets/<env>/...
+  ENVIRONMENT          Used by local-run only. Defaults to dev.
+
+Examples:
+  ./cambot.sh local-run
+  ENVIRONMENT=prod ./cambot.sh local-run
+
+  ./cambot.sh create-domain
+  ./cambot.sh create-vultr-envs
+  ./cambot.sh destroy-vultr-envs
 EOF
 }
 
@@ -69,89 +69,100 @@ require_script() {
   fi
 }
 
-run_vm() {
-  local action="$1"
+local_run() {
+  local environment="${ENVIRONMENT:-dev}"
 
-  require_script "$PROJECT_ROOT/infra/provision-vm.sh"
-
-  ENVIRONMENT="$ENVIRONMENT" \
-    "$PROJECT_ROOT/infra/provision-vm.sh" "$action"
-}
-
-pod_local_deploy() {
   require_script "$PROJECT_ROOT/infra/pod/podman-run.sh"
 
-  ENVIRONMENT="$ENVIRONMENT" \
+  echo "Running CamBot locally..."
+  echo "Environment: $environment"
+
+  ENVIRONMENT="$environment" \
   CAM_BOT_BASE_DIR="$PROJECT_ROOT" \
     "$PROJECT_ROOT/infra/pod/podman-run.sh"
 }
 
-push_pod() {
-  require_script "$PROJECT_ROOT/infra/provision-vm.sh"
+create_domain() {
+  require_script "$PROJECT_ROOT/infra/provision-domain.sh"
 
-  ENVIRONMENT="$ENVIRONMENT" \
-    "$PROJECT_ROOT/infra/provision-vm.sh" push-pod
+  echo
+  echo "Creating shared Vultr DNS domain..."
+  echo "Using ENVIRONMENT=global for shared domain state/input."
+
+  ENVIRONMENT=global "$PROJECT_ROOT/infra/provision-domain.sh" create-domain
+
+  echo
+  echo "Shared Vultr DNS domain created."
 }
 
-push_secrets() {
-  require_script "$PROJECT_ROOT/infra/provision-vm.sh"
+create_vultr_env() {
+  local environment="$1"
 
-  ENVIRONMENT="$ENVIRONMENT" \
-    "$PROJECT_ROOT/infra/provision-vm.sh" push-secrets
+  require_script "$PROJECT_ROOT/infra/provision-vm.sh"
+  require_script "$PROJECT_ROOT/infra/provision-ip.sh"
+  require_script "$PROJECT_ROOT/infra/provision-domain.sh"
+
+  echo
+  echo "Creating Vultr environment: $environment"
+
+  ENVIRONMENT="$environment" "$PROJECT_ROOT/infra/provision-vm.sh" create
+  ENVIRONMENT="$environment" "$PROJECT_ROOT/infra/provision-ip.sh"
+  ENVIRONMENT="$environment" "$PROJECT_ROOT/infra/provision-domain.sh" create-record
+
+  echo
+  echo "Created Vultr environment: $environment"
 }
 
-if [ -z "$COMMAND_GROUP" ]; then
+destroy_vultr_env() {
+  local environment="$1"
+
+  require_script "$PROJECT_ROOT/infra/provision-vm.sh"
+
+  echo
+  echo "Destroying Vultr environment: $environment"
+
+  ENVIRONMENT="$environment" "$PROJECT_ROOT/infra/provision-vm.sh" destroy
+
+  echo
+  echo "Destroyed Vultr environment: $environment"
+}
+
+create_vultr_envs() {
+  create_vultr_env dev
+  create_vultr_env prod
+
+  echo
+  echo "All Vultr environments created."
+}
+
+destroy_vultr_envs() {
+  destroy_vultr_env prod
+  destroy_vultr_env dev
+
+  echo
+  echo "All Vultr environments destroyed."
+}
+
+if [ -z "$COMMAND" ]; then
   show_usage
   exit 1
 fi
 
-case "$COMMAND_GROUP" in
-  pod)
-    case "$COMMAND_ACTION" in
-      local-deploy)
-        pod_local_deploy
-        ;;
-      push)
-        push_pod
-        ;;
-      *)
-        echo "Unknown pod action: ${COMMAND_ACTION:-}"
-        echo
-        show_usage
-        exit 1
-        ;;
-    esac
+case "$COMMAND" in
+  local-run)
+    local_run
     ;;
 
-  secrets)
-    case "$COMMAND_ACTION" in
-      push)
-        push_secrets
-        ;;
-      *)
-        echo "Unknown secrets action: ${COMMAND_ACTION:-}"
-        echo
-        show_usage
-        exit 1
-        ;;
-    esac
+  create-domain)
+    create_domain
     ;;
 
-  vm)
-    case "$COMMAND_ACTION" in
-      create)
-        run_vm create
-        ;;
-      destroy|delete)
-        run_vm destroy
-        ;;
-      *)
-        echo "Unknown vm action: ${COMMAND_ACTION:-}"
-        echo
-        show_usage
-        exit 1
-        ;;
-    esac
+  create-vultr-envs)
+    create_vultr_envs
+    ;;
+
+  destroy-vultr-envs)
+    destroy_vultr_envs
     ;;
 
   help|-h|--help)
@@ -159,7 +170,7 @@ case "$COMMAND_GROUP" in
     ;;
 
   *)
-    echo "Unknown command group: $COMMAND_GROUP"
+    echo "Unknown command: $COMMAND"
     echo
     show_usage
     exit 1

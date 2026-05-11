@@ -33,11 +33,6 @@ variable "ssh_key_ids" {
   default = []
 }
 
-variable "enable_dns" {
-  type    = bool
-  default = false
-}
-
 variable "domain_name" {
   type    = string
   default = ""
@@ -63,3 +58,12 @@ variable "reserved_ip_label" {
   default = "cambot-reserved-ip"
 }
 
+variable "enable_dns_domain" {
+  type    = bool
+  default = false
+}
+
+variable "enable_dns_record" {
+  type    = bool
+  default = false
+}

@@ -10,18 +10,18 @@ services:
       # - "${CAM_BOT_HTTPS_PORT:-8443}:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ${NGINX_HTPASSWD_PATH:-../../secrets/dev/podman/nginx.htpasswd}:/etc/nginx/.htpasswd:ro
+
+      # Serve the frontend directly from the client folder.
+      - ../../apps/client:/usr/share/nginx/html:ro
+
+      # Inject environment-specific frontend runtime config.
+      - ../../secrets/${ENVIRONMENT:-dev}/client/env.js:/usr/share/nginx/html/config/env.js:ro
+
+      # Optional basic auth file.
+      - ${NGINX_HTPASSWD_PATH:-../../secrets/${ENVIRONMENT:-dev}/podman/nginx.htpasswd}:/etc/nginx/.htpasswd:ro
     depends_on:
-      - frontend
       - rest-api
       - camera-system-mocker-rest-api
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ../../apps/client
-      dockerfile: Containerfile
-    container_name: cambot-frontend
     restart: unless-stopped
 
   rest-api:
@@ -30,9 +30,9 @@ services:
       dockerfile: Containerfile
     container_name: cambot-rest-api
     env_file:
-      - ../../secrets/dev/podman/.env
+      - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
-      CAMBOT_ENV: dev
+      CAMBOT_ENV: "${ENVIRONMENT:-dev}"
     depends_on:
       - postgres
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
       dockerfile: Containerfile
     container_name: cambot-gemini-caller
     env_file:
-      - ../../secrets/dev/podman/.env
+      - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
       GEMINI_URL: "${CAM_BOT_DEFAULT_GEMINI_URL:-}"
       GEMINI_API_KEY: "${CAM_BOT_DEFAULT_GEMINI_API_KEY:-}"
@@ -67,16 +67,16 @@ services:
       dockerfile: Containerfile
     container_name: cambot-camera-system-mocker-rest-api
     env_file:
-      - ../../secrets/dev/podman/.env
+      - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     restart: unless-stopped
 
   postgres:
     image: docker.io/postgres:16
     container_name: cambot-postgres
     environment:
-      POSTGRES_DB: cambot
-      POSTGRES_USER: cambot
-      POSTGRES_PASSWORD: cambot
+      POSTGRES_DB: "${POSTGRES_DB:-cambot}"
+      POSTGRES_USER: "${POSTGRES_USER:-cambot}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-cambot}"
     volumes:
       - cambot-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
