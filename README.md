@@ -5,11 +5,17 @@ Open source agent for monitoring camera systems using Vultr and Gemini.
 
 ## Dependencies
 
-This project relies on podman, ansible, terraform, zip, and rsync.
+For locally running the CamBot server, you just need podman.
+
+
+## Vultr VM Server Creation
+
+To create an environment for the application to be deployed on
+I am using Terraform, Ansible, and Github Actions.
 
 ## Running CamBot
 
-Cambot uses the secrets folder to configure the podman and also the vultr vm.
+Cambot uses the secrets folder to configure the podman pod and also the vultr vm.
 Look at secrets/example to inspect the required secrets to define.
 
     # Runs podman locally
@@ -18,7 +24,6 @@ Look at secrets/example to inspect the required secrets to define.
     # vultr vm commands
     ./cambot.sh create-vultr-vm prod
     ./cambot.sh destroy-vultr-vm prod
-    ./cambot.sh push-pod prod
     ./cambot.sh push-secrets prod
 
 ## CamBot Secrets Folder
