@@ -31,6 +31,7 @@ VULTR_ENV_FILE="$SECRETS_DIR/vultr.env"
 
 SSH_PRIVATE_KEY_PATH="$SECRETS_DIR/vm_ssh_key"
 SSH_PUBLIC_KEY_PATH="$SECRETS_DIR/vm_ssh_key.pub"
+GITHUB_DEPLOY_PUBLIC_KEY_PATH="$SECRETS_DIR/github_deploy_key.pub"
 
 REMOTE_DIR="${CAM_BOT_REMOTE_DIR:-/srv/cambot}"
 REMOTE_ADMIN_USER="${CAM_BOT_REMOTE_ADMIN_USER:-admin}"
@@ -176,6 +177,15 @@ cmd_create() {
   chmod 600 "$SSH_PRIVATE_KEY_PATH"
   chmod 644 "$SSH_PUBLIC_KEY_PATH"
 
+  if [ -f "$GITHUB_DEPLOY_PUBLIC_KEY_PATH" ]; then
+    chmod 644 "$GITHUB_DEPLOY_PUBLIC_KEY_PATH"
+  else
+    echo "GitHub deploy public key not found: $GITHUB_DEPLOY_PUBLIC_KEY_PATH"
+    echo "Continuing without adding a GitHub Actions deploy key."
+    echo "Create it with:"
+    echo "  ssh-keygen -t ed25519 -f $SECRETS_DIR/github_deploy_key -C \"cambot-github-actions-deploy\""
+  fi
+
   : "${VULTR_API_KEY:?missing VULTR_API_KEY}"
   : "${VULTR_SSH_KEY_ID:?missing VULTR_SSH_KEY_ID}"
 
@@ -205,6 +215,7 @@ cmd_create() {
   export CAM_BOT_SERVICE_USER="$SERVICE_USER"
   export CAM_BOT_REMOTE_DIR="$REMOTE_DIR"
   export SSH_PUBLIC_KEY_PATH="$SSH_PUBLIC_KEY_PATH"
+  export GITHUB_DEPLOY_PUBLIC_KEY_PATH="$GITHUB_DEPLOY_PUBLIC_KEY_PATH"
 
   ANSIBLE_HOST_KEY_CHECKING=True ansible-playbook \
     -i "$vm_ip," \
@@ -224,6 +235,9 @@ cmd_create() {
   echo
   echo "GitHub Actions can now deploy by SSHing into the VM as:"
   echo "  $REMOTE_ADMIN_USER@$vm_ip"
+  echo
+  echo "If using GitHub Actions, add this private key to the GitHub secret CAMBOT_DEPLOY_KEY:"
+  echo "  $SECRETS_DIR/github_deploy_key"
   echo
   echo "Manual fallback deploy commands:"
   echo "  ENVIRONMENT=$ENVIRONMENT ./infra/provision-vm.sh push-pod"
@@ -273,6 +287,7 @@ cmd_push_pod() {
     -e "ssh -i '$SSH_PRIVATE_KEY_PATH' -o StrictHostKeyChecking=yes" \
     --rsync-path="sudo -u $SERVICE_USER rsync" \
     --exclude ".git" \
+    --exclude ".github" \
     --exclude ".terraform" \
     --exclude "*.tfstate" \
     --exclude "*.tfstate.*" \

@@ -9,6 +9,7 @@
     cambot_user: "{{ lookup('env', 'CAM_BOT_SERVICE_USER') | default('cambot', true) }}"
     cambot_root: "{{ lookup('env', 'CAM_BOT_REMOTE_DIR') | default('/srv/cambot', true) }}"
     ssh_public_key_path: "{{ lookup('env', 'SSH_PUBLIC_KEY_PATH') }}"
+    github_deploy_public_key_path: "{{ lookup('env', 'GITHUB_DEPLOY_PUBLIC_KEY_PATH') | default('', true) }}"
 
     ufw_before_rules_path: /etc/ufw/before.rules
     ufw_nat_marker: "# {mark} CAMBOT NAT REDIRECTS"
@@ -39,6 +40,7 @@
     - name: Install required packages
       community.general.pacman:
         name:
+          - openssh
           - podman
           - podman-compose
           - ufw
@@ -70,11 +72,31 @@
         shell: /bin/bash
         create_home: true
 
-    - name: Add admin SSH key
+    - name: Add local/provisioning SSH key to admin
       ansible.posix.authorized_key:
         user: "{{ admin_user }}"
         key: "{{ lookup('file', ssh_public_key_path) }}"
         state: present
+
+    - name: Check for GitHub Actions deploy public key
+      ansible.builtin.stat:
+        path: "{{ github_deploy_public_key_path }}"
+      register: github_deploy_public_key_stat
+      delegate_to: localhost
+      become: false
+      when:
+        - github_deploy_public_key_path is defined
+        - github_deploy_public_key_path | length > 0
+
+    - name: Add GitHub Actions deploy SSH key to admin
+      ansible.posix.authorized_key:
+        user: "{{ admin_user }}"
+        key: "{{ lookup('file', github_deploy_public_key_path) }}"
+        state: present
+      when:
+        - github_deploy_public_key_path is defined
+        - github_deploy_public_key_path | length > 0
+        - github_deploy_public_key_stat.stat.exists | default(false)
 
     - name: Allow wheel sudo
       ansible.builtin.copy:

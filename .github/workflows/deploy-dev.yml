@@ -1,0 +1,52 @@
+name: Deploy CamBot Dev
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "${{ secrets.CAMBOT_DEV_DEPLOY_KEY }}" > ~/.ssh/cambot_deploy_key
+          chmod 600 ~/.ssh/cambot_deploy_key
+
+          ssh-keyscan -H "${{ secrets.CAMBOT_DEV_DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync repo to dev VM
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/cambot_deploy_key -o StrictHostKeyChecking=yes" \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "secrets" \
+            --exclude ".terraform" \
+            --exclude "*.tfstate" \
+            --exclude "*.tfstate.*" \
+            --exclude "__pycache__" \
+            --exclude ".venv" \
+            --exclude "venv" \
+            ./ "${{ secrets.CAMBOT_DEV_DEPLOY_USER }}@${{ secrets.CAMBOT_DEV_DEPLOY_HOST }}:${{ secrets.CAMBOT_DEV_REMOTE_DIR }}/"
+
+      - name: Fix ownership
+        run: |
+          ssh -i ~/.ssh/cambot_deploy_key \
+            "${{ secrets.CAMBOT_DEV_DEPLOY_USER }}@${{ secrets.CAMBOT_DEV_DEPLOY_HOST }}" \
+            "sudo chown -R cambot:cambot '${{ secrets.CAMBOT_DEV_REMOTE_DIR }}'"
+
+      - name: Start CamBot dev pod
+        run: |
+          ssh -i ~/.ssh/cambot_deploy_key \
+            "${{ secrets.CAMBOT_DEV_DEPLOY_USER }}@${{ secrets.CAMBOT_DEV_DEPLOY_HOST }}" \
+            "sudo -u cambot env ENVIRONMENT='dev' CAM_BOT_BASE_DIR='${{ secrets.CAMBOT_DEV_REMOTE_DIR }}' bash -c 'cd ${{ secrets.CAMBOT_DEV_REMOTE_DIR }}/infra/pod && ./podman-run.sh'"
