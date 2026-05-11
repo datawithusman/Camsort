@@ -1,0 +1,109 @@
+components:
+  schemas:
+    PromptType:
+      type: string
+      enum:
+        - sorting
+        - finding
+        - monitoring
+        - summarization
+
+    Priority:
+      type: string
+      enum:
+        - low
+        - normal
+        - high
+        - emergency
+
+    SavedPrompt:
+      type: object
+      required:
+        - id
+        - name
+        - promptType
+        - promptText
+        - enabled
+      properties:
+        id:
+          type: string
+          example: prompt-after-hours-person-detection
+        name:
+          type: string
+          example: After-hours person detection
+        promptType:
+          $ref: "#/components/schemas/PromptType"
+        description:
+          type: string
+          example: Find cameras where a person appears near a restricted entrance after hours.
+        promptText:
+          type: string
+          example: Look for a person standing near a restricted entrance after normal operating hours.
+        defaultPriority:
+          $ref: "#/components/schemas/Priority"
+        defaultMaxEstimatedCost:
+          type: number
+          format: double
+          example: 5.0
+        enabled:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateSavedPromptRequest:
+      type: object
+      required:
+        - name
+        - promptType
+        - promptText
+      properties:
+        name:
+          type: string
+        promptType:
+          $ref: "#/components/schemas/PromptType"
+        description:
+          type: string
+        promptText:
+          type: string
+        defaultPriority:
+          $ref: "#/components/schemas/Priority"
+        defaultMaxEstimatedCost:
+          type: number
+          format: double
+        enabled:
+          type: boolean
+          default: true
+
+    UpdateSavedPromptRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        promptType:
+          $ref: "#/components/schemas/PromptType"
+        description:
+          type: string
+        promptText:
+          type: string
+        defaultPriority:
+          $ref: "#/components/schemas/Priority"
+        defaultMaxEstimatedCost:
+          type: number
+          format: double
+        enabled:
+          type: boolean
+
+    SavedPromptListResponse:
+      type: object
+      required:
+        - prompts
+      properties:
+        prompts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SavedPrompt"

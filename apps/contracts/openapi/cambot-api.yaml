@@ -1,33 +1,350 @@
-openapi: 3.0.3
+openapi: 3.1.0
+
 info:
   title: CamBot REST API
   version: 0.1.0
+  description: Product API used by the CamBot client.
+
 servers:
   - url: /api
+    description: Reverse-proxied CamBot API root
+
+tags:
+  - name: Camera Groups
+  - name: Saved Prompts
+  - name: Prompt Bindings
+  - name: Operations
+  - name: Operator Queue
+  - name: Settings
+  - name: Usage
+
 paths:
-  /health:
+  /camera-groups:
     get:
+      tags: [Camera Groups]
+      summary: List CamBot camera groups
+      operationId: listCameraGroups
       responses:
         "200":
-          description: Health response
-  /operator-actions:
-    get:
-      responses:
-        "200":
-          description: Operator actions
+          description: Camera groups returned
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  actions:
-                    type: array
-                    items:
-                      $ref: "./schemas/operator-action.yaml#/components/schemas/OperatorAction"
-  /operator-actions/{actionId}:
-    patch:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroupListResponse"
+
+    post:
+      tags: [Camera Groups]
+      summary: Create a CamBot camera group
+      operationId: createCameraGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CreateCameraGroupRequest"
+      responses:
+        "201":
+          description: Camera group created
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroup"
+
+  /camera-groups/{groupId}:
+    get:
+      tags: [Camera Groups]
+      summary: Get a CamBot camera group
+      operationId: getCameraGroup
       parameters:
-        - name: actionId
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Camera group returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroup"
+
+    put:
+      tags: [Camera Groups]
+      summary: Update a CamBot camera group
+      operationId: updateCameraGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/UpdateCameraGroupRequest"
+      responses:
+        "200":
+          description: Camera group updated
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroup"
+
+    delete:
+      tags: [Camera Groups]
+      summary: Delete a CamBot camera group
+      operationId: deleteCameraGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "204":
+          description: Camera group deleted
+
+  /camera-groups/{groupId}/cameras:
+    put:
+      tags: [Camera Groups]
+      summary: Replace cameras assigned to a CamBot camera group
+      operationId: replaceCameraGroupCameras
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/ReplaceCameraGroupCamerasRequest"
+      responses:
+        "200":
+          description: Camera group cameras replaced
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroup"
+
+  /camera-groups/{groupId}/stats:
+    get:
+      tags: [Camera Groups]
+      summary: Get camera group statistics
+      operationId: getCameraGroupStats
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Camera group statistics returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroupStats"
+
+  /saved-prompts:
+    get:
+      tags: [Saved Prompts]
+      summary: List saved prompts
+      operationId: listSavedPrompts
+      parameters:
+        - name: promptType
+          in: query
+          required: false
+          schema:
+            $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/PromptType"
+      responses:
+        "200":
+          description: Saved prompts returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/SavedPromptListResponse"
+
+    post:
+      tags: [Saved Prompts]
+      summary: Create a saved prompt
+      operationId: createSavedPrompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/CreateSavedPromptRequest"
+      responses:
+        "201":
+          description: Saved prompt created
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/SavedPrompt"
+
+  /saved-prompts/{promptId}:
+    get:
+      tags: [Saved Prompts]
+      summary: Get a saved prompt
+      operationId: getSavedPrompt
+      parameters:
+        - $ref: "#/components/parameters/PromptId"
+      responses:
+        "200":
+          description: Saved prompt returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/SavedPrompt"
+
+    put:
+      tags: [Saved Prompts]
+      summary: Update a saved prompt
+      operationId: updateSavedPrompt
+      parameters:
+        - $ref: "#/components/parameters/PromptId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/UpdateSavedPromptRequest"
+      responses:
+        "200":
+          description: Saved prompt updated
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/SavedPrompt"
+
+    delete:
+      tags: [Saved Prompts]
+      summary: Delete a saved prompt
+      operationId: deleteSavedPrompt
+      parameters:
+        - $ref: "#/components/parameters/PromptId"
+      responses:
+        "204":
+          description: Saved prompt deleted
+
+  /camera-groups/{groupId}/prompt-bindings:
+    get:
+      tags: [Prompt Bindings]
+      summary: List saved prompts applied to a camera group
+      operationId: listCameraGroupPromptBindings
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Prompt bindings returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/prompt-binding.yaml#/components/schemas/PromptBindingListResponse"
+
+    post:
+      tags: [Prompt Bindings]
+      summary: Apply a saved prompt to a camera group
+      operationId: createCameraGroupPromptBinding
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/prompt-binding.yaml#/components/schemas/CreatePromptBindingRequest"
+      responses:
+        "201":
+          description: Prompt binding created
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/prompt-binding.yaml#/components/schemas/PromptBinding"
+
+  /camera-groups/{groupId}/prompt-bindings/{bindingId}:
+    put:
+      tags: [Prompt Bindings]
+      summary: Update a prompt binding
+      operationId: updateCameraGroupPromptBinding
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/BindingId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/prompt-binding.yaml#/components/schemas/UpdatePromptBindingRequest"
+      responses:
+        "200":
+          description: Prompt binding updated
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/prompt-binding.yaml#/components/schemas/PromptBinding"
+
+    delete:
+      tags: [Prompt Bindings]
+      summary: Remove prompt from camera group
+      operationId: deleteCameraGroupPromptBinding
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+        - $ref: "#/components/parameters/BindingId"
+      responses:
+        "204":
+          description: Prompt binding deleted
+
+  /operations/estimate:
+    post:
+      tags: [Operations]
+      summary: Estimate operation usage and cost
+      operationId: estimateOperation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/operation.yaml#/components/schemas/OperationEstimateRequest"
+      responses:
+        "200":
+          description: Operation estimate returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/OperationEstimate"
+
+  /operations:
+    post:
+      tags: [Operations]
+      summary: Start an AI operation
+      operationId: createOperation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/operation.yaml#/components/schemas/CreateOperationRequest"
+      responses:
+        "201":
+          description: Operation created
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/Operation"
+
+  /operator-queue:
+    get:
+      tags: [Operator Queue]
+      summary: List operator queue items
+      operationId: listOperatorQueueItems
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "./schemas/cambot/operator-queue.yaml#/components/schemas/OperatorQueueStatus"
+      responses:
+        "200":
+          description: Operator queue returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operator-queue.yaml#/components/schemas/OperatorQueueListResponse"
+
+  /operator-queue/{queueItemId}:
+    put:
+      tags: [Operator Queue]
+      summary: Update operator queue item status
+      operationId: updateOperatorQueueItem
+      parameters:
+        - name: queueItemId
           in: path
           required: true
           schema:
@@ -37,16 +354,109 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./schemas/operator-action.yaml#/components/schemas/UpdateOperatorActionRequest"
+              $ref: "./schemas/cambot/operator-queue.yaml#/components/schemas/UpdateOperatorQueueItemRequest"
       responses:
         "200":
-          description: Updated operator action
-  /stats:
-    get:
-      responses:
-        "200":
-          description: Stats
+          description: Queue item updated
           content:
             application/json:
               schema:
-                $ref: "./schemas/stats.yaml#/components/schemas/Stats"
+                $ref: "./schemas/cambot/operator-queue.yaml#/components/schemas/OperatorQueueItem"
+
+  /settings/gemini:
+    get:
+      tags: [Settings]
+      summary: Get Gemini caller settings
+      operationId: getGeminiCallerSettings
+      responses:
+        "200":
+          description: Gemini caller settings returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/settings.yaml#/components/schemas/GeminiCallerSettings"
+
+    put:
+      tags: [Settings]
+      summary: Update Gemini caller settings
+      operationId: updateGeminiCallerSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/settings.yaml#/components/schemas/UpdateGeminiCallerSettingsRequest"
+      responses:
+        "200":
+          description: Gemini caller settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/settings.yaml#/components/schemas/GeminiCallerSettings"
+
+  /settings/usage-limits:
+    get:
+      tags: [Settings]
+      summary: Get usage limit settings
+      operationId: getUsageLimitSettings
+      responses:
+        "200":
+          description: Usage limit settings returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/settings.yaml#/components/schemas/UsageLimitSettings"
+
+    put:
+      tags: [Settings]
+      summary: Update usage limit settings
+      operationId: updateUsageLimitSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/settings.yaml#/components/schemas/UpdateUsageLimitSettingsRequest"
+      responses:
+        "200":
+          description: Usage limit settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/settings.yaml#/components/schemas/UsageLimitSettings"
+
+  /usage/summary:
+    get:
+      tags: [Usage]
+      summary: Get usage and estimated cost summary
+      operationId: getUsageSummary
+      responses:
+        "200":
+          description: Usage summary returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/usage.yaml#/components/schemas/UsageSummary"
+
+components:
+  parameters:
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    PromptId:
+      name: promptId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    BindingId:
+      name: bindingId
+      in: path
+      required: true
+      schema:
+        type: string

@@ -1,0 +1,13 @@
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Invalid request.
+        details:
+          type: string
+          nullable: true

@@ -1,0 +1,108 @@
+components:
+  schemas:
+    CameraGroup:
+      type: object
+      required:
+        - id
+        - name
+        - cameraIds
+      properties:
+        id:
+          type: string
+          example: group-main-entrances
+        name:
+          type: string
+          example: Main Entrances
+        description:
+          type: string
+          example: Operational group for all main entrance cameras.
+        cameraIds:
+          type: array
+          items:
+            type: string
+          example:
+            - camera-main-entrance-01
+            - camera-main-entrance-02
+        stats:
+          $ref: "#/components/schemas/CameraGroupStats"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateCameraGroupRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        cameraIds:
+          type: array
+          items:
+            type: string
+
+    UpdateCameraGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    ReplaceCameraGroupCamerasRequest:
+      type: object
+      required:
+        - cameraIds
+      properties:
+        cameraIds:
+          type: array
+          items:
+            type: string
+
+    CameraGroupStats:
+      type: object
+      properties:
+        cameraCount:
+          type: integer
+          example: 12
+        appliedPromptCount:
+          type: integer
+          example: 4
+        enabledPromptCount:
+          type: integer
+          example: 3
+        scansPerDay:
+          type: number
+          format: double
+          example: 48
+        estimatedCostPerScan:
+          type: number
+          format: double
+          example: 0.08
+        estimatedCostPerDay:
+          type: number
+          format: double
+          example: 3.84
+        estimatedCostPerMonth:
+          type: number
+          format: double
+          example: 115.2
+        lastScannedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CameraGroupListResponse:
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/CameraGroup"

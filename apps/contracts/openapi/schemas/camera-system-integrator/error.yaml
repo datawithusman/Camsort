@@ -2,8 +2,12 @@ components:
   schemas:
     ErrorResponse:
       type: object
+      required:
+        - error
       properties:
         error:
           type: string
-        message:
+          example: Camera not found.
+        details:
           type: string
+          nullable: true

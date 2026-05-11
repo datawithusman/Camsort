@@ -1,0 +1,105 @@
+components:
+  schemas:
+    OperatorQueueStatus:
+      type: string
+      enum:
+        - pending
+        - acknowledged
+        - dismissed
+        - completed
+
+    ActionScore:
+      type: object
+      properties:
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        urgency:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        risk:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        overall:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    OperatorAction:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          example: Review restricted entrance
+        description:
+          type: string
+          example: A person appears to be standing near the restricted entrance.
+        recommendedAction:
+          type: string
+          example: Dispatch operator to verify the entrance area.
+
+    OperatorQueueItem:
+      type: object
+      required:
+        - id
+        - cameraId
+        - cameraGroupId
+        - action
+        - score
+        - status
+      properties:
+        id:
+          type: string
+        operationId:
+          type: string
+          nullable: true
+        cameraId:
+          type: string
+        cameraGroupId:
+          type: string
+        savedPromptId:
+          type: string
+          nullable: true
+        action:
+          $ref: "#/components/schemas/OperatorAction"
+        score:
+          $ref: "#/components/schemas/ActionScore"
+        status:
+          $ref: "#/components/schemas/OperatorQueueStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateOperatorQueueItemRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/OperatorQueueStatus"
+        operatorNote:
+          type: string
+          nullable: true
+
+    OperatorQueueListResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperatorQueueItem"

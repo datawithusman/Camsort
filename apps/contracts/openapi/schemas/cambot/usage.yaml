@@ -1,0 +1,30 @@
+components:
+  schemas:
+    UsageSummary:
+      type: object
+      properties:
+        scansToday:
+          type: integer
+          example: 72
+        scansThisMonth:
+          type: integer
+          example: 1320
+        estimatedCostToday:
+          type: number
+          format: double
+          example: 8.64
+        estimatedCostThisMonth:
+          type: number
+          format: double
+          example: 158.2
+        remainingDailyBudget:
+          type: number
+          format: double
+          example: 16.36
+        remainingMonthlyBudget:
+          type: number
+          format: double
+          example: 141.8
+        lastUpdatedAt:
+          type: string
+          format: date-time

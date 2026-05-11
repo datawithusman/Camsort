@@ -1,0 +1,133 @@
+components:
+  schemas:
+    OperationType:
+      type: string
+      enum:
+        - find
+        - sort
+        - scan
+        - summarize
+        - monitor
+
+    OperationStatus:
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+        - cancelled
+
+    OperationTargetType:
+      type: string
+      enum:
+        - camera
+        - camera-group
+        - facility
+
+    OperationTarget:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/OperationTargetType"
+        cameraId:
+          type: string
+          nullable: true
+        cameraGroupId:
+          type: string
+          nullable: true
+
+    OperationEstimateRequest:
+      type: object
+      required:
+        - operationType
+        - target
+      properties:
+        operationType:
+          $ref: "#/components/schemas/OperationType"
+        target:
+          $ref: "#/components/schemas/OperationTarget"
+        savedPromptId:
+          type: string
+          nullable: true
+        temporaryPromptText:
+          type: string
+          nullable: true
+
+    OperationEstimate:
+      type: object
+      required:
+        - allowed
+        - estimatedCameraCount
+        - estimatedCost
+      properties:
+        allowed:
+          type: boolean
+        restrictionReason:
+          type: string
+          nullable: true
+        estimatedCameraCount:
+          type: integer
+        estimatedPromptCount:
+          type: integer
+        estimatedTokenCount:
+          type: integer
+        estimatedCost:
+          type: number
+          format: double
+
+    CreateOperationRequest:
+      type: object
+      required:
+        - operationType
+        - target
+      properties:
+        operationType:
+          $ref: "#/components/schemas/OperationType"
+        target:
+          $ref: "#/components/schemas/OperationTarget"
+        savedPromptId:
+          type: string
+          nullable: true
+        temporaryPromptText:
+          type: string
+          nullable: true
+        maxEstimatedCost:
+          type: number
+          format: double
+          nullable: true
+
+    Operation:
+      type: object
+      required:
+        - id
+        - operationType
+        - status
+        - target
+      properties:
+        id:
+          type: string
+          example: operation-001
+        operationType:
+          $ref: "#/components/schemas/OperationType"
+        status:
+          $ref: "#/components/schemas/OperationStatus"
+        target:
+          $ref: "#/components/schemas/OperationTarget"
+        savedPromptId:
+          type: string
+          nullable: true
+        temporaryPromptText:
+          type: string
+          nullable: true
+        estimate:
+          $ref: "#/components/schemas/OperationEstimate"
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true

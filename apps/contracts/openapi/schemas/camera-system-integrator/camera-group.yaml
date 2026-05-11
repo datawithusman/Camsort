@@ -1,0 +1,42 @@
+components:
+  schemas:
+    CameraSystemGroup:
+      type: object
+      required:
+        - id
+        - name
+        - cameraIds
+      properties:
+        id:
+          type: string
+          example: source-group-building-a
+        name:
+          type: string
+          example: Building A
+        description:
+          type: string
+          nullable: true
+        parentGroupId:
+          type: string
+          nullable: true
+        cameraIds:
+          type: array
+          items:
+            type: string
+        childGroupIds:
+          type: array
+          items:
+            type: string
+        vendorMetadata:
+          type: object
+          additionalProperties: true
+
+    CameraSystemGroupListResponse:
+      type: object
+      required:
+        - groups
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/CameraSystemGroup"

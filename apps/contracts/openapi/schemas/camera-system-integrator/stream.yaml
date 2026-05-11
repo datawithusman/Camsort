@@ -1,0 +1,30 @@
+components:
+  schemas:
+    StreamType:
+      type: string
+      enum:
+        - rtsp
+        - hls
+        - webrtc
+        - mjpeg
+        - unknown
+
+    CameraStream:
+      type: object
+      required:
+        - cameraId
+        - streamType
+        - streamUrl
+      properties:
+        cameraId:
+          type: string
+          example: camera-main-entrance-01
+        streamType:
+          $ref: "#/components/schemas/StreamType"
+        streamUrl:
+          type: string
+          example: rtsp://camera-system.local/main-entrance-01
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true

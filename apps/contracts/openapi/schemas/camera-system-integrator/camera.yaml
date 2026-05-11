@@ -1,0 +1,54 @@
+components:
+  schemas:
+    CameraStatus:
+      type: string
+      enum:
+        - online
+        - offline
+        - unknown
+
+    Camera:
+      type: object
+      required:
+        - id
+        - name
+        - status
+      properties:
+        id:
+          type: string
+          example: camera-main-entrance-01
+        name:
+          type: string
+          example: Main Entrance 01
+        description:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          example: Building A Main Entrance
+        groupIds:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: "#/components/schemas/CameraStatus"
+        streamAvailable:
+          type: boolean
+          example: true
+        snapshotAvailable:
+          type: boolean
+          example: true
+        vendorMetadata:
+          type: object
+          additionalProperties: true
+
+    CameraListResponse:
+      type: object
+      required:
+        - cameras
+      properties:
+        cameras:
+          type: array
+          items:
+            $ref: "#/components/schemas/Camera"

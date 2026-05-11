@@ -1,0 +1,159 @@
+openapi: 3.1.0
+
+info:
+  title: Camera System Integrator API
+  version: 0.1.0
+  description: Contract implemented by camera system adapters. The Camera System Mocker implements this API for demo/testing.
+
+servers:
+  - url: /camera-system
+    description: Camera system integrator API root
+
+tags:
+  - name: System
+  - name: Cameras
+  - name: Source Camera Groups
+  - name: Snapshots
+  - name: Streams
+
+paths:
+  /system/status:
+    get:
+      tags: [System]
+      summary: Get camera system status
+      operationId: getCameraSystemStatus
+      responses:
+        "200":
+          description: System status returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/system-status.yaml#/components/schemas/SystemStatus"
+
+  /cameras:
+    get:
+      tags: [Cameras]
+      summary: List cameras from the camera system
+      operationId: listIntegratorCameras
+      parameters:
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cameras returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
+
+  /cameras/{cameraId}:
+    get:
+      tags: [Cameras]
+      summary: Get camera details from the camera system
+      operationId: getIntegratorCamera
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Camera returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/Camera"
+
+  /cameras/{cameraId}/snapshot:
+    get:
+      tags: [Snapshots]
+      summary: Get latest camera snapshot
+      operationId: getCameraSnapshot
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Snapshot returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraSnapshot"
+
+  /cameras/{cameraId}/stream:
+    get:
+      tags: [Streams]
+      summary: Get camera stream descriptor
+      operationId: getCameraStream
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Stream descriptor returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/stream.yaml#/components/schemas/CameraStream"
+
+  /camera-groups:
+    get:
+      tags: [Source Camera Groups]
+      summary: List source camera groups from the camera system
+      operationId: listIntegratorCameraGroups
+      responses:
+        "200":
+          description: Source camera groups returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroupListResponse"
+
+  /camera-groups/{groupId}:
+    get:
+      tags: [Source Camera Groups]
+      summary: Get source camera group details
+      operationId: getIntegratorCameraGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Source camera group returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroup"
+
+  /camera-groups/{groupId}/cameras:
+    get:
+      tags: [Source Camera Groups]
+      summary: List cameras in a source camera group
+      operationId: listIntegratorCameraGroupCameras
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Cameras returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
+
+components:
+  parameters:
+    CameraId:
+      name: cameraId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string

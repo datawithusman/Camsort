@@ -1,0 +1,92 @@
+components:
+  schemas:
+    GeminiCallerSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        modelName:
+          type: string
+          example: gemini-1.5-flash
+        maxRequestsPerMinute:
+          type: integer
+          example: 30
+        maxTokensPerRequest:
+          type: integer
+          example: 8192
+        maxCostPerOperation:
+          type: number
+          format: double
+          example: 2.5
+        maxCostPerDay:
+          type: number
+          format: double
+          example: 25.0
+        maxCostPerMonth:
+          type: number
+          format: double
+          example: 300.0
+        allowEmergencyOverride:
+          type: boolean
+          example: true
+
+    UpdateGeminiCallerSettingsRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        modelName:
+          type: string
+        maxRequestsPerMinute:
+          type: integer
+        maxTokensPerRequest:
+          type: integer
+        maxCostPerOperation:
+          type: number
+          format: double
+        maxCostPerDay:
+          type: number
+          format: double
+        maxCostPerMonth:
+          type: number
+          format: double
+        allowEmergencyOverride:
+          type: boolean
+
+    UsageLimitSettings:
+      type: object
+      properties:
+        maxScansPerDay:
+          type: integer
+          example: 500
+        maxScansPerMonth:
+          type: integer
+          example: 10000
+        maxEstimatedCostPerDay:
+          type: number
+          format: double
+          example: 25.0
+        maxEstimatedCostPerMonth:
+          type: number
+          format: double
+          example: 300.0
+        blockOperationsWhenLimitReached:
+          type: boolean
+          example: true
+
+    UpdateUsageLimitSettingsRequest:
+      type: object
+      properties:
+        maxScansPerDay:
+          type: integer
+        maxScansPerMonth:
+          type: integer
+        maxEstimatedCostPerDay:
+          type: number
+          format: double
+        maxEstimatedCostPerMonth:
+          type: number
+          format: double
+        blockOperationsWhenLimitReached:
+          type: boolean

@@ -1,0 +1,27 @@
+components:
+  schemas:
+    CameraSnapshot:
+      type: object
+      required:
+        - cameraId
+        - capturedAt
+        - imageUrl
+      properties:
+        cameraId:
+          type: string
+          example: camera-main-entrance-01
+        capturedAt:
+          type: string
+          format: date-time
+        imageUrl:
+          type: string
+          example: /camera-system/cameras/camera-main-entrance-01/snapshot.jpg
+        mimeType:
+          type: string
+          example: image/jpeg
+        width:
+          type: integer
+          example: 1280
+        height:
+          type: integer
+          example: 720

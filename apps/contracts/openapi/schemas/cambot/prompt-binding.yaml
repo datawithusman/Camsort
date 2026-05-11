@@ -1,0 +1,96 @@
+components:
+  schemas:
+    ScanFrequency:
+      type: string
+      enum:
+        - manual
+        - hourly
+        - daily
+        - continuous
+
+    Priority:
+      type: string
+      enum:
+        - low
+        - normal
+        - high
+        - emergency
+
+    PromptBinding:
+      type: object
+      required:
+        - id
+        - cameraGroupId
+        - promptId
+        - enabled
+      properties:
+        id:
+          type: string
+          example: binding-main-entrances-after-hours
+        cameraGroupId:
+          type: string
+          example: group-main-entrances
+        promptId:
+          type: string
+          example: prompt-after-hours-person-detection
+        enabled:
+          type: boolean
+          example: true
+        scanFrequency:
+          $ref: "#/components/schemas/ScanFrequency"
+        priorityOverride:
+          $ref: "#/components/schemas/Priority"
+        maxEstimatedCostOverride:
+          type: number
+          format: double
+          nullable: true
+          example: 2.5
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreatePromptBindingRequest:
+      type: object
+      required:
+        - promptId
+      properties:
+        promptId:
+          type: string
+        enabled:
+          type: boolean
+          default: true
+        scanFrequency:
+          $ref: "#/components/schemas/ScanFrequency"
+        priorityOverride:
+          $ref: "#/components/schemas/Priority"
+        maxEstimatedCostOverride:
+          type: number
+          format: double
+          nullable: true
+
+    UpdatePromptBindingRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        scanFrequency:
+          $ref: "#/components/schemas/ScanFrequency"
+        priorityOverride:
+          $ref: "#/components/schemas/Priority"
+        maxEstimatedCostOverride:
+          type: number
+          format: double
+          nullable: true
+
+    PromptBindingListResponse:
+      type: object
+      required:
+        - bindings
+      properties:
+        bindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptBinding"

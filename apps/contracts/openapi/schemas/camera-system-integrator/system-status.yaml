@@ -1,0 +1,26 @@
+components:
+  schemas:
+    SystemStatus:
+      type: object
+      required:
+        - status
+        - checkedAt
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+            - unavailable
+        checkedAt:
+          type: string
+          format: date-time
+        cameraCount:
+          type: integer
+          example: 128
+        onlineCameraCount:
+          type: integer
+          example: 121
+        message:
+          type: string
+          nullable: true
