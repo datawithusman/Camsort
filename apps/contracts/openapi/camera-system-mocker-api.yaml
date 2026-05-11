@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: CamBot Mock Camera System API
+  version: 0.1.0
+servers:
+  - url: /cam
+paths:
+  /health:
+    get:
+      responses:
+        "200":
+          description: Health response
+  /cameras:
+    get:
+      responses:
+        "200":
+          description: Cameras
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cameras:
+                    type: array
+                    items:
+                      $ref: "./schemas/camera.yaml#/components/schemas/Camera"
+  /cameras/{cameraId}/snapshot.jpg:
+    get:
+      parameters:
+        - name: cameraId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Snapshot
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary

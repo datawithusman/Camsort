@@ -1,0 +1,52 @@
+openapi: 3.0.3
+info:
+  title: CamBot REST API
+  version: 0.1.0
+servers:
+  - url: /api
+paths:
+  /health:
+    get:
+      responses:
+        "200":
+          description: Health response
+  /operator-actions:
+    get:
+      responses:
+        "200":
+          description: Operator actions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  actions:
+                    type: array
+                    items:
+                      $ref: "./schemas/operator-action.yaml#/components/schemas/OperatorAction"
+  /operator-actions/{actionId}:
+    patch:
+      parameters:
+        - name: actionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/operator-action.yaml#/components/schemas/UpdateOperatorActionRequest"
+      responses:
+        "200":
+          description: Updated operator action
+  /stats:
+    get:
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/stats.yaml#/components/schemas/Stats"

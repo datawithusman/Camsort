@@ -1,0 +1,220 @@
+---
+- name: Bootstrap CamBot VM
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    admin_user: "{{ lookup('env', 'CAM_BOT_REMOTE_ADMIN_USER') | default('admin', true) }}"
+    cambot_user: "{{ lookup('env', 'CAM_BOT_SERVICE_USER') | default('cambot', true) }}"
+    cambot_root: "{{ lookup('env', 'CAM_BOT_REMOTE_DIR') | default('/srv/cambot', true) }}"
+    ssh_public_key_path: "{{ lookup('env', 'SSH_PUBLIC_KEY_PATH') }}"
+
+    ufw_before_rules_path: /etc/ufw/before.rules
+    ufw_nat_marker: "# {mark} CAMBOT NAT REDIRECTS"
+    ufw_filter_marker: "# {mark} CAMBOT REDIRECT FILTERS"
+    public_iface: "{{ ansible_facts['default_ipv4']['interface'] }}"
+
+  pre_tasks:
+    - name: Ensure default IPv4 interface exists
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['default_ipv4'] is defined
+          - ansible_facts['default_ipv4']['interface'] is defined
+          - ansible_facts['default_ipv4']['interface'] | length > 0
+        fail_msg: "Could not determine default IPv4 interface for UFW redirect rules."
+
+    - name: Ensure SSH public key path is provided
+      ansible.builtin.assert:
+        that:
+          - ssh_public_key_path is defined
+          - ssh_public_key_path | length > 0
+        fail_msg: "SSH_PUBLIC_KEY_PATH must be provided by provision-vm.sh."
+
+  tasks:
+    - name: Update pacman package cache
+      community.general.pacman:
+        update_cache: true
+
+    - name: Install required packages
+      community.general.pacman:
+        name:
+          - podman
+          - podman-compose
+          - ufw
+          - sudo
+          - rsync
+          - git
+          - python
+          - python-pip
+          - apache
+          - shadow
+          - slirp4netns
+          - fuse-overlayfs
+          - iptables
+          - nftables
+        state: present
+
+    - name: Create admin user
+      ansible.builtin.user:
+        name: "{{ admin_user }}"
+        shell: /bin/bash
+        groups:
+          - wheel
+        append: true
+        create_home: true
+
+    - name: Create cambot service user
+      ansible.builtin.user:
+        name: "{{ cambot_user }}"
+        shell: /bin/bash
+        create_home: true
+
+    - name: Add admin SSH key
+      ansible.posix.authorized_key:
+        user: "{{ admin_user }}"
+        key: "{{ lookup('file', ssh_public_key_path) }}"
+        state: present
+
+    - name: Allow wheel sudo
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/99-wheel-nopasswd
+        content: "%wheel ALL=(ALL) NOPASSWD: ALL\n"
+        owner: root
+        group: root
+        mode: "0440"
+
+    - name: Create CamBot root directory
+      ansible.builtin.file:
+        path: "{{ cambot_root }}"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0755"
+
+    - name: Enable linger for cambot rootless services
+      ansible.builtin.command:
+        argv:
+          - loginctl
+          - enable-linger
+          - "{{ cambot_user }}"
+      register: enable_linger_result
+      changed_when: >-
+        'Created symlink' in (enable_linger_result.stdout | default('')) or
+        'Created symlink' in (enable_linger_result.stderr | default(''))
+      failed_when: false
+
+    - name: Configure rootless podman config directory for cambot
+      ansible.builtin.file:
+        path: "/home/{{ cambot_user }}/.config/containers"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0755"
+
+    - name: Write cambot rootless podman storage config
+      ansible.builtin.copy:
+        dest: "/home/{{ cambot_user }}/.config/containers/storage.conf"
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0644"
+        content: |
+          [storage]
+          driver = "overlay"
+
+          [storage.options.overlay]
+          mount_program = "/usr/bin/fuse-overlayfs"
+
+    - name: Write cambot rootless podman network config
+      ansible.builtin.copy:
+        dest: "/home/{{ cambot_user }}/.config/containers/containers.conf"
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0644"
+        content: |
+          [network]
+          default_rootless_network_cmd = "slirp4netns"
+
+    - name: Allow SSH through ufw
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+
+    - name: Allow HTTP through ufw
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+
+    - name: Allow HTTPS through ufw
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+
+    - name: Remove old CAMBOT NAT redirect block if present
+      ansible.builtin.blockinfile:
+        path: "{{ ufw_before_rules_path }}"
+        marker: "{{ ufw_nat_marker }}"
+        state: absent
+
+    - name: Remove old CAMBOT redirect filter block if present
+      ansible.builtin.blockinfile:
+        path: "{{ ufw_before_rules_path }}"
+        marker: "{{ ufw_filter_marker }}"
+        state: absent
+
+    - name: Ensure CamBot NAT redirects exist in ufw before.rules
+      ansible.builtin.blockinfile:
+        path: "{{ ufw_before_rules_path }}"
+        insertbefore: '^\*filter'
+        marker: "{{ ufw_nat_marker }}"
+        block: |
+          *nat
+          :PREROUTING ACCEPT [0:0]
+          :OUTPUT ACCEPT [0:0]
+          -A PREROUTING -i {{ public_iface }} -p tcp --dport 80 -j REDIRECT --to-ports 8080
+          -A PREROUTING -i {{ public_iface }} -p tcp --dport 443 -j REDIRECT --to-ports 8443
+          COMMIT
+
+    - name: Ensure redirected web traffic filter rules exist in ufw before.rules
+      ansible.builtin.blockinfile:
+        path: "{{ ufw_before_rules_path }}"
+        insertafter: '^:ufw-before-input - \[0:0\]$'
+        marker: "{{ ufw_filter_marker }}"
+        block: |
+          -A ufw-before-input -i {{ public_iface }} -p tcp -m conntrack --ctstate NEW,ESTABLISHED -m conntrack --ctdir ORIGINAL --ctorigdstport 80 --dport 8080 -j ACCEPT
+          -A ufw-before-input -i {{ public_iface }} -p tcp -m conntrack --ctstate NEW,ESTABLISHED -m conntrack --ctdir ORIGINAL --ctorigdstport 443 --dport 8443 -j ACCEPT
+
+    - name: Dry-run validate UFW configuration
+      ansible.builtin.command:
+        argv:
+          - ufw
+          - --dry-run
+          - reload
+      register: ufw_dry_run_reload
+      changed_when: false
+
+    - name: Enable ufw with deny incoming policy
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    - name: Disable root SSH login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin no"
+
+    - name: Disable password SSH authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication no"
+
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted

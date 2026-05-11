@@ -1,0 +1,55 @@
+---
+- name: Configure CamBot Arch Linux VM
+  hosts: cambot
+  become: true
+
+  vars:
+    cambot_user: cambot
+    cambot_root: /srv/cambot
+
+  tasks:
+    - name: Update pacman cache
+      community.general.pacman:
+        update_cache: true
+
+    - name: Install required packages
+      community.general.pacman:
+        name:
+          - podman
+          - podman-compose
+          - nginx
+          - python
+          - python-pip
+          - rsync
+          - git
+          - openssl
+        state: present
+
+    - name: Create cambot user
+      ansible.builtin.user:
+        name: "{{ cambot_user }}"
+        shell: /bin/bash
+        create_home: true
+
+    - name: Create CamBot root
+      ansible.builtin.file:
+        path: "{{ cambot_root }}"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0755"
+
+    - name: Enable linger for cambot user
+      ansible.builtin.command: "loginctl enable-linger {{ cambot_user }}"
+      changed_when: false
+      failed_when: false
+
+    - name: Copy project files
+      ansible.builtin.synchronize:
+        src: ../../../
+        dest: "{{ cambot_root }}/"
+        delete: false
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=secrets/dev"
+          - "--exclude=secrets/prod"

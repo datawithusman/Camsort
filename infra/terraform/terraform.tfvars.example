@@ -1,0 +1,7 @@
+vultr_api_key = "replace-me"
+region        = "ewr"
+plan          = "vc2-2c-4gb"
+os_name       = "Arch Linux x64"
+label         = "cambot-dev"
+hostname      = "cambot-dev"
+ssh_key_ids   = []

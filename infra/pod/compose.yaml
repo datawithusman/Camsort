@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  nginx:
+    image: docker.io/nginx:alpine
+    container_name: cambot-nginx
+    ports:
+      - "${CAM_BOT_HTTP_PORT:-8080}:80"
+      # Enable later when TLS is configured.
+      # - "${CAM_BOT_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${NGINX_HTPASSWD_PATH:-../../secrets/dev/podman/nginx.htpasswd}:/etc/nginx/.htpasswd:ro
+    depends_on:
+      - frontend
+      - rest-api
+      - camera-system-mocker-rest-api
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../../apps/client
+      dockerfile: Containerfile
+    container_name: cambot-frontend
+    restart: unless-stopped
+
+  rest-api:
+    build:
+      context: ../../apps/server/RestApi
+      dockerfile: Containerfile
+    container_name: cambot-rest-api
+    env_file:
+      - ../../secrets/dev/podman/.env
+    environment:
+      CAMBOT_ENV: dev
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  gemini-caller:
+    build:
+      context: ../../apps/server/GeminiCaller
+      dockerfile: Containerfile
+    container_name: cambot-gemini-caller
+    env_file:
+      - ../../secrets/dev/podman/.env
+    environment:
+      GEMINI_URL: "${CAM_BOT_DEFAULT_GEMINI_URL:-}"
+      GEMINI_API_KEY: "${CAM_BOT_DEFAULT_GEMINI_API_KEY:-}"
+      GEMINI_MODEL: "${CAM_BOT_DEFAULT_GEMINI_MODEL:-}"
+      GEMINI_BATCH_SIZE: "${CAM_BOT_DEFAULT_GEMINI_BATCH_SIZE:-5}"
+      GEMINI_JPEG_QUALITY: "${CAM_BOT_DEFAULT_GEMINI_JPEG_QUALITY:-70}"
+      SORT_INTERVAL_SECONDS: "${CAM_BOT_DEFAULT_BACKGROUND_WORKER_INTERVAL_S:-30}"
+      MAX_GEMINI_CALLS_PER_DAY: "${CAM_BOT_DEFAULT_MAX_GEMINI_CALLS_PER_DAY:-100}"
+      ESCALATION_THRESHOLD: "${CAM_BOT_DEFAULT_ESCALATION_THRESHOLD:-0.60}"
+      CAMERA_SYSTEM_BASE_URL: http://camera-system-mocker-rest-api:8080
+      REST_API_BASE_URL: http://rest-api:8080
+    depends_on:
+      - rest-api
+      - camera-system-mocker-rest-api
+      - postgres
+    restart: unless-stopped
+
+  camera-system-mocker-rest-api:
+    build:
+      context: ../../apps/server/CameraSystemMockerRestApi
+      dockerfile: Containerfile
+    container_name: cambot-camera-system-mocker-rest-api
+    env_file:
+      - ../../secrets/dev/podman/.env
+    restart: unless-stopped
+
+  postgres:
+    image: docker.io/postgres:16
+    container_name: cambot-postgres
+    environment:
+      POSTGRES_DB: cambot
+      POSTGRES_USER: cambot
+      POSTGRES_PASSWORD: cambot
+    volumes:
+      - cambot-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  cambot-postgres-data:
