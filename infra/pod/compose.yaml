@@ -13,9 +13,6 @@ services:
       # Frontend static files.
       - ../../apps/client:/usr/share/nginx/html:ro
 
-      # Browser runtime config.
-      - ../../secrets/${ENVIRONMENT:-dev}/client/env.js:/usr/share/nginx/html/config/env.js:ro
-
       # TLS certs.
       - ../../secrets/${ENVIRONMENT:-dev}/tls/fullchain.pem:/etc/nginx/tls/fullchain.pem:ro
       - ../../secrets/${ENVIRONMENT:-dev}/tls/privkey.pem:/etc/nginx/tls/privkey.pem:ro
