@@ -9,6 +9,5 @@ jobs:
   deploy-dev:
     uses: ./.github/workflows/deploy-core.yml
     with:
-      environment: dev
-      branch_environment: dev
+      cambot_environment: dev
     secrets: inherit

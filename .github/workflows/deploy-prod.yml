@@ -1,14 +1,13 @@
-name: Deploy CamBot Prod
+name: Deploy CamBot Dev
 
 on:
   push:
     branches:
-      - main
+      - dev
 
 jobs:
-  deploy-prod:
+  deploy-dev:
     uses: ./.github/workflows/deploy-core.yml
     with:
-      environment: prod
-      branch_environment: prod
+      cambot_environment: prod
     secrets: inherit
