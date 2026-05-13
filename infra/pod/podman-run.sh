@@ -7,15 +7,31 @@ set -euo pipefail
 #   ./podman-run.sh
 #   ENVIRONMENT=prod ./podman-run.sh
 #   ENVIRONMENT=dev CAM_BOT_BASE_DIR=/path/to/CamBot ./podman-run.sh
+#
+# Notes:
+#   This is the single entry point for starting the pod.
+#   Do not call podman compose directly from Ansible or GitHub Actions.
+#
+#   This script:
+#     1. Selects the environment: dev/prod
+#     2. Loads secrets/<env>/podman/.env
+#     3. Generates nginx.htpasswd from NGINX_USER_NAME / NGINX_PWD
+#     4. Exports paths needed by compose.yaml
+#     5. Sets a local rootless Podman storage config
+#     6. Starts the pod with podman compose
 
 ENVIRONMENT="${ENVIRONMENT:-dev}"
+export ENVIRONMENT
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTO_PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 CAM_BOT_BASE_DIR="${CAM_BOT_BASE_DIR:-$AUTO_PROJECT_ROOT}"
+export CAM_BOT_BASE_DIR
 
 ENV_FILE="$CAM_BOT_BASE_DIR/secrets/$ENVIRONMENT/podman/.env"
 NGINX_HTPASSWD_PATH="$CAM_BOT_BASE_DIR/secrets/$ENVIRONMENT/podman/nginx.htpasswd"
+export NGINX_HTPASSWD_PATH
 
 if [ ! -d "$CAM_BOT_BASE_DIR" ]; then
   echo "Missing CAM_BOT_BASE_DIR: $CAM_BOT_BASE_DIR"
@@ -35,13 +51,12 @@ set +a
 : "${NGINX_USER_NAME:=demo}"
 : "${NGINX_PWD:=demo}"
 
-export NGINX_HTPASSWD_PATH
-
 mkdir -p "$(dirname "$NGINX_HTPASSWD_PATH")"
 
 if ! command -v htpasswd >/dev/null 2>&1; then
   echo "Missing htpasswd command."
   echo "On Arch, install it with: sudo pacman -S apache"
+  echo "On Debian/Ubuntu, install it with: sudo apt-get install apache2-utils"
   exit 1
 fi
 
@@ -57,6 +72,12 @@ driver = "vfs"
 runroot = "$HOME/.local/share/cambot-podman-runroot"
 graphroot = "$HOME/.local/share/cambot-podman-storage"
 EOF
+
+echo "Starting CamBot pod..."
+echo "Environment:       $ENVIRONMENT"
+echo "Base dir:          $CAM_BOT_BASE_DIR"
+echo "Pod env file:      $ENV_FILE"
+echo "Nginx htpasswd:    $NGINX_HTPASSWD_PATH"
 
 cd "$CAM_BOT_BASE_DIR/infra/pod"
 

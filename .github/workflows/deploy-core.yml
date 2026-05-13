@@ -85,4 +85,4 @@ jobs:
           set -euo pipefail
 
           ssh -i ~/.ssh/cambot_deploy_key "$DEPLOY_USER@$HOST" \
-            "cd '$DEPLOY_DIR/infra/pod' && ENVIRONMENT='$CAMBOT_ENVIRONMENT' CAM_BOT_BASE_DIR='$DEPLOY_DIR' sudo -u cambot XDG_RUNTIME_DIR=/run/user/\$(id -u cambot) podman-compose up -d --build"
+            "sudo -H -u cambot env ENVIRONMENT='$CAMBOT_ENVIRONMENT' CAM_BOT_BASE_DIR='$DEPLOY_DIR' XDG_RUNTIME_DIR=/run/user/\$(id -u cambot) bash -lc 'cd \"\$CAM_BOT_BASE_DIR/infra/pod\" && ./podman-run.sh'"

@@ -139,9 +139,9 @@
       changed_when: false
       failed_when: false
 
-    - name: Start CamBot pod
+    - name: Start CamBot pod through wrapper
       ansible.builtin.command:
-        cmd: podman-compose up -d --build
+        cmd: ./podman-run.sh
         chdir: "{{ cambot_root }}/infra/pod"
       become: true
       become_user: "{{ cambot_user }}"
