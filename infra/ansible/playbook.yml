@@ -22,6 +22,7 @@
           - openssl
           - slirp4netns
           - fuse-overlayfs
+          - apache
         state: present
         update_cache: true
 
@@ -48,7 +49,7 @@
       changed_when: false
       failed_when: false
 
-    - name: Copy project files, excluding all local secrets
+    - name: Copy project files, excluding local/private artifacts
       ansible.builtin.synchronize:
         src: "{{ local_project_root }}/"
         dest: "{{ cambot_root }}/"
@@ -57,8 +58,30 @@
           - "--exclude=.git"
           - "--exclude=secrets"
           - "--exclude=generated"
+          - "--exclude=generated_dtos"
+          - "--exclude=build"
           - "--exclude=node_modules"
           - "--exclude=__pycache__"
+          - "--exclude=infra/terraform/.terraform"
+          - "--exclude=infra/terraform/terraform.tfstate"
+          - "--exclude=infra/terraform/terraform.tfstate.backup"
+          - "--exclude=apps/client/config/env.js"
+
+    - name: Ensure CamBot root ownership after sync
+      ansible.builtin.file:
+        path: "{{ cambot_root }}"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        recurse: true
+
+    - name: Ensure frontend config directory exists and is writable by cambot
+      ansible.builtin.file:
+        path: "{{ cambot_root }}/apps/client/config"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0755"
 
     - name: Create remote runtime secret directories
       ansible.builtin.file:
@@ -78,7 +101,7 @@
         dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/client/env.js"
         owner: "{{ cambot_user }}"
         group: "{{ cambot_user }}"
-        mode: "0644"
+        mode: "0640"
 
     - name: Push TLS certificate chain
       ansible.builtin.copy:
@@ -86,7 +109,7 @@
         dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/tls/fullchain.pem"
         owner: "{{ cambot_user }}"
         group: "{{ cambot_user }}"
-        mode: "0644"
+        mode: "0640"
 
     - name: Push TLS private key
       ansible.builtin.copy:
@@ -102,42 +125,38 @@
         dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/podman/.env"
         owner: "{{ cambot_user }}"
         group: "{{ cambot_user }}"
-        mode: "0600"
+        mode: "0640"
 
-    - name: Push nginx htpasswd file
+    - name: Push nginx htpasswd file if it exists locally
       ansible.builtin.copy:
         src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/podman/nginx.htpasswd"
         dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/podman/nginx.htpasswd"
         owner: "{{ cambot_user }}"
         group: "{{ cambot_user }}"
         mode: "0640"
+      failed_when: false
 
-    - name: Ensure CamBot root ownership
+    - name: Ensure secrets root is restricted
       ansible.builtin.file:
-        path: "{{ cambot_root }}"
+        path: "{{ cambot_root }}/secrets"
         state: directory
         owner: "{{ cambot_user }}"
         group: "{{ cambot_user }}"
-        recurse: true
+        mode: "0750"
+
+    - name: Ensure environment secrets directory is restricted
+      ansible.builtin.file:
+        path: "{{ cambot_root }}/secrets/{{ cambot_environment }}"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0750"
 
     - name: Get cambot user uid
       ansible.builtin.command:
         cmd: "id -u {{ cambot_user }}"
       register: cambot_user_uid
       changed_when: false
-
-    - name: Stop existing CamBot pod containers
-      ansible.builtin.command:
-        cmd: podman-compose down
-        chdir: "{{ cambot_root }}/infra/pod"
-      become: true
-      become_user: "{{ cambot_user }}"
-      environment:
-        ENVIRONMENT: "{{ cambot_environment }}"
-        CAM_BOT_BASE_DIR: "{{ cambot_root }}"
-        XDG_RUNTIME_DIR: "/run/user/{{ cambot_user_uid.stdout }}"
-      changed_when: false
-      failed_when: false
 
     - name: Start CamBot pod through wrapper
       ansible.builtin.command:
