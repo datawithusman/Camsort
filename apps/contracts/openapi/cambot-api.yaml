@@ -9,6 +9,9 @@ servers:
   - url: /api
     description: Reverse-proxied CamBot API root
 
+security:
+  - basicAuth: []
+
 tags:
   - name: Camera Groups
   - name: Saved Prompts
@@ -439,6 +442,12 @@ paths:
                 $ref: "./schemas/cambot/usage.yaml#/components/schemas/UsageSummary"
 
 components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic authentication using the operator username and password. Send credentials with the Authorization header.
+
   parameters:
     GroupId:
       name: groupId

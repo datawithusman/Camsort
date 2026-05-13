@@ -9,6 +9,9 @@ servers:
   - url: /camera-system
     description: Camera system integrator API root
 
+security:
+  - basicAuth: []
+
 tags:
   - name: System
   - name: Cameras
@@ -143,6 +146,12 @@ paths:
                 $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
 
 components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic authentication using the operator username and password. Send credentials with the Authorization header.
+
   parameters:
     CameraId:
       name: cameraId

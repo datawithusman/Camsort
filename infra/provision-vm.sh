@@ -1,25 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# provision-vm.sh
-#
-# Purpose:
-#   Create/destroy the Vultr VM and provide manual fallback commands for
-#   pushing CamBot files/secrets and running the pod.
-#
-# Usage:
-#   ENVIRONMENT=dev ./infra/provision-vm.sh create
-#   ENVIRONMENT=dev ./infra/provision-vm.sh destroy
-#   ENVIRONMENT=dev ./infra/provision-vm.sh push-pod
-#   ENVIRONMENT=dev ./infra/provision-vm.sh push-secrets
-#   ENVIRONMENT=dev ./infra/provision-vm.sh run-pod
-#
-# Defaults:
-#   ENVIRONMENT=dev
-#   CAM_BOT_REMOTE_DIR=/srv/cambot
-#   CAM_BOT_REMOTE_ADMIN_USER=admin
-#   CAM_BOT_SERVICE_USER=cambot
-
 COMMAND="${1:-}"
 ENVIRONMENT="${ENVIRONMENT:-dev}"
 
@@ -43,31 +24,19 @@ if [ -z "$COMMAND" ]; then
   echo "Usage:"
   echo "  ENVIRONMENT=dev ./infra/provision-vm.sh create"
   echo "  ENVIRONMENT=dev ./infra/provision-vm.sh destroy"
-  echo "  ENVIRONMENT=dev ./infra/provision-vm.sh push-pod"
-  echo "  ENVIRONMENT=dev ./infra/provision-vm.sh push-secrets"
-  echo "  ENVIRONMENT=dev ./infra/provision-vm.sh run-pod"
   exit 1
 fi
 
-if [ -f "$VULTR_ENV_FILE" ]; then
-  set -a
-  source "$VULTR_ENV_FILE"
-  set +a
+if [ ! -f "$VULTR_ENV_FILE" ]; then
+  echo "Missing Vultr env file: $VULTR_ENV_FILE"
+  exit 1
 fi
 
-REMOTE_DIR="${CAM_BOT_REMOTE_DIR:-$REMOTE_DIR}"
-REMOTE_ADMIN_USER="${CAM_BOT_REMOTE_ADMIN_USER:-$REMOTE_ADMIN_USER}"
-SERVICE_USER="${CAM_BOT_SERVICE_USER:-$SERVICE_USER}"
+set -a
+source "$VULTR_ENV_FILE"
+set +a
 
-SSH_KEY_ID="${VULTR_SSH_KEY_ID:-}"
-
-get_ssh_key_ids_tf() {
-  if [ -z "$SSH_KEY_ID" ]; then
-    echo "[]"
-  else
-    printf '["%s"]' "$SSH_KEY_ID"
-  fi
-}
+: "${VULTR_API_KEY:?missing VULTR_API_KEY}"
 
 terraform_init_for_environment() {
   cd "$PROJECT_ROOT/infra/terraform"
@@ -82,6 +51,48 @@ terraform_init_for_environment() {
   terraform init \
     -reconfigure \
     -backend-config="path=$tf_state_file"
+}
+
+get_public_key_content() {
+  if [ ! -f "$SSH_PUBLIC_KEY_PATH" ]; then
+    echo "Missing SSH public key: $SSH_PUBLIC_KEY_PATH" >&2
+    exit 1
+  fi
+
+  tr -d '\n' < "$SSH_PUBLIC_KEY_PATH"
+}
+
+terraform_env_args() {
+  local public_key_content
+  public_key_content="$(get_public_key_content)"
+
+  TF_ARGS=(
+    -var "vultr_api_key=$VULTR_API_KEY"
+    -var "region=${VULTR_REGION:-ewr}"
+    -var "plan=${VULTR_PLAN:-vc2-2c-4gb}"
+    -var "os_name=${VULTR_OS_NAME:-Arch Linux x64}"
+    -var "label=${VULTR_LABEL:-cambot-${ENVIRONMENT}}"
+    -var "hostname=${VULTR_HOSTNAME:-cambot-${ENVIRONMENT}}"
+
+    -var "enable_vm=true"
+
+    -var "enable_vultr_ssh_key=true"
+    -var "vultr_ssh_key_name=${VULTR_SSH_KEY_NAME:-cambot-${ENVIRONMENT}-vm-key}"
+    -var "vultr_ssh_public_key=$public_key_content"
+
+    -var "enable_reserved_ip=false"
+    -var "reserved_ip_label=${VULTR_RESERVED_IP_LABEL:-cambot-${ENVIRONMENT}-reserved-ip}"
+
+    -var "enable_dns_domain=false"
+    -var "enable_dns_record=false"
+    -var "domain_name=${DOMAIN_NAME:-rolecall.social}"
+    -var "subdomain_name=${SUBDOMAIN_NAME:-cambot-${ENVIRONMENT}}"
+    -var "dns_record_ip=${DNS_RECORD_IP:-127.0.0.1}"
+
+    -var "enable_tls_challenge_records=false"
+    -var "dev_tls_challenge_value=unused"
+    -var "prod_tls_challenge_value=unused"
+  )
 }
 
 get_vm_ip() {
@@ -141,29 +152,7 @@ wait_for_ssh() {
   exit 1
 }
 
-admin_remote() {
-  local ip
-  ip="$(get_vm_ip)"
-  echo "$REMOTE_ADMIN_USER@$ip"
-}
-
-ssh_admin() {
-  local remote
-  remote="$(admin_remote)"
-
-  ssh \
-    -i "$SSH_PRIVATE_KEY_PATH" \
-    -o StrictHostKeyChecking=yes \
-    "$remote" "$@"
-}
-
 cmd_create() {
-  if [ ! -f "$VULTR_ENV_FILE" ]; then
-    echo "Missing Vultr env file: $VULTR_ENV_FILE"
-    echo "Expected: secrets/$ENVIRONMENT/vultr.env"
-    exit 1
-  fi
-
   if [ ! -f "$SSH_PRIVATE_KEY_PATH" ]; then
     echo "Missing SSH private key: $SSH_PRIVATE_KEY_PATH"
     exit 1
@@ -182,23 +171,12 @@ cmd_create() {
   else
     echo "GitHub deploy public key not found: $GITHUB_DEPLOY_PUBLIC_KEY_PATH"
     echo "Continuing without adding a GitHub Actions deploy key."
-    echo "Create it with:"
-    echo "  ssh-keygen -t ed25519 -f $SECRETS_DIR/github_deploy_key -C \"cambot-github-actions-deploy\""
   fi
 
-  : "${VULTR_API_KEY:?missing VULTR_API_KEY}"
-  : "${VULTR_SSH_KEY_ID:?missing VULTR_SSH_KEY_ID}"
-
   terraform_init_for_environment
+  terraform_env_args
 
-  terraform apply \
-    -var "vultr_api_key=$VULTR_API_KEY" \
-    -var "region=${VULTR_REGION:-ewr}" \
-    -var "plan=${VULTR_PLAN:-vc2-2c-4gb}" \
-    -var "os_name=${VULTR_OS_NAME:-Arch Linux x64}" \
-    -var "label=${VULTR_LABEL:-cambot-${ENVIRONMENT}}" \
-    -var "hostname=${VULTR_HOSTNAME:-cambot-${ENVIRONMENT}}" \
-    -var "ssh_key_ids=$(get_ssh_key_ids_tf)"
+  terraform apply "${TF_ARGS[@]}"
 
   local vm_ip
   vm_ip="$(terraform output -raw vm_ip)"
@@ -232,133 +210,39 @@ cmd_create() {
   echo "Environment: $ENVIRONMENT"
   echo "Admin SSH:"
   echo "  ssh -i $SSH_PRIVATE_KEY_PATH $REMOTE_ADMIN_USER@$vm_ip"
-  echo
-  echo "GitHub Actions can now deploy by SSHing into the VM as:"
-  echo "  $REMOTE_ADMIN_USER@$vm_ip"
-  echo
-  echo "If using GitHub Actions, add this private key to the GitHub secret CAMBOT_DEPLOY_KEY:"
-  echo "  $SECRETS_DIR/github_deploy_key"
-  echo
-  echo "Manual fallback deploy commands:"
-  echo "  ENVIRONMENT=$ENVIRONMENT ./infra/provision-vm.sh push-pod"
-  echo "  ENVIRONMENT=$ENVIRONMENT ./infra/provision-vm.sh push-secrets"
-  echo "  ENVIRONMENT=$ENVIRONMENT ./infra/provision-vm.sh run-pod"
 }
 
 cmd_destroy() {
-  if [ ! -f "$VULTR_ENV_FILE" ]; then
-    echo "Missing Vultr env file: $VULTR_ENV_FILE"
-    echo "Expected: secrets/$ENVIRONMENT/vultr.env"
-    exit 1
-  fi
-
-  : "${VULTR_API_KEY:?missing VULTR_API_KEY}"
-
   terraform_init_for_environment
+  terraform_env_args
 
   local vm_ip=""
   vm_ip="$(terraform output -raw vm_ip 2>/dev/null || true)"
 
   echo "Destroying full CamBot Terraform environment: $ENVIRONMENT"
 
-  terraform destroy \
-    -var "vultr_api_key=$VULTR_API_KEY" \
-    -var "region=${VULTR_REGION:-ewr}" \
-    -var "plan=${VULTR_PLAN:-vc2-2c-4gb}" \
-    -var "os_name=${VULTR_OS_NAME:-Arch Linux x64}" \
-    -var "label=${VULTR_LABEL:-cambot-${ENVIRONMENT}}" \
-    -var "hostname=${VULTR_HOSTNAME:-cambot-${ENVIRONMENT}}" \
-    -var "ssh_key_ids=$(get_ssh_key_ids_tf)"
+  terraform destroy "${TF_ARGS[@]}"
 
   if [ -n "$vm_ip" ]; then
     remove_known_host "$vm_ip"
   fi
 }
 
-cmd_push_pod() {
-  local remote
-  remote="$(admin_remote)"
-
-  echo "Pushing CamBot project to $remote:$REMOTE_DIR"
-
-  ssh_admin "sudo mkdir -p '$REMOTE_DIR' && sudo chown -R '$SERVICE_USER:$SERVICE_USER' '$REMOTE_DIR'"
-
-  rsync -az --delete \
-    -e "ssh -i '$SSH_PRIVATE_KEY_PATH' -o StrictHostKeyChecking=yes" \
-    --rsync-path="sudo -u $SERVICE_USER rsync" \
-    --exclude ".git" \
-    --exclude ".github" \
-    --exclude ".terraform" \
-    --exclude "*.tfstate" \
-    --exclude "*.tfstate.*" \
-    --exclude "__pycache__" \
-    --exclude ".venv" \
-    --exclude "venv" \
-    --exclude "secrets" \
-    "$PROJECT_ROOT/" "$remote:$REMOTE_DIR/"
-
-  echo "Project pushed."
-}
-
-cmd_push_secrets() {
-  local remote
-  remote="$(admin_remote)"
-
-  if [ ! -d "$SECRETS_DIR" ]; then
-    echo "Missing secrets directory: $SECRETS_DIR"
-    exit 1
-  fi
-
-  echo "Pushing $ENVIRONMENT secrets to $remote:$REMOTE_DIR/secrets/$ENVIRONMENT"
-
-  ssh_admin "sudo mkdir -p '$REMOTE_DIR/secrets/$ENVIRONMENT' && sudo chown -R '$SERVICE_USER:$SERVICE_USER' '$REMOTE_DIR/secrets'"
-
-  rsync -az --delete \
-    -e "ssh -i '$SSH_PRIVATE_KEY_PATH' -o StrictHostKeyChecking=yes" \
-    --rsync-path="sudo -u $SERVICE_USER rsync" \
-    "$SECRETS_DIR/" "$remote:$REMOTE_DIR/secrets/$ENVIRONMENT/"
-
-  echo "Secrets pushed."
-}
-
-cmd_run_pod() {
-  echo "Starting CamBot pod on remote VM as $SERVICE_USER..."
-
-  local remote
-  remote="$(admin_remote)"
-
-  ssh \
-    -i "$SSH_PRIVATE_KEY_PATH" \
-    -o StrictHostKeyChecking=yes \
-    "$remote" \
-    "sudo -u '$SERVICE_USER' env ENVIRONMENT='$ENVIRONMENT' CAM_BOT_BASE_DIR='$REMOTE_DIR' bash -c 'cd $REMOTE_DIR/infra/pod && ./podman-run.sh'"
-}
-
 case "$COMMAND" in
   create)
     cmd_create
     ;;
+
   destroy|delete)
     cmd_destroy
     ;;
-  push-pod)
-    cmd_push_pod
-    ;;
-  push-secrets)
-    cmd_push_secrets
-    ;;
-  run-pod)
-    cmd_run_pod
-    ;;
+
   *)
     echo "Unknown command: $COMMAND"
     echo
     echo "Valid commands:"
     echo "  create"
     echo "  destroy"
-    echo "  push-pod"
-    echo "  push-secrets"
-    echo "  run-pod"
     exit 1
     ;;
 esac

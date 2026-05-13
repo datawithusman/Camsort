@@ -1,29 +1,29 @@
 ---
-- name: Configure CamBot Arch Linux VM
-  hosts: cambot
+- name: Configure CamBot application files and start pod
+  hosts: all
   become: true
 
   vars:
     cambot_user: cambot
     cambot_root: /srv/cambot
+    cambot_environment: "{{ lookup('env', 'ENVIRONMENT') | default('dev', true) }}"
+    local_project_root: "{{ playbook_dir }}/../.."
 
   tasks:
-    - name: Update pacman cache
-      community.general.pacman:
-        update_cache: true
-
-    - name: Install required packages
+    - name: Install required application packages
       community.general.pacman:
         name:
           - podman
           - podman-compose
-          - nginx
           - python
           - python-pip
           - rsync
           - git
           - openssl
+          - slirp4netns
+          - fuse-overlayfs
         state: present
+        update_cache: true
 
     - name: Create cambot user
       ansible.builtin.user:
@@ -40,16 +40,126 @@
         mode: "0755"
 
     - name: Enable linger for cambot user
-      ansible.builtin.command: "loginctl enable-linger {{ cambot_user }}"
+      ansible.builtin.command:
+        argv:
+          - loginctl
+          - enable-linger
+          - "{{ cambot_user }}"
       changed_when: false
       failed_when: false
 
-    - name: Copy project files
+    - name: Copy project files, excluding all local secrets
       ansible.builtin.synchronize:
-        src: ../../../
+        src: "{{ local_project_root }}/"
         dest: "{{ cambot_root }}/"
         delete: false
         rsync_opts:
           - "--exclude=.git"
-          - "--exclude=secrets/dev"
-          - "--exclude=secrets/prod"
+          - "--exclude=secrets"
+          - "--exclude=generated"
+          - "--exclude=node_modules"
+          - "--exclude=__pycache__"
+
+    - name: Create remote runtime secret directories
+      ansible.builtin.file:
+        path: "{{ cambot_root }}/secrets/{{ cambot_environment }}/{{ item }}"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0750"
+      loop:
+        - client
+        - tls
+        - podman
+
+    - name: Push frontend runtime config env.js
+      ansible.builtin.copy:
+        src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/client/env.js"
+        dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/client/env.js"
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0644"
+
+    - name: Push TLS certificate chain
+      ansible.builtin.copy:
+        src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/tls/fullchain.pem"
+        dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/tls/fullchain.pem"
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0644"
+
+    - name: Push TLS private key
+      ansible.builtin.copy:
+        src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/tls/privkey.pem"
+        dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/tls/privkey.pem"
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0600"
+
+    - name: Push pod runtime env file
+      ansible.builtin.copy:
+        src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/podman/.env"
+        dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/podman/.env"
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0600"
+
+    - name: Push nginx htpasswd file
+      ansible.builtin.copy:
+        src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/podman/nginx.htpasswd"
+        dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/podman/nginx.htpasswd"
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0640"
+
+    - name: Ensure CamBot root ownership
+      ansible.builtin.file:
+        path: "{{ cambot_root }}"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        recurse: true
+
+    - name: Get cambot user uid
+      ansible.builtin.command:
+        cmd: "id -u {{ cambot_user }}"
+      register: cambot_user_uid
+      changed_when: false
+
+    - name: Stop existing CamBot pod containers
+      ansible.builtin.command:
+        cmd: podman-compose down
+        chdir: "{{ cambot_root }}/infra/pod"
+      become: true
+      become_user: "{{ cambot_user }}"
+      environment:
+        ENVIRONMENT: "{{ cambot_environment }}"
+        CAM_BOT_BASE_DIR: "{{ cambot_root }}"
+        XDG_RUNTIME_DIR: "/run/user/{{ cambot_user_uid.stdout }}"
+      changed_when: false
+      failed_when: false
+
+    - name: Start CamBot pod
+      ansible.builtin.command:
+        cmd: podman-compose up -d --build
+        chdir: "{{ cambot_root }}/infra/pod"
+      become: true
+      become_user: "{{ cambot_user }}"
+      environment:
+        ENVIRONMENT: "{{ cambot_environment }}"
+        CAM_BOT_BASE_DIR: "{{ cambot_root }}"
+        XDG_RUNTIME_DIR: "/run/user/{{ cambot_user_uid.stdout }}"
+
+    - name: Show running CamBot containers
+      ansible.builtin.command:
+        cmd: podman ps
+      become: true
+      become_user: "{{ cambot_user }}"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ cambot_user_uid.stdout }}"
+      register: cambot_podman_ps
+      changed_when: false
+
+    - name: Print running containers
+      ansible.builtin.debug:
+        var: cambot_podman_ps.stdout_lines

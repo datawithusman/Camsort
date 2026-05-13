@@ -29,3 +29,4 @@ infra/ansible/generated/
 dist/
 build/
 tmp/
+generated_dtos

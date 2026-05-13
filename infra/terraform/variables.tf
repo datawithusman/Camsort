@@ -67,3 +67,50 @@ variable "enable_dns_record" {
   type    = bool
   default = false
 }
+variable "enable_tls_challenge_records" {
+  type    = bool
+  default = false
+}
+
+variable "dev_tls_challenge_value" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "prod_tls_challenge_value" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "dev_tls_challenge_name" {
+  type    = string
+  default = "_acme-challenge.cambot-dev"
+}
+
+variable "prod_tls_challenge_name" {
+  type    = string
+  default = "_acme-challenge.cambot-prod"
+}
+
+variable "enable_vultr_ssh_key" {
+  type    = bool
+  default = false
+}
+
+variable "vultr_ssh_key_name" {
+  type    = string
+  default = ""
+}
+
+variable "vultr_ssh_public_key" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "enable_vm" {
+  type    = bool
+  default = true
+}
