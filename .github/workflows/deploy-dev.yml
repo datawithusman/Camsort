@@ -14,16 +14,6 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v4
 
-      - name: Install SSH key
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          printf '%s\n' "${{ secrets.CAMBOT_DEV_DEPLOY_KEY }}" > ~/.ssh/cambot_deploy_key
-          chmod 600 ~/.ssh/cambot_deploy_key
-
-          ssh-keyscan -H "${{ secrets.CAMBOT_DEV_DEPLOY_HOST }}" >> ~/.ssh/known_hosts
-
       - name: Sync repo to dev VM
         run: |
           rsync -az --delete \
