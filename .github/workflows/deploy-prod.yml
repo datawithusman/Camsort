@@ -1,4 +1,4 @@
-name: Deploy CamBot Dev
+name: Deploy CamBot Prod
 
 on:
   push:
