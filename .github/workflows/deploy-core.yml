@@ -64,6 +64,7 @@ jobs:
             --exclude ".git" \
             --exclude "secrets" \
             --exclude "generated" \
+            --exclude "generated_dtos" \
             --exclude "node_modules" \
             --exclude "__pycache__" \
             ./ "$DEPLOY_USER@$HOST:$DEPLOY_DIR/"
