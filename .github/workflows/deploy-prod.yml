@@ -4,39 +4,11 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   deploy-prod:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
-
-      - name: Sync repo to prod VM
-        run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/cambot_deploy_key -o StrictHostKeyChecking=yes" \
-            --exclude ".git" \
-            --exclude ".github" \
-            --exclude "secrets" \
-            --exclude ".terraform" \
-            --exclude "*.tfstate" \
-            --exclude "*.tfstate.*" \
-            --exclude "__pycache__" \
-            --exclude ".venv" \
-            --exclude "venv" \
-            ./ "${{ secrets.CAMBOT_PROD_DEPLOY_USER }}@${{ secrets.CAMBOT_PROD_DEPLOY_HOST }}:${{ secrets.CAMBOT_PROD_REMOTE_DIR }}/"
-
-      - name: Fix ownership
-        run: |
-          ssh -i ~/.ssh/cambot_deploy_key \
-            "${{ secrets.CAMBOT_PROD_DEPLOY_USER }}@${{ secrets.CAMBOT_PROD_DEPLOY_HOST }}" \
-            "sudo chown -R cambot:cambot '${{ secrets.CAMBOT_PROD_REMOTE_DIR }}'"
-
-      - name: Start CamBot prod pod
-        run: |
-          ssh -i ~/.ssh/cambot_deploy_key \
-            "${{ secrets.CAMBOT_PROD_DEPLOY_USER }}@${{ secrets.CAMBOT_PROD_DEPLOY_HOST }}" \
-            "sudo -u cambot env ENVIRONMENT='prod' CAM_BOT_BASE_DIR='${{ secrets.CAMBOT_PROD_REMOTE_DIR }}' bash -c 'cd ${{ secrets.CAMBOT_PROD_REMOTE_DIR }}/infra/pod && ./podman-run.sh'"
+    uses: ./.github/workflows/deploy-core.yml
+    with:
+      environment: prod
+      branch_environment: prod
+    secrets: inherit

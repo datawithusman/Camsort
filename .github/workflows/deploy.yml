@@ -1,0 +1,81 @@
+name: Deploy CamBot Core
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      branch_environment:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    env:
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+      HOST: ${{ vars.HOST }}
+      USER: ${{ vars.USER }}
+      CAMBOT_ENVIRONMENT: ${{ inputs.branch_environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SSH key
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$DEPLOY_DIR" ]; then
+            echo "DEPLOY_DIR is missing."
+            exit 1
+          fi
+
+          if [ -z "$HOST" ]; then
+            echo "HOST is missing."
+            exit 1
+          fi
+
+          if [ -z "$USER" ]; then
+            echo "USER is missing."
+            exit 1
+          fi
+
+          if [ -z "$SSH_KEY" ]; then
+            echo "SSH_KEY is missing."
+            exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/cambot_deploy_key
+          chmod 600 ~/.ssh/cambot_deploy_key
+
+          ssh-keyscan -T 10 -H "$HOST" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Sync project files
+        run: |
+          set -euo pipefail
+
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/cambot_deploy_key -o StrictHostKeyChecking=yes" \
+            --exclude ".git" \
+            --exclude "secrets" \
+            --exclude "generated" \
+            --exclude "node_modules" \
+            --exclude "__pycache__" \
+            ./ "$USER@$HOST:$DEPLOY_DIR/"
+
+      - name: Restart CamBot pod
+        run: |
+          set -euo pipefail
+
+          ssh -i ~/.ssh/cambot_deploy_key "$USER@$HOST" \
+            "cd '$DEPLOY_DIR/infra/pod' && ENVIRONMENT='$CAMBOT_ENVIRONMENT' CAM_BOT_BASE_DIR='$DEPLOY_DIR' sudo -u cambot XDG_RUNTIME_DIR=/run/user/\$(id -u cambot) podman-compose up -d --build"
