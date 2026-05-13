@@ -3,10 +3,10 @@ name: Deploy CamBot Dev
 on:
   push:
     branches:
-      - dev
+      - prod
 
 jobs:
-  deploy-dev:
+  deploy-prod:
     uses: ./.github/workflows/deploy-core.yml
     with:
       cambot_environment: prod
