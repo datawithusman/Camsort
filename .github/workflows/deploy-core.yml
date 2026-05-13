@@ -84,5 +84,16 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [ -z "${CAMBOT_ENVIRONMENT:-}" ]; then
+            echo "CAMBOT_ENVIRONMENT is missing."
+            exit 1
+          fi
+
+          echo "Deploying CamBot environment: $CAMBOT_ENVIRONMENT"
+
           ssh -i ~/.ssh/cambot_deploy_key "$DEPLOY_USER@$HOST" \
+<<<<<<< HEAD
             "sudo -H -u cambot env ENVIRONMENT='$CAMBOT_ENVIRONMENT' CAM_BOT_BASE_DIR='$DEPLOY_DIR' XDG_RUNTIME_DIR=/run/user/\$(id -u cambot) bash -lc 'cd \"\$CAM_BOT_BASE_DIR/infra/pod\" && ./podman-run.sh'"
+=======
+            "sudo -H -u cambot env ENVIRONMENT='$CAMBOT_ENVIRONMENT' CAM_BOT_BASE_DIR='$DEPLOY_DIR' XDG_RUNTIME_DIR=/run/user/\$(id -u cambot) bash -lc 'echo Remote ENVIRONMENT=\$ENVIRONMENT; echo Remote CAM_BOT_BASE_DIR=\$CAM_BOT_BASE_DIR; cd \"\$CAM_BOT_BASE_DIR/infra/pod\" && ./podman-run.sh'"
+>>>>>>> main
