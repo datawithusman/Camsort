@@ -60,5 +60,23 @@ EOF
 
 cd "$CAM_BOT_BASE_DIR/infra/pod"
 
+echo "Stopping existing CamBot pod if present..."
+
+CONTAINERS_STORAGE_CONF="$HOME/.config/cambot-storage.conf" \
+podman compose -f compose.yaml down || true
+
+# Extra cleanup for containers/pods created by older podman-compose runs.
+podman pod rm -f pod_default 2>/dev/null || true
+
+podman rm -f \
+  cambot-nginx \
+  cambot-rest-api \
+  cambot-postgres \
+  cambot-camera-system-mocker-rest-api \
+  cambot-gemini-caller \
+  2>/dev/null || true
+
+echo "Starting CamBot pod..."
+
 CONTAINERS_STORAGE_CONF="$HOME/.config/cambot-storage.conf" \
 podman compose -f compose.yaml up --build -d
