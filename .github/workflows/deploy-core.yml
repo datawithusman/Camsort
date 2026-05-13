@@ -58,23 +58,23 @@ jobs:
       - name: Sync project files
         run: |
           set -euo pipefail
-        rsync -az --delete \
-          --rsync-path="sudo rsync" \
-          --chown=cambot:cambot \
-          --no-owner \
-          --no-group \
-          -e "ssh -i ~/.ssh/cambot_deploy_key -o StrictHostKeyChecking=yes" \
-          --exclude ".git" \
-          --exclude "secrets" \
-          --exclude "generated" \
-          --exclude "generated_dtos" \
-          --exclude "build" \
-          --exclude "node_modules" \
-          --exclude "__pycache__" \
-          --exclude "infra/terraform/.terraform" \
-          --exclude "infra/terraform/terraform.tfstate" \
-          --exclude "infra/terraform/terraform.tfstate.backup" \
-          ./ "$DEPLOY_USER@$HOST:$DEPLOY_DIR/"
+          rsync -az --delete \
+            --rsync-path="sudo rsync" \
+            --chown=cambot:cambot \
+            --no-owner \
+            --no-group \
+            -e "ssh -i ~/.ssh/cambot_deploy_key -o StrictHostKeyChecking=yes" \
+            --exclude ".git" \
+            --exclude "secrets" \
+            --exclude "generated" \
+            --exclude "generated_dtos" \
+            --exclude "build" \
+            --exclude "node_modules" \
+            --exclude "__pycache__" \
+            --exclude "infra/terraform/.terraform" \
+            --exclude "infra/terraform/terraform.tfstate" \
+            --exclude "infra/terraform/terraform.tfstate.backup" \
+            ./ "$DEPLOY_USER@$HOST:$DEPLOY_DIR/"
 
       - name: Restart CamBot pod
         run: |
