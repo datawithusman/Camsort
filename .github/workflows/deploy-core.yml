@@ -1,20 +1,22 @@
-name: Deploy CamBot Dev
+name: Deploy CamBot Core
 
 on:
-  push:
-    branches:
-      - dev
+  workflow_call:
+    inputs:
+      cambot_environment:
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: ${{ inputs.cambot_environment }}
 
     env:
       DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
       HOST: ${{ secrets.HOST }}
       DEPLOY_USER: ${{ secrets.USER }}
-      CAMBOT_ENVIRONMENT: dev
+      CAMBOT_ENVIRONMENT: ${{ inputs.cambot_environment }}
 
     steps:
       - name: Checkout
@@ -58,6 +60,7 @@ jobs:
       - name: Sync project files
         run: |
           set -euo pipefail
+
           rsync -az --delete \
             --rsync-path="sudo rsync" \
             --chown=cambot:cambot \
@@ -74,6 +77,7 @@ jobs:
             --exclude "infra/terraform/.terraform" \
             --exclude "infra/terraform/terraform.tfstate" \
             --exclude "infra/terraform/terraform.tfstate.backup" \
+            --exclude "apps/client/config/env.js" \
             ./ "$DEPLOY_USER@$HOST:$DEPLOY_DIR/"
 
       - name: Restart CamBot pod
