@@ -3,7 +3,7 @@ name: Deploy CamBot Prod
 on:
   push:
     branches:
-      - prod
+      - main
 
 jobs:
   deploy-prod:
