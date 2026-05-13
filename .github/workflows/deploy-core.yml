@@ -1,25 +1,20 @@
-name: Deploy CamBot Core
+name: Deploy CamBot Dev
 
 on:
-  workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
-      branch_environment:
-        required: true
-        type: string
+  push:
+    branches:
+      - dev
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: dev
 
     env:
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
-      HOST: ${{ vars.HOST }}
-      USER: ${{ vars.USER }}
-      CAMBOT_ENVIRONMENT: ${{ inputs.branch_environment }}
+      DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+      HOST: ${{ secrets.HOST }}
+      DEPLOY_USER: ${{ secrets.USER }}
+      CAMBOT_ENVIRONMENT: dev
 
     steps:
       - name: Checkout
@@ -41,7 +36,7 @@ jobs:
             exit 1
           fi
 
-          if [ -z "$USER" ]; then
+          if [ -z "$DEPLOY_USER" ]; then
             echo "USER is missing."
             exit 1
           fi
@@ -71,11 +66,11 @@ jobs:
             --exclude "generated" \
             --exclude "node_modules" \
             --exclude "__pycache__" \
-            ./ "$USER@$HOST:$DEPLOY_DIR/"
+            ./ "$DEPLOY_USER@$HOST:$DEPLOY_DIR/"
 
       - name: Restart CamBot pod
         run: |
           set -euo pipefail
 
-          ssh -i ~/.ssh/cambot_deploy_key "$USER@$HOST" \
+          ssh -i ~/.ssh/cambot_deploy_key "$DEPLOY_USER@$HOST" \
             "cd '$DEPLOY_DIR/infra/pod' && ENVIRONMENT='$CAMBOT_ENVIRONMENT' CAM_BOT_BASE_DIR='$DEPLOY_DIR' sudo -u cambot XDG_RUNTIME_DIR=/run/user/\$(id -u cambot) podman-compose up -d --build"
