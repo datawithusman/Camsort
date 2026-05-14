@@ -81,7 +81,7 @@ if ! command -v htpasswd >/dev/null 2>&1; then
 fi
 
 htpasswd -nbm "$NGINX_USER_NAME" "$NGINX_PWD" > "$NGINX_HTPASSWD_PATH"
-chmod 0640 "$NGINX_HTPASSWD_PATH"
+chmod 0644 "$NGINX_HTPASSWD_PATH"
 
 # Prepare frontend runtime config.
 #

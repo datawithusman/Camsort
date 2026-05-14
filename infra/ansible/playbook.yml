@@ -96,6 +96,14 @@
         - podman
         - camera-mocker
 
+    - name: Ensure nginx auth directory is readable by container
+      ansible.builtin.file:
+        path: "{{ cambot_root }}/secrets/{{ cambot_environment }}/podman"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        mode: "0755"
+
     - name: Push frontend runtime config env.js
       ansible.builtin.copy:
         src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/client/env.js"
@@ -134,7 +142,7 @@
         dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/podman/nginx.htpasswd"
         owner: "{{ cambot_user }}"
         group: "{{ cambot_user }}"
-        mode: "0640"
+        mode: "0644"
       failed_when: false
 
     - name: Push camera mocker dataset
