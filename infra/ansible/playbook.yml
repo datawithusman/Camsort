@@ -94,6 +94,7 @@
         - client
         - tls
         - podman
+        - camera-mocker
 
     - name: Push frontend runtime config env.js
       ansible.builtin.copy:
@@ -135,6 +136,26 @@
         group: "{{ cambot_user }}"
         mode: "0640"
       failed_when: false
+
+    - name: Push camera mocker dataset
+      ansible.builtin.synchronize:
+        src: "{{ local_project_root }}/secrets/{{ cambot_environment }}/camera-mocker/"
+        dest: "{{ cambot_root }}/secrets/{{ cambot_environment }}/camera-mocker/"
+        delete: true
+        rsync_opts:
+          - "--exclude=tmp"
+          - "--exclude=*.tmp"
+          - "--exclude=.DS_Store"
+          - "--exclude=__pycache__"
+          - "--chmod=D750,F640"
+
+    - name: Ensure camera mocker dataset ownership
+      ansible.builtin.file:
+        path: "{{ cambot_root }}/secrets/{{ cambot_environment }}/camera-mocker"
+        state: directory
+        owner: "{{ cambot_user }}"
+        group: "{{ cambot_user }}"
+        recurse: true
 
     - name: Ensure secrets root is restricted
       ansible.builtin.file:

@@ -69,6 +69,13 @@ services:
     container_name: cambot-camera-system-mocker-rest-api
     env_file:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
+    environment:
+      CAMERA_MOCKER_DATA_ROOT: /data/camera-mocker
+      CAMERA_MOCKER_CONFIG: /data/camera-mocker/defaultCameras.json
+      CAMERA_MOCKER_PUBLIC_BASE_PATH: /camera-system
+      CAMERA_MOCKER_CAMERA_N_COUNT: "20"
+    volumes:
+      - ../../secrets/${ENVIRONMENT:-dev}/camera-mocker:/data/camera-mocker:ro
     restart: unless-stopped
 
   postgres:
