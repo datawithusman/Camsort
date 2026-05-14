@@ -26,10 +26,17 @@ class TestSnapshotsApi(unittest.TestCase):
     def tearDown(self) -> None:
         pass
 
-    def test_get_camera_snapshot(self) -> None:
-        """Test case for get_camera_snapshot
+    def test_get_latest_camera_snapshot_image(self) -> None:
+        """Test case for get_latest_camera_snapshot_image
 
-        Get latest camera snapshot
+        Get most recent snapshot image
+        """
+        pass
+
+    def test_request_camera_snapshot(self) -> None:
+        """Test case for request_camera_snapshot
+
+        Request latest camera snapshot
         """
         pass
 

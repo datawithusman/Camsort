@@ -1,0 +1,38 @@
+components:
+  schemas:
+    CameraSnapshot:
+      type: object
+      required:
+        - snapshotId
+        - cameraId
+        - sequenceNumber
+        - capturedAt
+        - imageUrl
+      properties:
+        snapshotId:
+          type: string
+          description: Opaque id for this returned snapshot. This is not a source frame number.
+          example: snap-camera-main-entrance-01-000001
+        cameraId:
+          type: string
+          example: camera-main-entrance-01
+        sequenceNumber:
+          type: integer
+          description: Monotonic per-camera request sequence assigned by the adapter. Useful for ordering/debugging, not for selecting frames.
+          example: 1
+        capturedAt:
+          type: string
+          format: date-time
+        imageUrl:
+          type: string
+          description: Stable image URL for this requested snapshot. Repeated snapshot requests return different image URLs/snapshotIds as the cursor advances.
+          example: /camera-system/cameras/camera-main-entrance-01/snapshots/snap-camera-main-entrance-01-000001/image
+        mimeType:
+          type: string
+          example: image/jpeg
+        width:
+          type: integer
+          example: 1280
+        height:
+          type: integer
+          example: 720

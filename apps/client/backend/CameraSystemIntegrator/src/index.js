@@ -13,13 +13,14 @@
 
 
 import ApiClient from './ApiClient';
-import GetCameraSnapshot200Response from './model/GetCameraSnapshot200Response';
 import GetCameraStream200Response from './model/GetCameraStream200Response';
 import GetCameraSystemStatus200Response from './model/GetCameraSystemStatus200Response';
+import InlineObject from './model/InlineObject';
 import ListIntegratorCameraGroups200Response from './model/ListIntegratorCameraGroups200Response';
 import ListIntegratorCameraGroups200ResponseGroupsInner from './model/ListIntegratorCameraGroups200ResponseGroupsInner';
 import ListIntegratorCameras200Response from './model/ListIntegratorCameras200Response';
 import ListIntegratorCameras200ResponseCamerasInner from './model/ListIntegratorCameras200ResponseCamerasInner';
+import RequestCameraSnapshot200Response from './model/RequestCameraSnapshot200Response';
 import CamerasApi from './api/CamerasApi';
 import SnapshotsApi from './api/SnapshotsApi';
 import SourceCameraGroupsApi from './api/SourceCameraGroupsApi';
@@ -66,12 +67,6 @@ export {
     ApiClient,
 
     /**
-     * The GetCameraSnapshot200Response model constructor.
-     * @property {module:model/GetCameraSnapshot200Response}
-     */
-    GetCameraSnapshot200Response,
-
-    /**
      * The GetCameraStream200Response model constructor.
      * @property {module:model/GetCameraStream200Response}
      */
@@ -82,6 +77,12 @@ export {
      * @property {module:model/GetCameraSystemStatus200Response}
      */
     GetCameraSystemStatus200Response,
+
+    /**
+     * The InlineObject model constructor.
+     * @property {module:model/InlineObject}
+     */
+    InlineObject,
 
     /**
      * The ListIntegratorCameraGroups200Response model constructor.
@@ -106,6 +107,12 @@ export {
      * @property {module:model/ListIntegratorCameras200ResponseCamerasInner}
      */
     ListIntegratorCameras200ResponseCamerasInner,
+
+    /**
+     * The RequestCameraSnapshot200Response model constructor.
+     * @property {module:model/RequestCameraSnapshot200Response}
+     */
+    RequestCameraSnapshot200Response,
 
     /**
     * The CamerasApi service constructor.

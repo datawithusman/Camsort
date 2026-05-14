@@ -86,6 +86,8 @@ class SystemApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "GetCameraSystemStatus200Response",
+            '401': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -148,6 +150,8 @@ class SystemApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "GetCameraSystemStatus200Response",
+            '401': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -210,6 +214,8 @@ class SystemApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "GetCameraSystemStatus200Response",
+            '401': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,

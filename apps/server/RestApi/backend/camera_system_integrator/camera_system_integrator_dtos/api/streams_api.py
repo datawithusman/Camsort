@@ -91,6 +91,10 @@ class StreamsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "GetCameraStream200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -157,6 +161,10 @@ class StreamsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "GetCameraStream200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -223,6 +231,10 @@ class StreamsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "GetCameraStream200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,

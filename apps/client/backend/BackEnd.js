@@ -1,37 +1,25 @@
 /**
- * backend-client.js
+ * apps/client/backend/BackEnd.js
  *
- * Frontend-facing wrapper for the CamBot backend APIs.
+ * Frontend-facing wrapper for the CamBot APIs.
  *
- * Purpose:
- * - Centralize Basic Auth handling.
- * - Hide raw fetch/generated-client details from the frontend developer.
- * - Provide predictable error behavior.
+ * Generated OpenAPI clients/DTOs are expected to live at:
  *
- * Usage:
+ *   apps/client/backend/CambotApi
+ *   apps/client/backend/CameraSystemIntegrator
  *
- *   import { backend, BackendHttpError } from './backend-client.js';
+ * This wrapper keeps UI code simple and stable instead of making components
+ * import generated OpenAPI classes directly.
  *
- *   backend.configure({ baseUrl: '/api' });
- *   backend.setBasicAuth(username, password);
- *
- *   const result = await backend.cambot.health();
- *
- * Authentication:
- * - Uses HTTP Basic Auth.
- * - Call backend.setBasicAuth(username, password) after login.
- * - Protected requests automatically send:
- *
- *     Authorization: Basic base64(username:password)
- *
- * - Do not put the Gemini API key in browser JavaScript.
- * - The Gemini API key should stay server-side.
+ * Default routes:
+ * - CamBot API:        /api
+ * - Camera System API: /camera-system
  */
 
 export class BackendHttpError extends Error {
   constructor({ status, statusText, url, body }) {
     super(`Backend request failed: ${status} ${statusText}`);
-    this.name = 'BackendHttpError';
+    this.name = "BackendHttpError";
     this.status = status;
     this.statusText = statusText;
     this.url = url;
@@ -42,26 +30,40 @@ export class BackendHttpError extends Error {
 export class BackendConfigurationError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'BackendConfigurationError';
+    this.name = "BackendConfigurationError";
   }
 }
 
 const state = {
-  baseUrl: '/api',
+  cambotBaseUrl: "/api",
+  cameraSystemBaseUrl: "/camera-system",
   basicAuthToken: null,
 };
 
 function joinUrl(baseUrl, path) {
-  const cleanBase = baseUrl.replace(/\/+$/, '');
-  const cleanPath = path.replace(/^\/+/, '');
+  const cleanBase = String(baseUrl || "").replace(/\/+$/, "");
+  const cleanPath = String(path || "").replace(/^\/+/, "");
+
+  if (!cleanBase) {
+    return `/${cleanPath}`;
+  }
+
+  if (!cleanPath) {
+    return cleanBase;
+  }
+
   return `${cleanBase}/${cleanPath}`;
+}
+
+function encodePathPart(value) {
+  return encodeURIComponent(String(value));
 }
 
 function encodeBasicAuth(username, password) {
   const raw = `${username}:${password}`;
   const bytes = new TextEncoder().encode(raw);
 
-  let binary = '';
+  let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }
@@ -74,32 +76,26 @@ async function parseResponseBody(response) {
     return null;
   }
 
-  const contentType = response.headers.get('content-type') || '';
+  const contentType = response.headers.get("content-type") || "";
 
-  if (contentType.includes('application/json')) {
+  if (contentType.includes("application/json")) {
     return await response.json();
+  }
+
+  if (
+    contentType.startsWith("image/") ||
+    contentType.includes("application/octet-stream")
+  ) {
+    return await response.blob();
   }
 
   const text = await response.text();
   return text.length > 0 ? text : null;
 }
 
-/**
- * Low-level request helper.
- *
- * Returns:
- * - Parsed JSON for JSON responses.
- * - Text for text responses.
- * - null for 204 No Content or empty body.
- *
- * Throws:
- * - BackendConfigurationError if auth is required but missing.
- * - BackendHttpError for non-2xx responses.
- * - TypeError for network/fetch failures.
- */
-async function request(path, options = {}) {
+async function requestUrl(url, options = {}) {
   const {
-    method = 'GET',
+    method = "GET",
     body,
     headers = {},
     requireAuth = true,
@@ -107,19 +103,17 @@ async function request(path, options = {}) {
 
   if (requireAuth && !state.basicAuthToken) {
     throw new BackendConfigurationError(
-      'Basic Auth is not configured. Call backend.setBasicAuth(username, password) before using protected API calls.'
+      "Basic Auth is not configured. Call backend.setBasicAuth(username, password) before using protected API calls."
     );
   }
 
-  const url = joinUrl(state.baseUrl, path);
-
   const requestHeaders = {
-    Accept: 'application/json',
+    Accept: "application/json",
     ...headers,
   };
 
   if (body !== undefined && body !== null) {
-    requestHeaders['Content-Type'] = 'application/json';
+    requestHeaders["Content-Type"] = "application/json";
   }
 
   if (requireAuth) {
@@ -146,161 +140,226 @@ async function request(path, options = {}) {
   return responseBody;
 }
 
+async function requestFromBase(baseUrl, path, options = {}) {
+  return await requestUrl(joinUrl(baseUrl, path), options);
+}
+
+function imageUrlFromBase(baseUrl, path) {
+  return joinUrl(baseUrl, path);
+}
+
 export const backend = {
-  /**
-   * Configure backend base URL.
-   *
-   * Examples:
-   * - backend.configure({ baseUrl: '/api' })
-   * - backend.configure({ baseUrl: 'http://localhost:8080/api' })
-   */
   configure(config = {}) {
     if (config.baseUrl) {
-      state.baseUrl = config.baseUrl;
+      state.cambotBaseUrl = config.baseUrl;
+    }
+
+    if (config.cambotBaseUrl) {
+      state.cambotBaseUrl = config.cambotBaseUrl;
+    }
+
+    if (config.cameraSystemBaseUrl) {
+      state.cameraSystemBaseUrl = config.cameraSystemBaseUrl;
     }
   },
 
-  /**
-   * Store Basic Auth credentials in memory.
-   *
-   * Call this after the user logs in.
-   */
   setBasicAuth(username, password) {
     if (!username || !password) {
       throw new BackendConfigurationError(
-        'Both username and password are required for Basic Auth.'
+        "Both username and password are required for Basic Auth."
       );
     }
 
     state.basicAuthToken = encodeBasicAuth(username, password);
   },
 
-  /**
-   * Clear Basic Auth credentials.
-   *
-   * Call this on logout.
-   */
   clearBasicAuth() {
     state.basicAuthToken = null;
   },
 
-  /**
-   * Generic request helper for endpoints that do not have named wrappers yet.
-   */
-  request,
+  requestUrl,
+
+  request(path, options = {}) {
+    return requestFromBase(state.cambotBaseUrl, path, options);
+  },
 
   cambot: {
-    /**
-     * CamBot API health check.
-     *
-     * Returns:
-     * - health response body from the backend.
-     *
-     * Throws:
-     * - BackendHttpError
-     * - BackendConfigurationError
-     */
     async health() {
-      return await request('/health');
+      return await requestFromBase(state.cambotBaseUrl, "/health");
     },
 
-    /**
-     * Calls your backend Gemini validation endpoint.
-     *
-     * Important:
-     * - This calls your server, not Google directly.
-     * - Your backend should hold the Gemini API key.
-     *
-     * Request example:
-     *
-     *   {
-     *     prompt: "Validate this camera system",
-     *     data: { ... }
-     *   }
-     *
-     * Returns:
-     * - Whatever JSON your backend defines for Gemini validation.
-     */
     async validateWithGemini(validationRequest) {
-      return await request('/gemini/validate', {
-        method: 'POST',
+      return await requestFromBase(state.cambotBaseUrl, "/gemini/validate", {
+        method: "POST",
         body: validationRequest,
       });
     },
 
-    /**
-     * Generic GET helper.
-     */
     async get(path) {
-      return await request(path, {
-        method: 'GET',
+      return await requestFromBase(state.cambotBaseUrl, path, {
+        method: "GET",
       });
     },
 
-    /**
-     * Generic POST helper.
-     */
     async post(path, payload) {
-      return await request(path, {
-        method: 'POST',
+      return await requestFromBase(state.cambotBaseUrl, path, {
+        method: "POST",
         body: payload,
       });
     },
 
-    /**
-     * Generic PUT helper.
-     */
     async put(path, payload) {
-      return await request(path, {
-        method: 'PUT',
+      return await requestFromBase(state.cambotBaseUrl, path, {
+        method: "PUT",
         body: payload,
       });
     },
 
-    /**
-     * Generic DELETE helper.
-     */
     async delete(path) {
-      return await request(path, {
-        method: 'DELETE',
+      return await requestFromBase(state.cambotBaseUrl, path, {
+        method: "DELETE",
+      });
+    },
+  },
+
+  cameraSystem: {
+    async health() {
+      return await requestFromBase(state.cameraSystemBaseUrl, "/health");
+    },
+
+    async status() {
+      return await requestFromBase(state.cameraSystemBaseUrl, "/system/status");
+    },
+
+    cameras: {
+      async list({ groupId, search } = {}) {
+        const params = new URLSearchParams();
+
+        if (groupId) {
+          params.set("groupId", groupId);
+        }
+
+        if (search) {
+          params.set("search", search);
+        }
+
+        const query = params.toString();
+        const path = query ? `/cameras?${query}` : "/cameras";
+
+        return await requestFromBase(state.cameraSystemBaseUrl, path);
+      },
+
+      async get(cameraId) {
+        return await requestFromBase(
+          state.cameraSystemBaseUrl,
+          `/cameras/${encodePathPart(cameraId)}`
+        );
+      },
+
+      async requestSnapshot(cameraId) {
+        return await requestFromBase(
+          state.cameraSystemBaseUrl,
+          `/cameras/${encodePathPart(cameraId)}/snapshot`
+        );
+      },
+
+      snapshotImageUrl(cameraId) {
+        return imageUrlFromBase(
+          state.cameraSystemBaseUrl,
+          `/cameras/${encodePathPart(cameraId)}/snapshot/image`
+        );
+      },
+
+      async getSnapshotImage(cameraId) {
+        return await requestFromBase(
+          state.cameraSystemBaseUrl,
+          `/cameras/${encodePathPart(cameraId)}/snapshot/image`,
+          {
+            headers: {
+              Accept: "image/*",
+            },
+          }
+        );
+      },
+
+      async stream(cameraId) {
+        return await requestFromBase(
+          state.cameraSystemBaseUrl,
+          `/cameras/${encodePathPart(cameraId)}/stream`
+        );
+      },
+    },
+
+    groups: {
+      async list() {
+        return await requestFromBase(state.cameraSystemBaseUrl, "/camera-groups");
+      },
+
+      async get(groupId) {
+        return await requestFromBase(
+          state.cameraSystemBaseUrl,
+          `/camera-groups/${encodePathPart(groupId)}`
+        );
+      },
+
+      async cameras(groupId) {
+        return await requestFromBase(
+          state.cameraSystemBaseUrl,
+          `/camera-groups/${encodePathPart(groupId)}/cameras`
+        );
+      },
+    },
+
+    async get(path) {
+      return await requestFromBase(state.cameraSystemBaseUrl, path, {
+        method: "GET",
+      });
+    },
+
+    async post(path, payload) {
+      return await requestFromBase(state.cameraSystemBaseUrl, path, {
+        method: "POST",
+        body: payload,
+      });
+    },
+
+    async put(path, payload) {
+      return await requestFromBase(state.cameraSystemBaseUrl, path, {
+        method: "PUT",
+        body: payload,
+      });
+    },
+
+    async delete(path) {
+      return await requestFromBase(state.cameraSystemBaseUrl, path, {
+        method: "DELETE",
       });
     },
   },
 
   cameraSystemIntegrator: {
-    /**
-     * Camera System Integrator health check.
-     *
-     * Change this path if your actual route differs.
-     */
     async health() {
-      return await request('/camera-system-integrator/health');
+      return await backend.cameraSystem.health();
+    },
+
+    async status() {
+      return await backend.cameraSystem.status();
     },
 
     async get(path) {
-      return await request(path, {
-        method: 'GET',
-      });
+      return await backend.cameraSystem.get(path);
     },
 
     async post(path, payload) {
-      return await request(path, {
-        method: 'POST',
-        body: payload,
-      });
+      return await backend.cameraSystem.post(path, payload);
     },
 
     async put(path, payload) {
-      return await request(path, {
-        method: 'PUT',
-        body: payload,
-      });
+      return await backend.cameraSystem.put(path, payload);
     },
 
     async delete(path) {
-      return await request(path, {
-        method: 'DELETE',
-      });
+      return await backend.cameraSystem.delete(path);
     },
   },
 };

@@ -16,8 +16,9 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import StrictStr
-from camera_system_integrator_dtos.models.get_camera_snapshot200_response import GetCameraSnapshot200Response
+from pydantic import StrictBytes, StrictStr
+from typing import Tuple, Union
+from camera_system_integrator_dtos.models.request_camera_snapshot200_response import RequestCameraSnapshot200Response
 
 from camera_system_integrator_dtos.api_client import ApiClient, RequestSerialized
 from camera_system_integrator_dtos.api_response import ApiResponse
@@ -38,7 +39,7 @@ class SnapshotsApi:
 
 
     @validate_call
-    def get_camera_snapshot(
+    def get_latest_camera_snapshot_image(
         self,
         camera_id: StrictStr,
         _request_timeout: Union[
@@ -53,9 +54,10 @@ class SnapshotsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> GetCameraSnapshot200Response:
-        """Get latest camera snapshot
+    ) -> bytearray:
+        """Get most recent snapshot image
 
+        Returns the image for the most recently requested snapshot for this camera. If no snapshot has been requested yet, the adapter may select the current/latest available snapshot. Historical snapshot lookup is intentionally not supported.
 
         :param camera_id: (required)
         :type camera_id: str
@@ -81,7 +83,7 @@ class SnapshotsApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_camera_snapshot_serialize(
+        _param = self._get_latest_camera_snapshot_image_serialize(
             camera_id=camera_id,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -90,7 +92,11 @@ class SnapshotsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "GetCameraSnapshot200Response",
+            '200': "bytearray",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -104,7 +110,7 @@ class SnapshotsApi:
 
 
     @validate_call
-    def get_camera_snapshot_with_http_info(
+    def get_latest_camera_snapshot_image_with_http_info(
         self,
         camera_id: StrictStr,
         _request_timeout: Union[
@@ -119,9 +125,10 @@ class SnapshotsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[GetCameraSnapshot200Response]:
-        """Get latest camera snapshot
+    ) -> ApiResponse[bytearray]:
+        """Get most recent snapshot image
 
+        Returns the image for the most recently requested snapshot for this camera. If no snapshot has been requested yet, the adapter may select the current/latest available snapshot. Historical snapshot lookup is intentionally not supported.
 
         :param camera_id: (required)
         :type camera_id: str
@@ -147,7 +154,7 @@ class SnapshotsApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_camera_snapshot_serialize(
+        _param = self._get_latest_camera_snapshot_image_serialize(
             camera_id=camera_id,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -156,7 +163,11 @@ class SnapshotsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "GetCameraSnapshot200Response",
+            '200': "bytearray",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -170,7 +181,7 @@ class SnapshotsApi:
 
 
     @validate_call
-    def get_camera_snapshot_without_preload_content(
+    def get_latest_camera_snapshot_image_without_preload_content(
         self,
         camera_id: StrictStr,
         _request_timeout: Union[
@@ -186,8 +197,9 @@ class SnapshotsApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """Get latest camera snapshot
+        """Get most recent snapshot image
 
+        Returns the image for the most recently requested snapshot for this camera. If no snapshot has been requested yet, the adapter may select the current/latest available snapshot. Historical snapshot lookup is intentionally not supported.
 
         :param camera_id: (required)
         :type camera_id: str
@@ -213,7 +225,7 @@ class SnapshotsApi:
         :return: Returns the result object.
         """ # noqa: E501
 
-        _param = self._get_camera_snapshot_serialize(
+        _param = self._get_latest_camera_snapshot_image_serialize(
             camera_id=camera_id,
             _request_auth=_request_auth,
             _content_type=_content_type,
@@ -222,7 +234,11 @@ class SnapshotsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "GetCameraSnapshot200Response",
+            '200': "bytearray",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -231,7 +247,283 @@ class SnapshotsApi:
         return response_data.response
 
 
-    def _get_camera_snapshot_serialize(
+    def _get_latest_camera_snapshot_image_serialize(
+        self,
+        camera_id,
+        _request_auth,
+        _content_type,
+        _headers,
+        _host_index,
+    ) -> RequestSerialized:
+
+        _host = None
+
+        _collection_formats: Dict[str, str] = {
+        }
+
+        _path_params: Dict[str, str] = {}
+        _query_params: List[Tuple[str, str]] = []
+        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _form_params: List[Tuple[str, str]] = []
+        _files: Dict[
+            str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
+        ] = {}
+        _body_params: Optional[bytes] = None
+
+        # process the path parameters
+        if camera_id is not None:
+            _path_params['cameraId'] = camera_id
+        # process the query parameters
+        # process the header parameters
+        # process the form parameters
+        # process the body parameter
+
+
+        # set the HTTP header `Accept`
+        if 'Accept' not in _header_params:
+            _header_params['Accept'] = self.api_client.select_header_accept(
+                [
+                    'image/jpeg', 
+                    'image/png', 
+                    'image/webp', 
+                    'application/json'
+                ]
+            )
+
+
+        # authentication setting
+        _auth_settings: List[str] = [
+            'basicAuth'
+        ]
+
+        return self.api_client.param_serialize(
+            method='GET',
+            resource_path='/cameras/{cameraId}/snapshot/image',
+            path_params=_path_params,
+            query_params=_query_params,
+            header_params=_header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            auth_settings=_auth_settings,
+            collection_formats=_collection_formats,
+            _host=_host,
+            _request_auth=_request_auth
+        )
+
+
+
+
+    @validate_call
+    def request_camera_snapshot(
+        self,
+        camera_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> RequestCameraSnapshot200Response:
+        """Request latest camera snapshot
+
+        Selects the latest snapshot for the camera and returns metadata pointing to the current snapshot image. Adapters do not retain or retrieve historical snapshots, and callers do not provide frame numbers or snapshot IDs.
+
+        :param camera_id: (required)
+        :type camera_id: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._request_camera_snapshot_serialize(
+            camera_id=camera_id,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "RequestCameraSnapshot200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data
+
+
+    @validate_call
+    def request_camera_snapshot_with_http_info(
+        self,
+        camera_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> ApiResponse[RequestCameraSnapshot200Response]:
+        """Request latest camera snapshot
+
+        Selects the latest snapshot for the camera and returns metadata pointing to the current snapshot image. Adapters do not retain or retrieve historical snapshots, and callers do not provide frame numbers or snapshot IDs.
+
+        :param camera_id: (required)
+        :type camera_id: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._request_camera_snapshot_serialize(
+            camera_id=camera_id,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "RequestCameraSnapshot200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        )
+
+
+    @validate_call
+    def request_camera_snapshot_without_preload_content(
+        self,
+        camera_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> RESTResponseType:
+        """Request latest camera snapshot
+
+        Selects the latest snapshot for the camera and returns metadata pointing to the current snapshot image. Adapters do not retain or retrieve historical snapshots, and callers do not provide frame numbers or snapshot IDs.
+
+        :param camera_id: (required)
+        :type camera_id: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._request_camera_snapshot_serialize(
+            camera_id=camera_id,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "RequestCameraSnapshot200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        return response_data.response
+
+
+    def _request_camera_snapshot_serialize(
         self,
         camera_id,
         _request_auth,

@@ -93,6 +93,10 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameraGroups200ResponseGroupsInner",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -159,6 +163,10 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameraGroups200ResponseGroupsInner",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -225,6 +233,10 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameraGroups200ResponseGroupsInner",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -351,6 +363,10 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameras200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -417,6 +433,10 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameras200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -483,6 +503,10 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameras200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -605,6 +629,8 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameraGroups200Response",
+            '401': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -667,6 +693,8 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameraGroups200Response",
+            '401': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,
@@ -729,6 +757,8 @@ class SourceCameraGroupsApi:
 
         _response_types_map: Dict[str, Optional[str]] = {
             '200': "ListIntegratorCameraGroups200Response",
+            '401': "InlineObject",
+            '500': "InlineObject",
         }
         response_data = self.api_client.call_api(
             *_param,

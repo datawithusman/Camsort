@@ -7,77 +7,155 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-podman}"
 GENERATOR_IMAGE="${GENERATOR_IMAGE:-docker.io/openapitools/openapi-generator-cli:v7.12.0}"
 
-CAMBOT_SPEC="/workspace/apps/contracts/openapi/cambot-api.yaml"
-CAMERA_SYSTEM_INTEGRATOR_SPEC="/workspace/apps/contracts/openapi/camera-system-integrator-api.yaml"
-
-OUTPUT_ROOT=""
+TMP_ROOT="$PROJECT_ROOT/apps/tmp/generated-dtos"
 
 show_usage() {
-  cat <<EOF
+  cat <<EOF_USAGE
 Usage:
-  ./apps/generate-dtos.sh --output-dir <folder>
+  ./apps/generate-dtos.sh
 
-Examples:
-  ./apps/generate-dtos.sh --output-dir ./generated/dtos
-  ./apps/generate-dtos.sh --output-dir /tmp/cambot-dtos
+Behavior:
+  1. Deletes and recreates apps/tmp/generated-dtos
+  2. Generates OpenAPI client/DTO packages once into tmp
+  3. Copies generated packages into each app's backend folder
+
+Generated temp output:
+  apps/tmp/generated-dtos/python/cambot
+  apps/tmp/generated-dtos/python/camera_system_integrator
+  apps/tmp/generated-dtos/javascript/CambotApi
+  apps/tmp/generated-dtos/javascript/CameraSystemIntegrator
+
+Copied Python output:
+  apps/server/RestApi/backend/cambot
+  apps/server/RestApi/backend/camera_system_integrator
+
+  apps/server/GeminiCaller/backend/cambot
+  apps/server/GeminiCaller/backend/camera_system_integrator
+
+  apps/server/CameraSystemMockerRestApi/backend/cambot
+  apps/server/CameraSystemMockerRestApi/backend/camera_system_integrator
+
+Copied JavaScript output:
+  apps/client/backend/CambotApi
+  apps/client/backend/CameraSystemIntegrator
 
 Environment:
-  CONTAINER_RUNTIME   podman by default
-  GENERATOR_IMAGE     docker.io/openapitools/openapi-generator-cli:v7.12.0 by default
-EOF
+  CONTAINER_RUNTIME           podman by default
+  GENERATOR_IMAGE             docker.io/openapitools/openapi-generator-cli:v7.12.0 by default
+  CAMBOT_SPEC_PATH            optional host path override for cambot-api.yaml
+  CAMERA_SYSTEM_SPEC_PATH     optional host path override for camera-system-integrator-api.yaml
+EOF_USAGE
 }
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --output-dir|-o)
-      OUTPUT_ROOT="${2:-}"
-      shift 2
-      ;;
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  show_usage
+  exit 0
+fi
 
-    --help|-h)
-      show_usage
-      exit 0
-      ;;
-
-    *)
-      echo "Unknown argument: $1"
-      echo
-      show_usage
-      exit 1
-      ;;
-  esac
-done
-
-if [[ -z "$OUTPUT_ROOT" ]]; then
-  echo "Missing required argument: --output-dir"
+if [[ $# -gt 0 ]]; then
+  echo "Unknown argument(s): $*"
   echo
   show_usage
   exit 1
 fi
 
-mkdir -p "$OUTPUT_ROOT"
-OUTPUT_ROOT="$(cd "$OUTPUT_ROOT" && pwd)"
+require_inside_project() {
+  local host_path="$1"
+  local abs_path
 
-# Convert host output path into the corresponding container path.
-# Since PROJECT_ROOT is mounted as /workspace, output must be inside PROJECT_ROOT.
-case "$OUTPUT_ROOT" in
-  "$PROJECT_ROOT"/*)
-    CONTAINER_OUTPUT_ROOT="/workspace${OUTPUT_ROOT#"$PROJECT_ROOT"}"
-    ;;
-  "$PROJECT_ROOT")
-    CONTAINER_OUTPUT_ROOT="/workspace"
-    ;;
-  *)
-    echo "Output directory must be inside the project root."
-    echo "Project root: $PROJECT_ROOT"
-    echo "Output root:  $OUTPUT_ROOT"
+  if [[ ! -e "$host_path" ]]; then
+    echo "Missing path: $host_path" >&2
     exit 1
-    ;;
-esac
+  fi
+
+  abs_path="$(cd "$(dirname "$host_path")" && pwd)/$(basename "$host_path")"
+
+  case "$abs_path" in
+    "$PROJECT_ROOT"/*|"$PROJECT_ROOT")
+      echo "$abs_path"
+      ;;
+    *)
+      echo "Path must be inside the project root." >&2
+      echo "Project root: $PROJECT_ROOT" >&2
+      echo "Path:         $abs_path" >&2
+      exit 1
+      ;;
+  esac
+}
+
+to_container_file_path() {
+  local host_file="$1"
+  local abs_file
+  abs_file="$(require_inside_project "$host_file")"
+  echo "/workspace${abs_file#"$PROJECT_ROOT"}"
+}
+
+to_container_dir_path() {
+  local host_dir="$1"
+  local abs_dir
+
+  mkdir -p "$host_dir"
+  abs_dir="$(cd "$host_dir" && pwd)"
+
+  case "$abs_dir" in
+    "$PROJECT_ROOT"/*)
+      echo "/workspace${abs_dir#"$PROJECT_ROOT"}"
+      ;;
+    "$PROJECT_ROOT")
+      echo "/workspace"
+      ;;
+    *)
+      echo "Path must be inside the project root." >&2
+      echo "Project root: $PROJECT_ROOT" >&2
+      echo "Path:         $abs_dir" >&2
+      exit 1
+      ;;
+  esac
+}
+
+find_spec() {
+  local env_var_name="$1"
+  local expected_name="$2"
+  shift 2
+
+  local candidates=("$@")
+  local override="${!env_var_name:-}"
+
+  if [[ -n "$override" ]]; then
+    require_inside_project "$override" >/dev/null
+    echo "$override"
+    return 0
+  fi
+
+  for candidate in "${candidates[@]}"; do
+    if [[ -f "$candidate" ]]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+
+  local found
+  found="$(
+    find "$PROJECT_ROOT/apps/contracts" \
+      -type f \
+      \( -name "$expected_name" -o -name "${expected_name%.yaml}.yml" \) \
+      2>/dev/null | head -n 1 || true
+  )"
+
+  if [[ -n "$found" ]]; then
+    echo "$found"
+    return 0
+  fi
+
+  echo "Could not find OpenAPI spec: $expected_name" >&2
+  echo "Files under apps/contracts:" >&2
+  find "$PROJECT_ROOT/apps/contracts" -maxdepth 4 -type f 2>/dev/null | sort >&2 || true
+  exit 1
+}
 
 run_generator() {
   "$CONTAINER_RUNTIME" run --rm \
-    -v "$PROJECT_ROOT:/workspace" \
+    -v "$PROJECT_ROOT:/workspace:Z" \
     "$GENERATOR_IMAGE" "$@"
 }
 
@@ -87,74 +165,165 @@ reset_dir() {
   mkdir -p "$dir"
 }
 
-echo "DTO/client output root:"
-echo "  $OUTPUT_ROOT"
+copy_generated_dir() {
+  local src="$1"
+  local dst="$2"
+
+  if [[ ! -d "$src" ]]; then
+    echo "Missing generated source directory: $src" >&2
+    exit 1
+  fi
+
+  rm -rf "$dst"
+  mkdir -p "$dst"
+
+  # Copy contents, not the containing folder.
+  cp -a "$src/." "$dst/"
+}
+
+generate_python() {
+  local spec_host="$1"
+  local host_output="$2"
+  local package_name="$3"
+  local project_name="$4"
+
+  local spec_container
+  local container_output
+
+  reset_dir "$host_output"
+
+  spec_container="$(to_container_file_path "$spec_host")"
+  container_output="$(to_container_dir_path "$host_output")"
+
+  run_generator generate -i "$spec_container" -g python \
+    -o "$container_output" \
+    --additional-properties=packageName="$package_name",projectName="$project_name"
+}
+
+generate_javascript() {
+  local spec_host="$1"
+  local host_output="$2"
+  local project_name="$3"
+
+  local spec_container
+  local container_output
+
+  reset_dir "$host_output"
+
+  spec_container="$(to_container_file_path "$spec_host")"
+  container_output="$(to_container_dir_path "$host_output")"
+
+  run_generator generate -i "$spec_container" -g javascript \
+    -o "$container_output" \
+    --additional-properties=projectName="$project_name",usePromises=true,useES6=true
+}
+
+CAMBOT_SPEC_HOST="$(
+  find_spec \
+    CAMBOT_SPEC_PATH \
+    cambot-api.yaml \
+    "$PROJECT_ROOT/apps/contracts/cambot-api.yaml" \
+    "$PROJECT_ROOT/apps/contracts/cambot-api.yml" \
+    "$PROJECT_ROOT/apps/contracts/openapi/cambot-api.yaml" \
+    "$PROJECT_ROOT/apps/contracts/openapi/cambot-api.yml"
+)"
+
+CAMERA_SYSTEM_SPEC_HOST="$(
+  find_spec \
+    CAMERA_SYSTEM_SPEC_PATH \
+    camera-system-integrator-api.yaml \
+    "$PROJECT_ROOT/apps/contracts/camera-system-integrator-api.yaml" \
+    "$PROJECT_ROOT/apps/contracts/camera-system-integrator-api.yml" \
+    "$PROJECT_ROOT/apps/contracts/openapi/camera-system-integrator-api.yaml" \
+    "$PROJECT_ROOT/apps/contracts/openapi/camera-system-integrator-api.yml"
+)"
+
+CAMBOT_SPEC_CONTAINER="$(to_container_file_path "$CAMBOT_SPEC_HOST")"
+CAMERA_SYSTEM_SPEC_CONTAINER="$(to_container_file_path "$CAMERA_SYSTEM_SPEC_HOST")"
+
+TMP_PY_CAMBOT="$TMP_ROOT/python/cambot"
+TMP_PY_CAMERA_SYSTEM="$TMP_ROOT/python/camera_system_integrator"
+TMP_JS_CAMBOT="$TMP_ROOT/javascript/CambotApi"
+TMP_JS_CAMERA_SYSTEM="$TMP_ROOT/javascript/CameraSystemIntegrator"
+
+PYTHON_SERVICES=(
+  "RestApi"
+  "GeminiCaller"
+  "CameraSystemMockerRestApi"
+)
+
+echo "Project root:"
+echo "  $PROJECT_ROOT"
 echo
 
+echo "OpenAPI specs:"
+echo "  CamBot API:                 $CAMBOT_SPEC_HOST"
+echo "  Camera System Integrator:   $CAMERA_SYSTEM_SPEC_HOST"
+echo
+
+echo "Resetting temp generated DTO folder:"
+echo "  $TMP_ROOT"
+rm -rf "$TMP_ROOT"
+mkdir -p "$TMP_ROOT"
+
+echo
 echo "Validating OpenAPI specs..."
-run_generator validate -i "$CAMBOT_SPEC"
-run_generator validate -i "$CAMERA_SYSTEM_INTEGRATOR_SPEC"
+run_generator validate -i "$CAMBOT_SPEC_CONTAINER"
+run_generator validate -i "$CAMERA_SYSTEM_SPEC_CONTAINER"
 
-echo "Generating Python client/DTO package for RestApi..."
-reset_dir "$OUTPUT_ROOT/python/RestApi/cambot"
-reset_dir "$OUTPUT_ROOT/python/RestApi/camera_system_integrator"
+echo
+echo "Generating CamBot Python DTO/client package into tmp..."
+generate_python "$CAMBOT_SPEC_HOST" "$TMP_PY_CAMBOT" \
+  "cambot_dtos" "cambot-dtos"
 
-run_generator generate -i "$CAMBOT_SPEC" -g python \
-  -o "$CONTAINER_OUTPUT_ROOT/python/RestApi/cambot" \
-  --additional-properties=packageName=cambot_dtos,projectName=cambot-dtos
+echo
+echo "Generating Camera System Python DTO/client package into tmp..."
+generate_python "$CAMERA_SYSTEM_SPEC_HOST" "$TMP_PY_CAMERA_SYSTEM" \
+  "camera_system_integrator_dtos" "camera-system-integrator-dtos"
 
-run_generator generate -i "$CAMERA_SYSTEM_INTEGRATOR_SPEC" -g python \
-  -o "$CONTAINER_OUTPUT_ROOT/python/RestApi/camera_system_integrator" \
-  --additional-properties=packageName=camera_system_integrator_dtos,projectName=camera-system-integrator-dtos
+echo
+echo "Generating CamBot JavaScript DTO/client package into tmp..."
+generate_javascript "$CAMBOT_SPEC_HOST" "$TMP_JS_CAMBOT" \
+  "cambot-api"
 
-echo "Generating Python client/DTO packages for GeminiCaller..."
-reset_dir "$OUTPUT_ROOT/python/GeminiCaller/cambot"
-reset_dir "$OUTPUT_ROOT/python/GeminiCaller/camera_system_integrator"
+echo
+echo "Generating Camera System JavaScript DTO/client package into tmp..."
+generate_javascript "$CAMERA_SYSTEM_SPEC_HOST" "$TMP_JS_CAMERA_SYSTEM" \
+  "camera-system-integrator-api"
 
-run_generator generate -i "$CAMBOT_SPEC" -g python \
-  -o "$CONTAINER_OUTPUT_ROOT/python/GeminiCaller/cambot" \
-  --additional-properties=packageName=cambot_dtos,projectName=cambot-dtos
+echo
+echo "Copying generated Python packages into server apps..."
 
-run_generator generate -i "$CAMERA_SYSTEM_INTEGRATOR_SPEC" -g python \
-  -o "$CONTAINER_OUTPUT_ROOT/python/GeminiCaller/camera_system_integrator" \
-  --additional-properties=packageName=camera_system_integrator_dtos,projectName=camera-system-integrator-dtos
+for service in "${PYTHON_SERVICES[@]}"; do
+  echo "  $service"
 
-echo "Generating Python client/DTO package for CameraSystemMockerRestApi..."
-reset_dir "$OUTPUT_ROOT/python/CameraSystemMockerRestApi/camera_system_integrator"
+  copy_generated_dir "$TMP_PY_CAMBOT" \
+    "$PROJECT_ROOT/apps/server/$service/backend/cambot"
 
-run_generator generate -i "$CAMERA_SYSTEM_INTEGRATOR_SPEC" -g python \
-  -o "$CONTAINER_OUTPUT_ROOT/python/CameraSystemMockerRestApi/camera_system_integrator" \
-  --additional-properties=packageName=camera_system_integrator_dtos,projectName=camera-system-integrator-dtos
+  copy_generated_dir "$TMP_PY_CAMERA_SYSTEM" \
+    "$PROJECT_ROOT/apps/server/$service/backend/camera_system_integrator"
+done
 
-echo "Generating JavaScript frontend client/DTO package for CamBot API..."
-reset_dir "$OUTPUT_ROOT/javascript/client/CambotApi"
+echo
+echo "Copying generated JavaScript packages into client app..."
 
-run_generator generate -i "$CAMBOT_SPEC" -g javascript \
-  -o "$CONTAINER_OUTPUT_ROOT/javascript/client/CambotApi" \
-  --additional-properties=projectName=cambot-api,usePromises=true,useES6=true
+copy_generated_dir "$TMP_JS_CAMBOT" \
+  "$PROJECT_ROOT/apps/client/backend/CambotApi"
 
-echo "Generating JavaScript frontend client/DTO package for Camera System Integrator API..."
-reset_dir "$OUTPUT_ROOT/javascript/client/CameraSystemIntegrator"
-
-run_generator generate -i "$CAMERA_SYSTEM_INTEGRATOR_SPEC" -g javascript \
-  -o "$CONTAINER_OUTPUT_ROOT/javascript/client/CameraSystemIntegrator" \
-  --additional-properties=projectName=camera-system-integrator-api,usePromises=true,useES6=true
+copy_generated_dir "$TMP_JS_CAMERA_SYSTEM" \
+  "$PROJECT_ROOT/apps/client/backend/CameraSystemIntegrator"
 
 echo
 echo "DTO/client generation complete."
 echo
-echo "Generated output:"
-echo "  Python RestApi:"
-echo "    $OUTPUT_ROOT/python/RestApi/cambot"
-echo "    $OUTPUT_ROOT/python/RestApi/camera_system_integrator"
+echo "Generated temp output:"
+echo "  $TMP_ROOT"
 echo
-echo "  Python GeminiCaller:"
-echo "    $OUTPUT_ROOT/python/GeminiCaller/cambot"
-echo "    $OUTPUT_ROOT/python/GeminiCaller/camera_system_integrator"
+echo "Copied project output:"
+for service in "${PYTHON_SERVICES[@]}"; do
+  echo "  apps/server/$service/backend/cambot"
+  echo "  apps/server/$service/backend/camera_system_integrator"
+done
 echo
-echo "  Python CameraSystemMockerRestApi:"
-echo "    $OUTPUT_ROOT/python/CameraSystemMockerRestApi/camera_system_integrator"
-echo
-echo "  JavaScript client:"
-echo "    $OUTPUT_ROOT/javascript/client/CambotApi"
-echo "    $OUTPUT_ROOT/javascript/client/CameraSystemIntegrator"
+echo "  apps/client/backend/CambotApi"
+echo "  apps/client/backend/CameraSystemIntegrator"
