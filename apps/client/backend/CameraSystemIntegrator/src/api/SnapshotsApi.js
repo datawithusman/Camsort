@@ -14,7 +14,6 @@
 
 import ApiClient from "../ApiClient";
 import InlineObject from '../model/InlineObject';
-import RequestCameraSnapshot200Response from '../model/RequestCameraSnapshot200Response';
 
 /**
 * Snapshots service.
@@ -37,16 +36,16 @@ export default class SnapshotsApi {
 
 
     /**
-     * Get most recent snapshot image
-     * Returns the image for the most recently requested snapshot for this camera. If no snapshot has been requested yet, the adapter may select the current/latest available snapshot. Historical snapshot lookup is intentionally not supported.
+     * Get camera snapshot image
+     * Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
      * @param {String} cameraId 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link File} and HTTP response
      */
-    getLatestCameraSnapshotImageWithHttpInfo(cameraId) {
+    getCameraSnapshotWithHttpInfo(cameraId) {
       let postBody = null;
       // verify the required parameter 'cameraId' is set
       if (cameraId === undefined || cameraId === null) {
-        throw new Error("Missing the required parameter 'cameraId' when calling getLatestCameraSnapshotImage");
+        throw new Error("Missing the required parameter 'cameraId' when calling getCameraSnapshot");
       }
 
       let pathParams = {
@@ -64,54 +63,6 @@ export default class SnapshotsApi {
       let accepts = ['image/jpeg', 'image/png', 'image/webp', 'application/json'];
       let returnType = File;
       return this.apiClient.callApi(
-        '/cameras/{cameraId}/snapshot/image', 'GET',
-        pathParams, queryParams, headerParams, formParams, postBody,
-        authNames, contentTypes, accepts, returnType, null
-      );
-    }
-
-    /**
-     * Get most recent snapshot image
-     * Returns the image for the most recently requested snapshot for this camera. If no snapshot has been requested yet, the adapter may select the current/latest available snapshot. Historical snapshot lookup is intentionally not supported.
-     * @param {String} cameraId 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link File}
-     */
-    getLatestCameraSnapshotImage(cameraId) {
-      return this.getLatestCameraSnapshotImageWithHttpInfo(cameraId)
-        .then(function(response_and_data) {
-          return response_and_data.data;
-        });
-    }
-
-
-    /**
-     * Request latest camera snapshot
-     * Selects the latest snapshot for the camera and returns metadata pointing to the current snapshot image. Adapters do not retain or retrieve historical snapshots, and callers do not provide frame numbers or snapshot IDs.
-     * @param {String} cameraId 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/RequestCameraSnapshot200Response} and HTTP response
-     */
-    requestCameraSnapshotWithHttpInfo(cameraId) {
-      let postBody = null;
-      // verify the required parameter 'cameraId' is set
-      if (cameraId === undefined || cameraId === null) {
-        throw new Error("Missing the required parameter 'cameraId' when calling requestCameraSnapshot");
-      }
-
-      let pathParams = {
-        'cameraId': cameraId
-      };
-      let queryParams = {
-      };
-      let headerParams = {
-      };
-      let formParams = {
-      };
-
-      let authNames = ['basicAuth'];
-      let contentTypes = [];
-      let accepts = ['application/json'];
-      let returnType = RequestCameraSnapshot200Response;
-      return this.apiClient.callApi(
         '/cameras/{cameraId}/snapshot', 'GET',
         pathParams, queryParams, headerParams, formParams, postBody,
         authNames, contentTypes, accepts, returnType, null
@@ -119,13 +70,13 @@ export default class SnapshotsApi {
     }
 
     /**
-     * Request latest camera snapshot
-     * Selects the latest snapshot for the camera and returns metadata pointing to the current snapshot image. Adapters do not retain or retrieve historical snapshots, and callers do not provide frame numbers or snapshot IDs.
+     * Get camera snapshot image
+     * Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
      * @param {String} cameraId 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/RequestCameraSnapshot200Response}
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link File}
      */
-    requestCameraSnapshot(cameraId) {
-      return this.requestCameraSnapshotWithHttpInfo(cameraId)
+    getCameraSnapshot(cameraId) {
+      return this.getCameraSnapshotWithHttpInfo(cameraId)
         .then(function(response_and_data) {
           return response_and_data.data;
         });

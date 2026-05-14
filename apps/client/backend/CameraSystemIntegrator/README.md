@@ -126,8 +126,7 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *CameraSystemIntegratorApi.CamerasApi* | [**getIntegratorCamera**](docs/CamerasApi.md#getIntegratorCamera) | **GET** /cameras/{cameraId} | Get camera details from the camera system
 *CameraSystemIntegratorApi.CamerasApi* | [**listIntegratorCameras**](docs/CamerasApi.md#listIntegratorCameras) | **GET** /cameras | List cameras from the camera system
-*CameraSystemIntegratorApi.SnapshotsApi* | [**getLatestCameraSnapshotImage**](docs/SnapshotsApi.md#getLatestCameraSnapshotImage) | **GET** /cameras/{cameraId}/snapshot/image | Get most recent snapshot image
-*CameraSystemIntegratorApi.SnapshotsApi* | [**requestCameraSnapshot**](docs/SnapshotsApi.md#requestCameraSnapshot) | **GET** /cameras/{cameraId}/snapshot | Request latest camera snapshot
+*CameraSystemIntegratorApi.SnapshotsApi* | [**getCameraSnapshot**](docs/SnapshotsApi.md#getCameraSnapshot) | **GET** /cameras/{cameraId}/snapshot | Get camera snapshot image
 *CameraSystemIntegratorApi.SourceCameraGroupsApi* | [**getIntegratorCameraGroup**](docs/SourceCameraGroupsApi.md#getIntegratorCameraGroup) | **GET** /camera-groups/{groupId} | Get source camera group details
 *CameraSystemIntegratorApi.SourceCameraGroupsApi* | [**listIntegratorCameraGroupCameras**](docs/SourceCameraGroupsApi.md#listIntegratorCameraGroupCameras) | **GET** /camera-groups/{groupId}/cameras | List cameras in a source camera group
 *CameraSystemIntegratorApi.SourceCameraGroupsApi* | [**listIntegratorCameraGroups**](docs/SourceCameraGroupsApi.md#listIntegratorCameraGroups) | **GET** /camera-groups | List source camera groups from the camera system
@@ -144,7 +143,6 @@ Class | Method | HTTP request | Description
  - [CameraSystemIntegratorApi.ListIntegratorCameraGroups200ResponseGroupsInner](docs/ListIntegratorCameraGroups200ResponseGroupsInner.md)
  - [CameraSystemIntegratorApi.ListIntegratorCameras200Response](docs/ListIntegratorCameras200Response.md)
  - [CameraSystemIntegratorApi.ListIntegratorCameras200ResponseCamerasInner](docs/ListIntegratorCameras200ResponseCamerasInner.md)
- - [CameraSystemIntegratorApi.RequestCameraSnapshot200Response](docs/RequestCameraSnapshot200Response.md)
 
 
 ## Documentation for Authorization

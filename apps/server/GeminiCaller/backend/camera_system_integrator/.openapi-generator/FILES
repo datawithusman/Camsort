@@ -23,7 +23,6 @@ camera_system_integrator_dtos/models/list_integrator_camera_groups200_response.p
 camera_system_integrator_dtos/models/list_integrator_camera_groups200_response_groups_inner.py
 camera_system_integrator_dtos/models/list_integrator_cameras200_response.py
 camera_system_integrator_dtos/models/list_integrator_cameras200_response_cameras_inner.py
-camera_system_integrator_dtos/models/request_camera_snapshot200_response.py
 camera_system_integrator_dtos/py.typed
 camera_system_integrator_dtos/rest.py
 docs/CamerasApi.md
@@ -34,7 +33,6 @@ docs/ListIntegratorCameraGroups200Response.md
 docs/ListIntegratorCameraGroups200ResponseGroupsInner.md
 docs/ListIntegratorCameras200Response.md
 docs/ListIntegratorCameras200ResponseCamerasInner.md
-docs/RequestCameraSnapshot200Response.md
 docs/SnapshotsApi.md
 docs/SourceCameraGroupsApi.md
 docs/StreamsApi.md
@@ -54,7 +52,6 @@ test/test_list_integrator_camera_groups200_response.py
 test/test_list_integrator_camera_groups200_response_groups_inner.py
 test/test_list_integrator_cameras200_response.py
 test/test_list_integrator_cameras200_response_cameras_inner.py
-test/test_request_camera_snapshot200_response.py
 test/test_snapshots_api.py
 test/test_source_camera_groups_api.py
 test/test_streams_api.py

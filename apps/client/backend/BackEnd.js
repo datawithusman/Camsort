@@ -256,30 +256,47 @@ export const backend = {
         );
       },
 
-      async requestSnapshot(cameraId) {
-        return await requestFromBase(
+      /**
+       * Returns the browser URL for the camera snapshot image.
+       *
+       * Use this directly in an <img>:
+       *
+       *   img.src = backend.cameraSystem.cameras.snapshotImageUrl("cam01");
+       *
+       * The endpoint returns image bytes directly.
+       */
+      snapshotImageUrl(cameraId) {
+        return imageUrlFromBase(
           state.cameraSystemBaseUrl,
           `/cameras/${encodePathPart(cameraId)}/snapshot`
         );
       },
 
-      snapshotImageUrl(cameraId) {
-        return imageUrlFromBase(
-          state.cameraSystemBaseUrl,
-          `/cameras/${encodePathPart(cameraId)}/snapshot/image`
-        );
-      },
-
+      /**
+       * Fetches the camera snapshot image as a Blob.
+       *
+       * The endpoint returns image bytes directly.
+       */
       async getSnapshotImage(cameraId) {
         return await requestFromBase(
           state.cameraSystemBaseUrl,
-          `/cameras/${encodePathPart(cameraId)}/snapshot/image`,
+          `/cameras/${encodePathPart(cameraId)}/snapshot`,
           {
             headers: {
               Accept: "image/*",
             },
           }
         );
+      },
+
+      /**
+       * Backward-compatible alias.
+       *
+       * Older code may call requestSnapshot(), but the new contract returns
+       * the image blob directly, not metadata.
+       */
+      async requestSnapshot(cameraId) {
+        return await this.getSnapshotImage(cameraId);
       },
 
       async stream(cameraId) {

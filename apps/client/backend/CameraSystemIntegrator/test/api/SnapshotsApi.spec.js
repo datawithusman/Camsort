@@ -48,20 +48,10 @@
   }
 
   describe('SnapshotsApi', function() {
-    describe('getLatestCameraSnapshotImage', function() {
-      it('should call getLatestCameraSnapshotImage successfully', function(done) {
-        //uncomment below and update the code to test getLatestCameraSnapshotImage
-        //instance.getLatestCameraSnapshotImage(function(error) {
-        //  if (error) throw error;
-        //expect().to.be();
-        //});
-        done();
-      });
-    });
-    describe('requestCameraSnapshot', function() {
-      it('should call requestCameraSnapshot successfully', function(done) {
-        //uncomment below and update the code to test requestCameraSnapshot
-        //instance.requestCameraSnapshot(function(error) {
+    describe('getCameraSnapshot', function() {
+      it('should call getCameraSnapshot successfully', function(done) {
+        //uncomment below and update the code to test getCameraSnapshot
+        //instance.getCameraSnapshot(function(error) {
         //  if (error) throw error;
         //expect().to.be();
         //});

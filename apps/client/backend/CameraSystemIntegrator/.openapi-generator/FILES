@@ -11,7 +11,6 @@ docs/ListIntegratorCameraGroups200Response.md
 docs/ListIntegratorCameraGroups200ResponseGroupsInner.md
 docs/ListIntegratorCameras200Response.md
 docs/ListIntegratorCameras200ResponseCamerasInner.md
-docs/RequestCameraSnapshot200Response.md
 docs/SnapshotsApi.md
 docs/SourceCameraGroupsApi.md
 docs/StreamsApi.md
@@ -33,7 +32,6 @@ src/model/ListIntegratorCameraGroups200Response.js
 src/model/ListIntegratorCameraGroups200ResponseGroupsInner.js
 src/model/ListIntegratorCameras200Response.js
 src/model/ListIntegratorCameras200ResponseCamerasInner.js
-src/model/RequestCameraSnapshot200Response.js
 test/api/CamerasApi.spec.js
 test/api/SnapshotsApi.spec.js
 test/api/SourceCameraGroupsApi.spec.js
@@ -46,4 +44,3 @@ test/model/ListIntegratorCameraGroups200Response.spec.js
 test/model/ListIntegratorCameraGroups200ResponseGroupsInner.spec.js
 test/model/ListIntegratorCameras200Response.spec.js
 test/model/ListIntegratorCameras200ResponseCamerasInner.spec.js
-test/model/RequestCameraSnapshot200Response.spec.js

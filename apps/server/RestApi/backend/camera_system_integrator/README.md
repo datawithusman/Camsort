@@ -97,8 +97,7 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *CamerasApi* | [**get_integrator_camera**](docs/CamerasApi.md#get_integrator_camera) | **GET** /cameras/{cameraId} | Get camera details from the camera system
 *CamerasApi* | [**list_integrator_cameras**](docs/CamerasApi.md#list_integrator_cameras) | **GET** /cameras | List cameras from the camera system
-*SnapshotsApi* | [**get_latest_camera_snapshot_image**](docs/SnapshotsApi.md#get_latest_camera_snapshot_image) | **GET** /cameras/{cameraId}/snapshot/image | Get most recent snapshot image
-*SnapshotsApi* | [**request_camera_snapshot**](docs/SnapshotsApi.md#request_camera_snapshot) | **GET** /cameras/{cameraId}/snapshot | Request latest camera snapshot
+*SnapshotsApi* | [**get_camera_snapshot**](docs/SnapshotsApi.md#get_camera_snapshot) | **GET** /cameras/{cameraId}/snapshot | Get camera snapshot image
 *SourceCameraGroupsApi* | [**get_integrator_camera_group**](docs/SourceCameraGroupsApi.md#get_integrator_camera_group) | **GET** /camera-groups/{groupId} | Get source camera group details
 *SourceCameraGroupsApi* | [**list_integrator_camera_group_cameras**](docs/SourceCameraGroupsApi.md#list_integrator_camera_group_cameras) | **GET** /camera-groups/{groupId}/cameras | List cameras in a source camera group
 *SourceCameraGroupsApi* | [**list_integrator_camera_groups**](docs/SourceCameraGroupsApi.md#list_integrator_camera_groups) | **GET** /camera-groups | List source camera groups from the camera system
@@ -115,7 +114,6 @@ Class | Method | HTTP request | Description
  - [ListIntegratorCameraGroups200ResponseGroupsInner](docs/ListIntegratorCameraGroups200ResponseGroupsInner.md)
  - [ListIntegratorCameras200Response](docs/ListIntegratorCameras200Response.md)
  - [ListIntegratorCameras200ResponseCamerasInner](docs/ListIntegratorCameras200ResponseCamerasInner.md)
- - [RequestCameraSnapshot200Response](docs/RequestCameraSnapshot200Response.md)
 
 
 <a id="documentation-for-authorization"></a>

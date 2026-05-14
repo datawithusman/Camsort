@@ -93,38 +93,14 @@ paths:
   /cameras/{cameraId}/snapshot:
     get:
       tags: [Snapshots]
-      summary: Request latest camera snapshot
-      description: Selects the latest snapshot for the camera and returns metadata pointing to the current snapshot image. Adapters do not retain or retrieve historical snapshots, and callers do not provide frame numbers or snapshot IDs.
-      operationId: requestCameraSnapshot
+      summary: Get camera snapshot image
+      description: Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+      operationId: getCameraSnapshot
       parameters:
         - $ref: "#/components/parameters/CameraId"
       responses:
         "200":
-          description: Snapshot metadata returned
-          content:
-            application/json:
-              schema:
-                $ref: "./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraSnapshot"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  /cameras/{cameraId}/snapshot/image:
-    get:
-      tags: [Snapshots]
-      summary: Get most recent snapshot image
-      description: Returns the image for the most recently requested snapshot for this camera. If no snapshot has been requested yet, the adapter may select the current/latest available snapshot. Historical snapshot lookup is intentionally not supported.
-      operationId: getLatestCameraSnapshotImage
-      parameters:
-        - $ref: "#/components/parameters/CameraId"
-      responses:
-        "200":
-          description: Most recent snapshot image returned
+          description: Snapshot image bytes returned
           content:
             image/jpeg:
               schema:

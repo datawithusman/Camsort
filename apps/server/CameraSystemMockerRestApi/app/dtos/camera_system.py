@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any, Literal
 
 
 CameraStatus = Literal["online", "offline", "unknown"]
 CameraSystemHealthStatus = Literal["healthy", "degraded", "unavailable"]
 StreamType = Literal["rtsp", "hls", "webrtc", "mjpeg", "unknown"]
-
 
 JsonObject = dict[str, Any]
 
@@ -39,13 +37,6 @@ def _list_of_str(value: Any) -> list[str]:
 class CameraSystemStatusDto:
     """
     App-facing DTO for camera-system health/status.
-
-    This is the stable DTO used by RestApi handwritten code.
-
-    It intentionally wraps the generated OpenAPI shape so the rest of RestApi
-    does not need to import generated model names like:
-
-      GetCameraSystemStatus200Response
 
     Expected JSON shape:
 
@@ -91,20 +82,6 @@ class CameraSystemCameraDto:
 
     This is not a CamBot operational camera group. This is the source camera
     exposed by the camera-system integrator/mocker.
-
-    Expected JSON shape:
-
-      {
-        "id": "cam01",
-        "name": "Camera 01",
-        "description": null,
-        "location": "Demo Site",
-        "groupIds": ["group-all"],
-        "status": "online",
-        "streamAvailable": false,
-        "snapshotAvailable": true,
-        "vendorMetadata": {...}
-      }
     """
 
     id: str
@@ -242,49 +219,6 @@ class CameraSystemGroupListDto:
 
 
 @dataclass(frozen=True)
-class CameraSnapshotDto:
-    """
-    App-facing DTO for current/latest camera snapshot metadata.
-
-    Important:
-      The simplified camera-system API does not expose historical snapshot
-      lookup. The imageUrl points to the current/latest snapshot image endpoint.
-
-    Expected flow:
-      1. request_snapshot("cam01")
-      2. get_latest_snapshot_image("cam01")
-    """
-
-    camera_id: str
-    captured_at: str
-    image_url: str
-    mime_type: str | None = "image/jpeg"
-    width: int | None = None
-    height: int | None = None
-
-    @staticmethod
-    def from_json(data: JsonObject) -> "CameraSnapshotDto":
-        return CameraSnapshotDto(
-            camera_id=str(data.get("cameraId", "")),
-            captured_at=str(data.get("capturedAt", "")),
-            image_url=str(data.get("imageUrl", "")),
-            mime_type=_optional_str(data.get("mimeType")),
-            width=_optional_int(data.get("width")),
-            height=_optional_int(data.get("height")),
-        )
-
-    def to_json(self) -> JsonObject:
-        return {
-            "cameraId": self.camera_id,
-            "capturedAt": self.captured_at,
-            "imageUrl": self.image_url,
-            "mimeType": self.mime_type,
-            "width": self.width,
-            "height": self.height,
-        }
-
-
-@dataclass(frozen=True)
 class CameraStreamDto:
     """
     App-facing DTO for a source camera stream descriptor.
@@ -314,3 +248,20 @@ class CameraStreamDto:
             "streamUrl": self.stream_url,
             "expiresAt": self.expires_at,
         }
+
+
+# Snapshot note:
+#
+# There is intentionally no CameraSnapshotDto anymore.
+#
+# The camera-system contract now says:
+#
+#   GET /cameras/{cameraId}/snapshot
+#
+# returns image bytes directly, usually image/jpeg.
+#
+# Python wrapper methods should return:
+#
+#   bytes
+#
+# for snapshot calls.
