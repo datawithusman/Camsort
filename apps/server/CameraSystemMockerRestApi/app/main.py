@@ -11,7 +11,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
 from app.dtos.camera_system import (
-    CameraSnapshotDto,
     CameraStreamDto,
     CameraSystemCameraDto,
     CameraSystemCameraListDto,
@@ -35,20 +34,10 @@ CONFIG_PATH = Path(
     )
 )
 
-PUBLIC_BASE_PATH = os.environ.get(
-    "CAMERA_MOCKER_PUBLIC_BASE_PATH",
-    "/camera-system",
-).rstrip("/")
-
 state_lock = threading.Lock()
 
 # Per-camera cursor used to advance mock snapshots.
 camera_cursors: dict[str, int] = {}
-
-# Stores only the latest selected snapshot path per camera.
-# Historical snapshots are intentionally not implemented.
-latest_snapshot_paths: dict[str, Path] = {}
-
 
 JsonObject = dict[str, Any]
 
@@ -73,7 +62,7 @@ def load_json_config() -> JsonObject:
         "defaultCameras": [...]
       }
 
-    defaultCameras are real explicitly configured cameras.
+    defaultCameras are explicitly configured cameras.
     genericCameras creates extra cameras after the highest default cam number.
     """
 
@@ -147,14 +136,14 @@ def build_cameras(config: JsonObject) -> list[JsonObject]:
     """
     Builds the full camera list from defaultCameras + genericCameras.
 
-    Your current config has:
+    Current intended config:
       defaultCameras: cam01-cam30
       genericCameras.amount: 20
 
     Therefore generic cameras become:
       cam31-cam50
 
-    Generic cameras should not overwrite cam01-cam30.
+    Generic cameras must not overwrite cam01-cam30.
     """
 
     default_camera_entries = config.get("defaultCameras")
@@ -225,7 +214,7 @@ def build_groups(config: JsonObject, cameras: list[JsonObject]) -> list[JsonObje
     """
     Builds camera groups from config.
 
-    This preserves your configured group IDs and names, but:
+    Preserves configured group IDs and names, but:
       - filters nonexistent camera IDs
       - deduplicates repeated camera IDs
     """
@@ -473,12 +462,13 @@ def get_camera(camera_id: str) -> JsonObject:
 
 
 @app.get("/cameras/{camera_id}/snapshot")
-def get_snapshot_metadata(camera_id: str) -> JsonObject:
+def get_snapshot_image(camera_id: str) -> FileResponse:
     """
-    Selects/advances the latest mock snapshot for this camera.
+    Returns the next/current snapshot image for this camera.
 
-    This endpoint does not create historical snapshot records.
-    It only updates the current/latest selected image in memory.
+    This endpoint returns the image blob directly.
+
+    Historical snapshot lookup is intentionally not supported.
     """
 
     camera = get_camera_or_404(camera_id)
@@ -500,53 +490,8 @@ def get_snapshot_metadata(camera_id: str) -> JsonObject:
         cursor = camera_cursors.get(camera_id, 0)
         frame_index = cursor % len(frames)
 
-        selected_path = frames[frame_index]
-
+        path = frames[frame_index]
         camera_cursors[camera_id] = (frame_index + 1) % len(frames)
-        latest_snapshot_paths[camera_id] = selected_path
-
-    return CameraSnapshotDto(
-        camera_id=camera_id,
-        captured_at=utc_now_iso(),
-        image_url=f"{PUBLIC_BASE_PATH}/cameras/{camera_id}/snapshot/image",
-        mime_type=content_type_for(selected_path),
-        width=None,
-        height=None,
-    ).to_json()
-
-
-@app.get("/cameras/{camera_id}/snapshot/image")
-def get_latest_snapshot_image(camera_id: str) -> FileResponse:
-    """
-    Returns the current/latest selected snapshot image for this camera.
-
-    If /snapshot has not been called yet for this camera, this endpoint uses the
-    first available frame as the current image.
-
-    Historical snapshot lookup is intentionally not supported.
-    """
-
-    camera = get_camera_or_404(camera_id)
-    frames = list_image_files(camera)
-
-    if not frames:
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "error": "No snapshot frames found for camera.",
-                "details": {
-                    "cameraId": camera_id,
-                    "mediaFolder": camera.get("mediaFolder") or camera_id,
-                },
-            },
-        )
-
-    with state_lock:
-        path = latest_snapshot_paths.get(camera_id)
-
-        if path is None or path not in frames:
-            path = frames[0]
-            latest_snapshot_paths[camera_id] = path
 
     return FileResponse(
         path,
