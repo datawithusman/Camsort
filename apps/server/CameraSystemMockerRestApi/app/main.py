@@ -138,9 +138,106 @@ def generate_config_from_folders() -> dict[str, Any]:
 
 
 def normalize_config(data: dict[str, Any]) -> dict[str, Any]:
+    """Normalize the user's defaultCameras.json style into API-ready data.
+
+    Supported top-level styles:
+      - { "cameras": [...] }
+      - { "defaultCameras": [...] }
+      - { "genericCameras": { "amount": 20, "mediaFolder": "camN", "namePrefix": "Gen Cam" } }
+
+    The user's current style uses defaultCameras plus genericCameras. For generic
+    cameras, IDs continue after the highest numbered camXX default camera.
+    Example: cam01..cam30 + amount 20 => cam31..cam50, all backed by camN.
+    """
+
+    raw_cameras = data.get("cameras")
+    if raw_cameras is None:
+        raw_cameras = data.get("defaultCameras", [])
+    if raw_cameras is None:
+        raw_cameras = []
+
+    cameras: list[dict[str, Any]] = []
+
+    # First load explicit/default cameras exactly as authored.
+    for camera in raw_cameras:
+        if not isinstance(camera, dict) or "id" not in camera:
+            continue
+        camera_id = str(camera["id"])
+        media_folder = str(camera.get("mediaFolder") or camera_id)
+        cameras.append(
+            {
+                "id": camera_id,
+                "name": str(camera.get("name") or camera_id),
+                "description": camera.get("description"),
+                "location": camera.get("location"),
+                "groupIds": [str(x) for x in camera.get("groupIds", [])],
+                "status": camera.get("status", "online"),
+                "streamAvailable": bool(camera.get("streamAvailable", False)),
+                "snapshotAvailable": bool(camera.get("snapshotAvailable", True)),
+                "mediaFolder": media_folder,
+                "vendorMetadata": {
+                    **(camera.get("vendorMetadata", {}) or {}),
+                    "mediaFolder": media_folder,
+                    "mocker": True,
+                    "source": "defaultCameras",
+                },
+            }
+        )
+
+    # Then expand the user's genericCameras block.
+    generic = data.get("genericCameras") or {}
+    if isinstance(generic, dict):
+        try:
+            amount = int(generic.get("amount", 0) or 0)
+        except (TypeError, ValueError):
+            amount = 0
+
+        media_folder = str(generic.get("mediaFolder") or "camN")
+        name_prefix = str(generic.get("namePrefix") or "Gen Cam")
+        location = generic.get("location", "Demo Site")
+        status = generic.get("status", "online")
+
+        existing_ids = {camera["id"] for camera in cameras}
+        numbered_suffixes: list[int] = []
+        for camera_id in existing_ids:
+            if camera_id.startswith("cam") and camera_id[3:].isdigit():
+                numbered_suffixes.append(int(camera_id[3:]))
+
+        next_number = (max(numbered_suffixes) + 1) if numbered_suffixes else 1
+
+        for offset in range(amount):
+            number = next_number + offset
+            camera_id = f"cam{number:02d}"
+            while camera_id in existing_ids:
+                number += 1
+                camera_id = f"cam{number:02d}"
+
+            existing_ids.add(camera_id)
+            cameras.append(
+                {
+                    "id": camera_id,
+                    "name": f"{name_prefix} {number:02d}",
+                    "description": generic.get("description"),
+                    "location": location,
+                    "groupIds": [],
+                    "status": status,
+                    "streamAvailable": bool(generic.get("streamAvailable", False)),
+                    "snapshotAvailable": bool(generic.get("snapshotAvailable", True)),
+                    "mediaFolder": media_folder,
+                    "vendorMetadata": {
+                        **(generic.get("vendorMetadata", {}) or {}),
+                        "mediaFolder": media_folder,
+                        "mocker": True,
+                        "source": "genericCameras",
+                        "genericTemplate": media_folder,
+                        "genericInstance": offset + 1,
+                    },
+                }
+            )
+
     groups = []
     for group in data.get("groups", []):
-        if "id" not in group or "name" not in group:
+        if not isinstance(group, dict) or "id" not in group or "name" not in group:
             continue
         groups.append(
             {
@@ -154,41 +251,23 @@ def normalize_config(data: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
+    # Add group memberships onto cameras after generic expansion, so cam31..cam50
+    # group references work.
     group_ids_by_camera: dict[str, list[str]] = {}
     for group in groups:
         for camera_id in group["cameraIds"]:
             group_ids_by_camera.setdefault(camera_id, []).append(group["id"])
 
-    cameras = []
-    for camera in data.get("cameras", []):
-        if "id" not in camera:
-            continue
-        camera_id = str(camera["id"])
-        media_folder = str(camera.get("mediaFolder") or camera_id)
+    normalized_cameras = []
+    for camera in cameras:
+        camera_id = camera["id"]
         camera_group_ids = list(dict.fromkeys(
             [str(x) for x in camera.get("groupIds", [])] + group_ids_by_camera.get(camera_id, [])
         ))
-        cameras.append(
-            {
-                "id": camera_id,
-                "name": str(camera.get("name") or camera_id),
-                "description": camera.get("description"),
-                "location": camera.get("location"),
-                "groupIds": camera_group_ids,
-                "status": camera.get("status", "online"),
-                "streamAvailable": bool(camera.get("streamAvailable", False)),
-                "snapshotAvailable": bool(camera.get("snapshotAvailable", True)),
-                "mediaFolder": media_folder,
-                "vendorMetadata": {
-                    **(camera.get("vendorMetadata", {}) or {}),
-                    "mediaFolder": media_folder,
-                    "mocker": True,
-                },
-            }
-        )
+        camera["groupIds"] = camera_group_ids
+        normalized_cameras.append(camera)
 
-    return {"cameras": cameras, "groups": groups}
-
+    return {"cameras": normalized_cameras, "groups": groups}
 
 def config() -> dict[str, Any]:
     # Reload on every request so changing defaultCameras.json does not require a container rebuild.
