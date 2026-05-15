@@ -33,7 +33,8 @@ services:
     env_file:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
-      CAMBOT_ENV: "${ENVIRONMENT:-dev}"
+      DATABASE_URL: postgresql://cambot:cambot@postgres:5432/cambot
+      CAMERA_SYSTEM_BASE_URL: http://camera-system-mocker-rest-api:8080
     depends_on:
       - postgres
     restart: unless-stopped
