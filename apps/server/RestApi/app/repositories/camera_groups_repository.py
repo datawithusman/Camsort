@@ -4,7 +4,7 @@ import dataclasses
 from typing import Any
 from uuid import uuid4
 
-from backend.db import camera_groups as generated_camera_groups
+from db import camera_groups as generated_camera_groups
 
 from app.db.connection import connect
 
