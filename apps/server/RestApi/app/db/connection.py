@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import os
+from functools import lru_cache
 
-import psycopg
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 
 
 def get_database_url() -> str:
@@ -11,8 +13,50 @@ def get_database_url() -> str:
     if not database_url:
         raise RuntimeError("DATABASE_URL is not set.")
 
+    # SQLAlchemy needs an explicit driver. The generated sqlc Python code uses
+    # SQLAlchemy, and we install/use psycopg v3.
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace(
+            "postgresql://",
+            "postgresql+psycopg://",
+            1,
+        )
+
     return database_url
 
 
+@lru_cache(maxsize=1)
+def get_engine() -> Engine:
+    return create_engine(
+        get_database_url(),
+        pool_pre_ping=True,
+    )
+
+
 def connect():
-    return psycopg.connect(get_database_url())
+    """
+    Returns a SQLAlchemy connection.
+
+    Important:
+      The generated backend/db/*.py files use sqlalchemy.text(...), so they
+      require a SQLAlchemy connection, not a raw psycopg connection.
+    """
+
+    return get_engine().connect()
+
+
+def check_database_connection() -> dict:
+    try:
+        with connect() as conn:
+            value = conn.execute(text("SELECT 1")).scalar_one()
+
+        return {
+            "status": "ok",
+            "result": value,
+        }
+
+    except Exception as exc:
+        return {
+            "status": "error",
+            "error": str(exc),
+        }
