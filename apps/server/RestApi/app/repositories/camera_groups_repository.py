@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 from typing import Any
 from uuid import uuid4
 
@@ -96,6 +97,66 @@ def _record_to_dict(record: Any) -> JsonObject:
     }
 
 
+def _call_generated(method, values: JsonObject):
+    """
+    Calls a generated sqlc method using whatever parameter names it generated.
+
+    sqlc-gen-python may emit names like:
+      arg1, arg2, arg3, arg4
+
+    or names like:
+      id, name, description, camera_ids
+
+    This adapter keeps RestApi handwritten code stable.
+    """
+
+    signature = inspect.signature(method)
+    params = [
+        name
+        for name in signature.parameters.keys()
+        if name != "self"
+    ]
+
+    if not params:
+        return method()
+
+    # Common sqlc fallback names.
+    if all(name.startswith("arg") for name in params):
+        ordered_values = [
+            values.get("id"),
+            values.get("name"),
+            values.get("description"),
+            values.get("camera_ids"),
+        ]
+
+        kwargs = {
+            param_name: ordered_values[index]
+            for index, param_name in enumerate(params)
+            if index < len(ordered_values)
+        }
+
+        return method(**kwargs)
+
+    # Semantic names.
+    kwargs: JsonObject = {}
+
+    aliases = {
+        "id": values.get("id"),
+        "group_id": values.get("id"),
+        "camera_group_id": values.get("id"),
+        "name": values.get("name"),
+        "description": values.get("description"),
+        "camera_ids": values.get("camera_ids"),
+        "cameraIds": values.get("camera_ids"),
+    }
+
+    for param_name in params:
+        if param_name in aliases:
+            kwargs[param_name] = aliases[param_name]
+
+    return method(**kwargs)
+
+
 class CameraGroupsRepository:
     def list_camera_groups(self) -> list[JsonObject]:
         with connect() as conn:
@@ -106,14 +167,14 @@ class CameraGroupsRepository:
     def get_camera_group(self, group_id: str) -> JsonObject | None:
         with connect() as conn:
             querier = _make_querier(conn)
+            method = _get_method(querier, "get_camera_group")
 
             try:
-                row = _get_method(querier, "get_camera_group")(
-                    id=group_id,
-                )
-            except TypeError:
-                row = _get_method(querier, "get_camera_group")(
-                    group_id=group_id,
+                row = _call_generated(
+                    method,
+                    {
+                        "id": group_id,
+                    },
                 )
             except Exception:
                 return None
@@ -133,12 +194,16 @@ class CameraGroupsRepository:
     ) -> JsonObject:
         with connect() as conn:
             querier = _make_querier(conn)
+            method = _get_method(querier, "create_camera_group")
 
-            row = _get_method(querier, "create_camera_group")(
-                id=group_id or _new_id(),
-                name=name,
-                description=description,
-                camera_ids=camera_ids,
+            row = _call_generated(
+                method,
+                {
+                    "id": group_id or _new_id(),
+                    "name": name,
+                    "description": description,
+                    "camera_ids": camera_ids,
+                },
             )
 
             conn.commit()
@@ -153,18 +218,16 @@ class CameraGroupsRepository:
     ) -> JsonObject | None:
         with connect() as conn:
             querier = _make_querier(conn)
+            method = _get_method(querier, "update_camera_group")
 
             try:
-                row = _get_method(querier, "update_camera_group")(
-                    id=group_id,
-                    name=name,
-                    description=description,
-                )
-            except TypeError:
-                row = _get_method(querier, "update_camera_group")(
-                    group_id=group_id,
-                    name=name,
-                    description=description,
+                row = _call_generated(
+                    method,
+                    {
+                        "id": group_id,
+                        "name": name,
+                        "description": description,
+                    },
                 )
             except Exception:
                 return None
@@ -180,16 +243,15 @@ class CameraGroupsRepository:
     ) -> JsonObject | None:
         with connect() as conn:
             querier = _make_querier(conn)
+            method = _get_method(querier, "replace_camera_group_cameras")
 
             try:
-                row = _get_method(querier, "replace_camera_group_cameras")(
-                    id=group_id,
-                    camera_ids=camera_ids,
-                )
-            except TypeError:
-                row = _get_method(querier, "replace_camera_group_cameras")(
-                    group_id=group_id,
-                    camera_ids=camera_ids,
+                row = _call_generated(
+                    method,
+                    {
+                        "id": group_id,
+                        "camera_ids": camera_ids,
+                    },
                 )
             except Exception:
                 return None
@@ -200,14 +262,14 @@ class CameraGroupsRepository:
     def delete_camera_group(self, group_id: str) -> bool:
         with connect() as conn:
             querier = _make_querier(conn)
+            method = _get_method(querier, "delete_camera_group")
 
             try:
-                _get_method(querier, "delete_camera_group")(
-                    id=group_id,
-                )
-            except TypeError:
-                _get_method(querier, "delete_camera_group")(
-                    group_id=group_id,
+                _call_generated(
+                    method,
+                    {
+                        "id": group_id,
+                    },
                 )
             except Exception:
                 return False
