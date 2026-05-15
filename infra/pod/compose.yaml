@@ -88,6 +88,9 @@ services:
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-cambot}"
     volumes:
       - cambot-postgres-data:/var/lib/postgresql/data
+      # Init SQL runs only when /var/lib/postgresql/data is empty/new.
+      - ./../contracts/postgres/schema/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro,Z
+      - ./../contracts/postgres/seed/dev.sql:/docker-entrypoint-initdb.d/002_dev_seed.sql:ro,Z
     restart: unless-stopped
 
 volumes:
