@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import os
 from functools import lru_cache
+from typing import Any
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+
+
+JsonObject = dict[str, Any]
 
 
 def get_database_url() -> str:
@@ -13,8 +17,8 @@ def get_database_url() -> str:
     if not database_url:
         raise RuntimeError("DATABASE_URL is not set.")
 
-    # SQLAlchemy needs an explicit driver. The generated sqlc Python code uses
-    # SQLAlchemy, and we install/use psycopg v3.
+    # The generated sqlc Python code uses SQLAlchemy.
+    # SQLAlchemy should use the psycopg v3 driver explicitly.
     if database_url.startswith("postgresql://"):
         database_url = database_url.replace(
             "postgresql://",
@@ -37,15 +41,14 @@ def connect():
     """
     Returns a SQLAlchemy connection.
 
-    Important:
-      The generated backend/db/*.py files use sqlalchemy.text(...), so they
-      require a SQLAlchemy connection, not a raw psycopg connection.
+    The generated backend/db/*.py files use sqlalchemy.text(...), so they need
+    a SQLAlchemy connection, not a raw psycopg connection.
     """
 
     return get_engine().connect()
 
 
-def check_database_connection() -> dict:
+def check_database_connection() -> JsonObject:
     try:
         with connect() as conn:
             value = conn.execute(text("SELECT 1")).scalar_one()

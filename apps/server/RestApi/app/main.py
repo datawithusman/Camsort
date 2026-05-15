@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 
 from fastapi import FastAPI, HTTPException, Response
 
-from app.db.connection import connect
+from app.db.connection import check_database_connection
 from app.repositories.camera_groups_repository import CameraGroupsRepository
 
 
@@ -68,25 +68,6 @@ def check_camera_system() -> JsonObject:
         }
 
 
-def check_database() -> JsonObject:
-    try:
-        with connect() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT 1")
-                value = cursor.fetchone()[0]
-
-        return {
-            "status": "ok",
-            "result": value,
-        }
-
-    except Exception as exc:
-        return {
-            "status": "error",
-            "error": str(exc),
-        }
-
-
 def not_found(entity: str, entity_id: str) -> None:
     raise HTTPException(
         status_code=404,
@@ -99,7 +80,7 @@ def not_found(entity: str, entity_id: str) -> None:
 
 @app.get("/health")
 def health() -> JsonObject:
-    database = check_database()
+    database = check_database_connection()
     camera_system = check_camera_system()
 
     status = "ok"

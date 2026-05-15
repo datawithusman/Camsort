@@ -17,17 +17,6 @@ def _new_id() -> str:
 
 
 def _make_querier(conn):
-    """
-    Supports the common sqlc-gen-python generated class names.
-
-    Depending on plugin/version/config, the generated module may expose:
-      - Querier
-      - SyncQuerier
-
-    This keeps the handwritten app code insulated from small generator naming
-    differences.
-    """
-
     if hasattr(generated_camera_groups, "Querier"):
         return generated_camera_groups.Querier(conn)
 
@@ -46,45 +35,44 @@ def _get_method(querier, name: str):
     return getattr(querier, name)
 
 
-def _value(obj: Any, name: str, default: Any = None) -> Any:
-    if isinstance(obj, dict):
-        return obj.get(name, default)
+def _to_iso(value: Any) -> str | None:
+    if value is None:
+        return None
 
-    return getattr(obj, name, default)
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+
+    return str(value)
+
+
+def _record_to_raw_dict(record: Any) -> JsonObject:
+    if dataclasses.is_dataclass(record):
+        return dataclasses.asdict(record)
+
+    if isinstance(record, dict):
+        return record
+
+    if hasattr(record, "_asdict"):
+        return record._asdict()
+
+    raw: JsonObject = {}
+
+    for key in dir(record):
+        if key.startswith("_"):
+            continue
+
+        value = getattr(record, key)
+
+        if callable(value):
+            continue
+
+        raw[key] = value
+
+    return raw
 
 
 def _record_to_dict(record: Any) -> JsonObject:
-    """
-    Converts generated sqlc model/dataclass/dict records into API JSON.
-
-    Database shape:
-      id
-      name
-      description
-      camera_ids
-      created_at
-      updated_at
-
-    API shape:
-      id
-      name
-      description
-      cameraIds
-      stats
-      createdAt
-      updatedAt
-    """
-
-    if dataclasses.is_dataclass(record):
-        raw = dataclasses.asdict(record)
-    elif isinstance(record, dict):
-        raw = record
-    else:
-        raw = {
-            key: getattr(record, key)
-            for key in dir(record)
-            if not key.startswith("_") and not callable(getattr(record, key))
-        }
+    raw = _record_to_raw_dict(record)
 
     camera_ids = raw.get("camera_ids") or raw.get("cameraIds") or []
 
@@ -108,16 +96,6 @@ def _record_to_dict(record: Any) -> JsonObject:
     }
 
 
-def _to_iso(value: Any) -> str | None:
-    if value is None:
-        return None
-
-    if hasattr(value, "isoformat"):
-        return value.isoformat()
-
-    return str(value)
-
-
 class CameraGroupsRepository:
     def list_camera_groups(self) -> list[JsonObject]:
         with connect() as conn:
@@ -130,7 +108,13 @@ class CameraGroupsRepository:
             querier = _make_querier(conn)
 
             try:
-                row = _get_method(querier, "get_camera_group")(group_id)
+                row = _get_method(querier, "get_camera_group")(
+                    id=group_id,
+                )
+            except TypeError:
+                row = _get_method(querier, "get_camera_group")(
+                    group_id=group_id,
+                )
             except Exception:
                 return None
 
@@ -151,10 +135,10 @@ class CameraGroupsRepository:
             querier = _make_querier(conn)
 
             row = _get_method(querier, "create_camera_group")(
-                group_id or _new_id(),
-                name,
-                description,
-                camera_ids,
+                id=group_id or _new_id(),
+                name=name,
+                description=description,
+                camera_ids=camera_ids,
             )
 
             conn.commit()
@@ -172,9 +156,15 @@ class CameraGroupsRepository:
 
             try:
                 row = _get_method(querier, "update_camera_group")(
-                    group_id,
-                    name,
-                    description,
+                    id=group_id,
+                    name=name,
+                    description=description,
+                )
+            except TypeError:
+                row = _get_method(querier, "update_camera_group")(
+                    group_id=group_id,
+                    name=name,
+                    description=description,
                 )
             except Exception:
                 return None
@@ -193,8 +183,13 @@ class CameraGroupsRepository:
 
             try:
                 row = _get_method(querier, "replace_camera_group_cameras")(
-                    group_id,
-                    camera_ids,
+                    id=group_id,
+                    camera_ids=camera_ids,
+                )
+            except TypeError:
+                row = _get_method(querier, "replace_camera_group_cameras")(
+                    group_id=group_id,
+                    camera_ids=camera_ids,
                 )
             except Exception:
                 return None
@@ -207,7 +202,13 @@ class CameraGroupsRepository:
             querier = _make_querier(conn)
 
             try:
-                _get_method(querier, "delete_camera_group")(group_id)
+                _get_method(querier, "delete_camera_group")(
+                    id=group_id,
+                )
+            except TypeError:
+                _get_method(querier, "delete_camera_group")(
+                    group_id=group_id,
+                )
             except Exception:
                 return False
 
