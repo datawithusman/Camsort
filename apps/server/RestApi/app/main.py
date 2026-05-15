@@ -1,82 +1,157 @@
+from __future__ import annotations
+
+import os
 from datetime import datetime, timezone
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Literal
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
-app = FastAPI(title="CamBot RestApi")
+from fastapi import FastAPI
 
-ActionStatus = Literal["open", "acknowledged", "resolved", "dismissed"]
 
-class UpdateOperatorActionRequest(BaseModel):
-    status: ActionStatus
-    operatorNote: str | None = None
+app = FastAPI(title="CamBot REST API")
 
-_now = lambda: datetime.now(timezone.utc).isoformat()
+JsonObject = dict[str, Any]
 
-ACTIONS = [
-    {
-        "id": "action-001",
-        "cameraId": "CAM-014",
-        "promptId": "prompt-001",
-        "sortRunId": "run-001",
-        "rank": 1,
-        "score": 0.94,
-        "severity": "high",
-        "classification": "obstructed_view",
-        "reason": "The camera view is mostly blocked by an object near the lens.",
-        "recommendedAction": "Dispatch maintenance to inspect and clear the obstruction.",
-        "operatorPriority": "immediate",
-        "status": "open",
-        "snapshotUrl": "/cam/cameras/CAM-014/snapshot.jpg",
-        "createdAt": _now(),
-        "updatedAt": _now(),
-    },
-    {
-        "id": "action-002",
-        "cameraId": "CAM-006",
-        "promptId": "prompt-001",
-        "sortRunId": "run-001",
-        "rank": 2,
-        "score": 0.82,
-        "severity": "medium",
-        "classification": "dim_lighting",
-        "reason": "The camera view appears dark and may be difficult for operators to interpret.",
-        "recommendedAction": "Check lighting in this area or inspect camera night mode.",
-        "operatorPriority": "urgent",
-        "status": "open",
-        "snapshotUrl": "/cam/cameras/CAM-006/snapshot.jpg",
-        "createdAt": _now(),
-        "updatedAt": _now(),
-    },
-]
 
-@app.get("/api/health")
-def health():
-    return {"status": "ok"}
+def utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-@app.get("/api/operator-actions")
-def list_operator_actions():
-    return {"actions": ACTIONS}
 
-@app.patch("/api/operator-actions/{action_id}")
-def update_operator_action(action_id: str, body: UpdateOperatorActionRequest):
-    for action in ACTIONS:
-        if action["id"] == action_id:
-            action["status"] = body.status
-            action["updatedAt"] = _now()
-            return action
-    raise HTTPException(status_code=404, detail="operator action not found")
+def check_camera_system() -> JsonObject:
+    """
+    Checks whether RestApi can reach the internal camera-system service.
 
-@app.get("/api/stats")
-def stats():
+    This is an internal pod-to-pod call:
+      RestApi -> camera-system-mocker-rest-api
+
+    It does not go through public nginx, so no Basic Auth is needed.
+    """
+
+    base_url = os.environ.get(
+        "CAMERA_SYSTEM_BASE_URL",
+        "http://camera-system-mocker-rest-api:8080",
+    ).rstrip("/")
+
+    url = f"{base_url}/health"
+
+    try:
+        request = Request(
+            url,
+            method="GET",
+            headers={"Accept": "application/json"},
+        )
+
+        with urlopen(request, timeout=5) as response:
+            return {
+                "status": "ok",
+                "url": url,
+                "httpStatus": response.status,
+            }
+
+    except HTTPError as exc:
+        return {
+            "status": "error",
+            "url": url,
+            "httpStatus": exc.code,
+            "error": str(exc),
+        }
+
+    except URLError as exc:
+        return {
+            "status": "error",
+            "url": url,
+            "httpStatus": None,
+            "error": str(exc.reason),
+        }
+
+    except Exception as exc:
+        return {
+            "status": "error",
+            "url": url,
+            "httpStatus": None,
+            "error": str(exc),
+        }
+
+
+def check_database() -> JsonObject:
+    """
+    Checks whether RestApi can reach Postgres.
+
+    Requires:
+      DATABASE_URL
+
+    Example:
+      postgresql://cambot:cambot@postgres:5432/cambot
+
+    This uses psycopg directly for the health check because health checks should
+    stay simple. The actual RestApi routes can use generated DB code/wrappers.
+    """
+
+    database_url = os.environ.get("DATABASE_URL")
+
+    if not database_url:
+        return {
+            "status": "not_configured",
+            "message": "DATABASE_URL is not set.",
+        }
+
+    try:
+        import psycopg
+
+        with psycopg.connect(database_url, connect_timeout=5) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                value = cursor.fetchone()[0]
+
+        return {
+            "status": "ok",
+            "result": value,
+        }
+
+    except Exception as exc:
+        return {
+            "status": "error",
+            "error": str(exc),
+        }
+
+
+@app.get("/health")
+def health() -> JsonObject:
+    database = check_database()
+    camera_system = check_camera_system()
+
+    status = "ok"
+
+    if database["status"] == "error":
+        status = "degraded"
+
+    if camera_system["status"] != "ok":
+        status = "degraded"
+
     return {
-        "operatorActionsOpen": sum(1 for a in ACTIONS if a["status"] == "open"),
-        "operatorActionsAcknowledged": sum(1 for a in ACTIONS if a["status"] == "acknowledged"),
-        "operatorActionsResolved": sum(1 for a in ACTIONS if a["status"] == "resolved"),
-        "operatorActionsDismissed": sum(1 for a in ACTIONS if a["status"] == "dismissed"),
-        "workerRunsToday": 1,
-        "geminiCallsToday": 0,
-        "skippedRunsDueToRateLimitToday": 0,
-        "lastWorkerRunAt": None,
-        "lastSuccessfulWorkerRunAt": None,
+        "status": status,
+        "service": "rest-api",
+        "checkedAt": utc_now_iso(),
+        "database": database,
+        "cameraSystem": camera_system,
+    }
+
+
+@app.get("/camera-system/health")
+def camera_system_health() -> JsonObject:
+    return check_camera_system()
+
+
+@app.get("/debug/routes")
+def debug_routes() -> JsonObject:
+    return {
+        "routes": [
+            {
+                "path": route.path,
+                "name": route.name,
+                "methods": sorted(route.methods or []),
+            }
+            for route in app.routes
+        ]
     }
