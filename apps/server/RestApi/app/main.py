@@ -6,7 +6,10 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Response
+
+from app.db.connection import connect
+from app.repositories.camera_groups_repository import CameraGroupsRepository
 
 
 app = FastAPI(title="CamBot REST API")
@@ -19,15 +22,6 @@ def utc_now_iso() -> str:
 
 
 def check_camera_system() -> JsonObject:
-    """
-    Checks whether RestApi can reach the internal camera-system service.
-
-    This is an internal pod-to-pod call:
-      RestApi -> camera-system-mocker-rest-api
-
-    It does not go through public nginx, so no Basic Auth is needed.
-    """
-
     base_url = os.environ.get(
         "CAMERA_SYSTEM_BASE_URL",
         "http://camera-system-mocker-rest-api:8080",
@@ -75,31 +69,8 @@ def check_camera_system() -> JsonObject:
 
 
 def check_database() -> JsonObject:
-    """
-    Checks whether RestApi can reach Postgres.
-
-    Requires:
-      DATABASE_URL
-
-    Example:
-      postgresql://cambot:cambot@postgres:5432/cambot
-
-    This uses psycopg directly for the health check because health checks should
-    stay simple. The actual RestApi routes can use generated DB code/wrappers.
-    """
-
-    database_url = os.environ.get("DATABASE_URL")
-
-    if not database_url:
-        return {
-            "status": "not_configured",
-            "message": "DATABASE_URL is not set.",
-        }
-
     try:
-        import psycopg
-
-        with psycopg.connect(database_url, connect_timeout=5) as conn:
+        with connect() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT 1")
                 value = cursor.fetchone()[0]
@@ -116,6 +87,16 @@ def check_database() -> JsonObject:
         }
 
 
+def not_found(entity: str, entity_id: str) -> None:
+    raise HTTPException(
+        status_code=404,
+        detail={
+            "error": f"{entity} not found.",
+            "details": entity_id,
+        },
+    )
+
+
 @app.get("/health")
 def health() -> JsonObject:
     database = check_database()
@@ -123,7 +104,7 @@ def health() -> JsonObject:
 
     status = "ok"
 
-    if database["status"] == "error":
+    if database["status"] != "ok":
         status = "degraded"
 
     if camera_system["status"] != "ok":
@@ -141,6 +122,81 @@ def health() -> JsonObject:
 @app.get("/camera-system/health")
 def camera_system_health() -> JsonObject:
     return check_camera_system()
+
+
+@app.get("/camera-groups")
+def list_camera_groups() -> JsonObject:
+    repo = CameraGroupsRepository()
+
+    return {
+        "groups": repo.list_camera_groups(),
+    }
+
+
+@app.post("/camera-groups", status_code=201)
+def create_camera_group(payload: JsonObject) -> JsonObject:
+    repo = CameraGroupsRepository()
+
+    return repo.create_camera_group(
+        group_id=payload.get("id"),
+        name=payload["name"],
+        description=payload.get("description"),
+        camera_ids=payload.get("cameraIds") or [],
+    )
+
+
+@app.get("/camera-groups/{group_id}")
+def get_camera_group(group_id: str) -> JsonObject:
+    repo = CameraGroupsRepository()
+    group = repo.get_camera_group(group_id)
+
+    if group is None:
+        not_found("Camera group", group_id)
+
+    return group
+
+
+@app.put("/camera-groups/{group_id}")
+def update_camera_group(group_id: str, payload: JsonObject) -> JsonObject:
+    repo = CameraGroupsRepository()
+
+    group = repo.update_camera_group(
+        group_id=group_id,
+        name=payload.get("name"),
+        description=payload.get("description"),
+    )
+
+    if group is None:
+        not_found("Camera group", group_id)
+
+    return group
+
+
+@app.put("/camera-groups/{group_id}/cameras")
+def replace_camera_group_cameras(group_id: str, payload: JsonObject) -> JsonObject:
+    repo = CameraGroupsRepository()
+
+    group = repo.replace_camera_group_cameras(
+        group_id=group_id,
+        camera_ids=payload.get("cameraIds") or [],
+    )
+
+    if group is None:
+        not_found("Camera group", group_id)
+
+    return group
+
+
+@app.delete("/camera-groups/{group_id}", status_code=204)
+def delete_camera_group(group_id: str) -> Response:
+    repo = CameraGroupsRepository()
+
+    deleted = repo.delete_camera_group(group_id)
+
+    if not deleted:
+        not_found("Camera group", group_id)
+
+    return Response(status_code=204)
 
 
 @app.get("/debug/routes")
