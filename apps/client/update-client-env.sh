@@ -2,7 +2,7 @@
 set -eu
 
 : "${CAMBOT_API_BASE_PATH:=/api}"
-: "${CAMERA_SYSTEM_API_BASE_PATH:=/camera-system}"
+: "${CAMERA_SYSTEM_API_BASE_PATH:=/api/camera-system}"
 
 mkdir -p /usr/share/nginx/html/config
 

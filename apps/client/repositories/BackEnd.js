@@ -13,7 +13,7 @@
  *
  * Default routes:
  * - CamBot API:        /api
- * - Camera System API: /camera-system
+ * - Camera System API: /api/camera-system
  *
  * Important frame design:
  * - The snapshot endpoint now returns JSON frame metadata, not image bytes.
@@ -42,7 +42,7 @@ export class BackendConfigurationError extends Error {
 
 const state = {
   cambotBaseUrl: "/api",
-  cameraSystemBaseUrl: "/camera-system",
+  cameraSystemBaseUrl: "/api/camera-system",
   basicAuthToken: null,
 };
 
@@ -98,6 +98,31 @@ function resolveCameraSystemUrl(url) {
   }
 
   return joinUrl(state.cameraSystemBaseUrl, value);
+}
+
+
+function isRestApiCameraSystemFacade() {
+  return String(state.cameraSystemBaseUrl || "").replace(/\/+$/, "").endsWith("/api/camera-system");
+}
+
+function cameraSystemStatusPath() {
+  return isRestApiCameraSystemFacade() ? "/status" : "/system/status";
+}
+
+function cameraSystemGroupsPath() {
+  return isRestApiCameraSystemFacade() ? "/source-camera-groups" : "/camera-groups";
+}
+
+function cameraSystemGroupPath(groupId) {
+  return isRestApiCameraSystemFacade()
+    ? `/source-camera-groups/${encodePathPart(groupId)}`
+    : `/camera-groups/${encodePathPart(groupId)}`;
+}
+
+function cameraSystemGroupCamerasPath(groupId) {
+  return isRestApiCameraSystemFacade()
+    ? `/source-camera-groups/${encodePathPart(groupId)}/cameras`
+    : `/camera-groups/${encodePathPart(groupId)}/cameras`;
 }
 
 function normalizeSnapshot(snapshot) {
@@ -274,6 +299,56 @@ export const backend = {
       },
     },
 
+    cameraGroups: {
+      async list() {
+        return await requestFromBase(state.cambotBaseUrl, "/camera-groups");
+      },
+
+      async get(groupId) {
+        return await requestFromBase(
+          state.cambotBaseUrl,
+          `/camera-groups/${encodePathPart(groupId)}`
+        );
+      },
+
+      async create(cameraGroup) {
+        return await requestFromBase(state.cambotBaseUrl, "/camera-groups", {
+          method: "POST",
+          body: cameraGroup,
+        });
+      },
+
+      async update(groupId, cameraGroupPatch) {
+        return await requestFromBase(
+          state.cambotBaseUrl,
+          `/camera-groups/${encodePathPart(groupId)}`,
+          {
+            method: "PUT",
+            body: cameraGroupPatch,
+          }
+        );
+      },
+
+      async replaceCameras(groupId, cameraIds) {
+        return await requestFromBase(
+          state.cambotBaseUrl,
+          `/camera-groups/${encodePathPart(groupId)}/cameras`,
+          {
+            method: "PUT",
+            body: { cameraIds },
+          }
+        );
+      },
+
+      async delete(groupId) {
+        return await requestFromBase(
+          state.cambotBaseUrl,
+          `/camera-groups/${encodePathPart(groupId)}`,
+          { method: "DELETE" }
+        );
+      },
+    },
+
     async get(path) {
       return await requestFromBase(state.cambotBaseUrl, path, {
         method: "GET",
@@ -307,7 +382,7 @@ export const backend = {
     },
 
     async status() {
-      return await requestFromBase(state.cameraSystemBaseUrl, "/system/status");
+      return await requestFromBase(state.cameraSystemBaseUrl, cameraSystemStatusPath());
     },
 
     cameras: {
@@ -507,20 +582,20 @@ export const backend = {
 
     groups: {
       async list() {
-        return await requestFromBase(state.cameraSystemBaseUrl, "/camera-groups");
+        return await requestFromBase(state.cameraSystemBaseUrl, cameraSystemGroupsPath());
       },
 
       async get(groupId) {
         return await requestFromBase(
           state.cameraSystemBaseUrl,
-          `/camera-groups/${encodePathPart(groupId)}`
+          cameraSystemGroupPath(groupId)
         );
       },
 
       async cameras(groupId) {
         return await requestFromBase(
           state.cameraSystemBaseUrl,
-          `/camera-groups/${encodePathPart(groupId)}/cameras`
+          cameraSystemGroupCamerasPath(groupId)
         );
       },
     },
