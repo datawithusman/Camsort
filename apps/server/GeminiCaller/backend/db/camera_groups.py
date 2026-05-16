@@ -11,8 +11,18 @@ from db import models
 
 
 CREATE_CAMERA_GROUP = """-- name: create_camera_group \\:one
-INSERT INTO camera_groups (id, name, description, camera_ids)
-VALUES (COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text), :p2, :p3, COALESCE(:p4, '{}'\\:\\:text[]))
+INSERT INTO camera_groups (
+  id,
+  name,
+  description,
+  camera_ids
+)
+VALUES (
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
+  :p2,
+  :p3,
+  COALESCE(:p4, '{}'\\:\\:text[])
+)
 RETURNING id, name, description, camera_ids, created_at, updated_at
 """
 
@@ -39,16 +49,18 @@ ORDER BY name ASC
 
 REPLACE_CAMERA_GROUP_CAMERAS = """-- name: replace_camera_group_cameras \\:one
 UPDATE camera_groups
-SET camera_ids = COALESCE(:p2, '{}'\\:\\:text[])
-WHERE id = :p1
+SET camera_ids = COALESCE(:p1, '{}'\\:\\:text[])
+WHERE id = :p2
 RETURNING id, name, description, camera_ids, created_at, updated_at
 """
 
 
 UPDATE_CAMERA_GROUP = """-- name: update_camera_group \\:one
 UPDATE camera_groups
-SET name = COALESCE(:p2, name), description = COALESCE(:p3, description)
-WHERE id = :p1
+SET
+  name = COALESCE(:p1, name),
+  description = COALESCE(:p2, description)
+WHERE id = :p3
 RETURNING id, name, description, camera_ids, created_at, updated_at
 """
 
@@ -57,12 +69,12 @@ class Querier:
     def __init__(self, conn: sqlalchemy.engine.Connection):
         self._conn = conn
 
-    def create_camera_group(self, *, dollar_1: Optional[Any], name: str, description: Optional[str], dollar_4: Optional[Any]) -> Optional[models.CameraGroup]:
+    def create_camera_group(self, *, id: Optional[Any], name: str, description: Optional[str], camera_ids: Optional[Any]) -> Optional[models.CameraGroup]:
         row = self._conn.execute(sqlalchemy.text(CREATE_CAMERA_GROUP), {
-            "p1": dollar_1,
+            "p1": id,
             "p2": name,
             "p3": description,
-            "p4": dollar_4,
+            "p4": camera_ids,
         }).first()
         if row is None:
             return None
@@ -103,8 +115,8 @@ class Querier:
                 updated_at=row[5],
             )
 
-    def replace_camera_group_cameras(self, *, id: str, camera_ids: List[str]) -> Optional[models.CameraGroup]:
-        row = self._conn.execute(sqlalchemy.text(REPLACE_CAMERA_GROUP_CAMERAS), {"p1": id, "p2": camera_ids}).first()
+    def replace_camera_group_cameras(self, *, camera_ids: List[str], id: str) -> Optional[models.CameraGroup]:
+        row = self._conn.execute(sqlalchemy.text(REPLACE_CAMERA_GROUP_CAMERAS), {"p1": camera_ids, "p2": id}).first()
         if row is None:
             return None
         return models.CameraGroup(
@@ -116,8 +128,8 @@ class Querier:
             updated_at=row[5],
         )
 
-    def update_camera_group(self, *, id: str, name: str, description: Optional[str]) -> Optional[models.CameraGroup]:
-        row = self._conn.execute(sqlalchemy.text(UPDATE_CAMERA_GROUP), {"p1": id, "p2": name, "p3": description}).first()
+    def update_camera_group(self, *, name: str, description: Optional[str], id: str) -> Optional[models.CameraGroup]:
+        row = self._conn.execute(sqlalchemy.text(UPDATE_CAMERA_GROUP), {"p1": name, "p2": description, "p3": id}).first()
         if row is None:
             return None
         return models.CameraGroup(
@@ -134,12 +146,12 @@ class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
 
-    async def create_camera_group(self, *, dollar_1: Optional[Any], name: str, description: Optional[str], dollar_4: Optional[Any]) -> Optional[models.CameraGroup]:
+    async def create_camera_group(self, *, id: Optional[Any], name: str, description: Optional[str], camera_ids: Optional[Any]) -> Optional[models.CameraGroup]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_CAMERA_GROUP), {
-            "p1": dollar_1,
+            "p1": id,
             "p2": name,
             "p3": description,
-            "p4": dollar_4,
+            "p4": camera_ids,
         })).first()
         if row is None:
             return None
@@ -180,8 +192,8 @@ class AsyncQuerier:
                 updated_at=row[5],
             )
 
-    async def replace_camera_group_cameras(self, *, id: str, camera_ids: List[str]) -> Optional[models.CameraGroup]:
-        row = (await self._conn.execute(sqlalchemy.text(REPLACE_CAMERA_GROUP_CAMERAS), {"p1": id, "p2": camera_ids})).first()
+    async def replace_camera_group_cameras(self, *, camera_ids: List[str], id: str) -> Optional[models.CameraGroup]:
+        row = (await self._conn.execute(sqlalchemy.text(REPLACE_CAMERA_GROUP_CAMERAS), {"p1": camera_ids, "p2": id})).first()
         if row is None:
             return None
         return models.CameraGroup(
@@ -193,8 +205,8 @@ class AsyncQuerier:
             updated_at=row[5],
         )
 
-    async def update_camera_group(self, *, id: str, name: str, description: Optional[str]) -> Optional[models.CameraGroup]:
-        row = (await self._conn.execute(sqlalchemy.text(UPDATE_CAMERA_GROUP), {"p1": id, "p2": name, "p3": description})).first()
+    async def update_camera_group(self, *, name: str, description: Optional[str], id: str) -> Optional[models.CameraGroup]:
+        row = (await self._conn.execute(sqlalchemy.text(UPDATE_CAMERA_GROUP), {"p1": name, "p2": description, "p3": id})).first()
         if row is None:
             return None
         return models.CameraGroup(

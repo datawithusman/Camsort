@@ -126,7 +126,8 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *CameraSystemIntegratorApi.CamerasApi* | [**getIntegratorCamera**](docs/CamerasApi.md#getIntegratorCamera) | **GET** /cameras/{cameraId} | Get camera details from the camera system
 *CameraSystemIntegratorApi.CamerasApi* | [**listIntegratorCameras**](docs/CamerasApi.md#listIntegratorCameras) | **GET** /cameras | List cameras from the camera system
-*CameraSystemIntegratorApi.SnapshotsApi* | [**getCameraSnapshot**](docs/SnapshotsApi.md#getCameraSnapshot) | **GET** /cameras/{cameraId}/snapshot | Get camera snapshot image
+*CameraSystemIntegratorApi.SnapshotsApi* | [**getCameraFrameUrl**](docs/SnapshotsApi.md#getCameraFrameUrl) | **GET** /cameras/{cameraId}/frames/{frameId}/url | Get camera frame URL
+*CameraSystemIntegratorApi.SnapshotsApi* | [**getCameraSnapshot**](docs/SnapshotsApi.md#getCameraSnapshot) | **GET** /cameras/{cameraId}/snapshot | Get camera snapshot frame metadata
 *CameraSystemIntegratorApi.SourceCameraGroupsApi* | [**getIntegratorCameraGroup**](docs/SourceCameraGroupsApi.md#getIntegratorCameraGroup) | **GET** /camera-groups/{groupId} | Get source camera group details
 *CameraSystemIntegratorApi.SourceCameraGroupsApi* | [**listIntegratorCameraGroupCameras**](docs/SourceCameraGroupsApi.md#listIntegratorCameraGroupCameras) | **GET** /camera-groups/{groupId}/cameras | List cameras in a source camera group
 *CameraSystemIntegratorApi.SourceCameraGroupsApi* | [**listIntegratorCameraGroups**](docs/SourceCameraGroupsApi.md#listIntegratorCameraGroups) | **GET** /camera-groups | List source camera groups from the camera system
@@ -136,6 +137,9 @@ Class | Method | HTTP request | Description
 
 ## Documentation for Models
 
+ - [CameraSystemIntegratorApi.GetCameraFrameUrl200Response](docs/GetCameraFrameUrl200Response.md)
+ - [CameraSystemIntegratorApi.GetCameraSnapshot200Response](docs/GetCameraSnapshot200Response.md)
+ - [CameraSystemIntegratorApi.GetCameraSnapshot200ResponseFrame](docs/GetCameraSnapshot200ResponseFrame.md)
  - [CameraSystemIntegratorApi.GetCameraStream200Response](docs/GetCameraStream200Response.md)
  - [CameraSystemIntegratorApi.GetCameraSystemStatus200Response](docs/GetCameraSystemStatus200Response.md)
  - [CameraSystemIntegratorApi.InlineObject](docs/InlineObject.md)

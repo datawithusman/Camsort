@@ -1,11 +1,14 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env sh
+set -eu
 
-: "${CAMBOT_API_BASE_PATH:?missing CAMBOT_API_BASE_PATH}"
-: "${CAMERA_SYSTEM_API_BASE_PATH:?missing CAMERA_SYSTEM_API_BASE_PATH}"
+: "${CAMBOT_API_BASE_PATH:=/api}"
+: "${CAMERA_SYSTEM_API_BASE_PATH:=/camera-system}"
 
-cat > /usr/share/nginx/html/env.js <<EOF
+mkdir -p /usr/share/nginx/html/config
+
+cat > /usr/share/nginx/html/config/env.js <<EOF_JS
 window.CAMBOT_CONFIG = {
   cambotApiBasePath: "${CAMBOT_API_BASE_PATH}",
   cameraSystemApiBasePath: "${CAMERA_SYSTEM_API_BASE_PATH}"
 };
+EOF_JS

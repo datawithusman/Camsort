@@ -13,21 +13,37 @@ from db import models
 
 
 CREATE_USAGE_EVENT = """-- name: create_usage_event \\:one
-INSERT INTO usage_events (id, operation_id, camera_id, camera_group_id, event_type, estimated_cost, token_count)
-VALUES (COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text), :p2, :p3, :p4, :p5, COALESCE(:p6, 0), COALESCE(:p7, 0))
+INSERT INTO usage_events (
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  event_type,
+  estimated_cost,
+  token_count
+)
+VALUES (
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
+  :p2,
+  :p3,
+  :p4,
+  :p5,
+  COALESCE(:p6, 0),
+  COALESCE(:p7, 0)
+)
 RETURNING id, operation_id, camera_id, camera_group_id, event_type, estimated_cost, token_count, created_at
 """
 
 
 @dataclasses.dataclass()
 class CreateUsageEventParams:
-    column_1: Optional[Any]
+    id: Optional[Any]
     operation_id: Optional[str]
     camera_id: Optional[str]
     camera_group_id: Optional[str]
     event_type: str
-    column_6: Optional[Any]
-    column_7: Optional[Any]
+    estimated_cost: Optional[Any]
+    token_count: Optional[Any]
 
 
 GET_USAGE_SUMMARY = """-- name: get_usage_summary \\:one
@@ -98,13 +114,13 @@ class Querier:
 
     def create_usage_event(self, arg: CreateUsageEventParams) -> Optional[models.UsageEvent]:
         row = self._conn.execute(sqlalchemy.text(CREATE_USAGE_EVENT), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.operation_id,
             "p3": arg.camera_id,
             "p4": arg.camera_group_id,
             "p5": arg.event_type,
-            "p6": arg.column_6,
-            "p7": arg.column_7,
+            "p6": arg.estimated_cost,
+            "p7": arg.token_count,
         }).first()
         if row is None:
             return None
@@ -162,13 +178,13 @@ class AsyncQuerier:
 
     async def create_usage_event(self, arg: CreateUsageEventParams) -> Optional[models.UsageEvent]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_USAGE_EVENT), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.operation_id,
             "p3": arg.camera_id,
             "p4": arg.camera_group_id,
             "p5": arg.event_type,
-            "p6": arg.column_6,
-            "p7": arg.column_7,
+            "p6": arg.estimated_cost,
+            "p7": arg.token_count,
         })).first()
         if row is None:
             return None

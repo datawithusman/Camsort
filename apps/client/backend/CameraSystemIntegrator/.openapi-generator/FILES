@@ -4,6 +4,9 @@
 .travis.yml
 README.md
 docs/CamerasApi.md
+docs/GetCameraFrameUrl200Response.md
+docs/GetCameraSnapshot200Response.md
+docs/GetCameraSnapshot200ResponseFrame.md
 docs/GetCameraStream200Response.md
 docs/GetCameraSystemStatus200Response.md
 docs/InlineObject.md
@@ -25,6 +28,9 @@ src/api/SourceCameraGroupsApi.js
 src/api/StreamsApi.js
 src/api/SystemApi.js
 src/index.js
+src/model/GetCameraFrameUrl200Response.js
+src/model/GetCameraSnapshot200Response.js
+src/model/GetCameraSnapshot200ResponseFrame.js
 src/model/GetCameraStream200Response.js
 src/model/GetCameraSystemStatus200Response.js
 src/model/InlineObject.js
@@ -37,6 +43,9 @@ test/api/SnapshotsApi.spec.js
 test/api/SourceCameraGroupsApi.spec.js
 test/api/StreamsApi.spec.js
 test/api/SystemApi.spec.js
+test/model/GetCameraFrameUrl200Response.spec.js
+test/model/GetCameraSnapshot200Response.spec.js
+test/model/GetCameraSnapshot200ResponseFrame.spec.js
 test/model/GetCameraStream200Response.spec.js
 test/model/GetCameraSystemStatus200Response.spec.js
 test/model/InlineObject.spec.js

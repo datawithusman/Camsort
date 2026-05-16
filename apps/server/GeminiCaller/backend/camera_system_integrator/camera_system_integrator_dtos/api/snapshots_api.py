@@ -16,8 +16,9 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import StrictBytes, StrictStr
-from typing import Tuple, Union
+from pydantic import StrictStr
+from camera_system_integrator_dtos.models.get_camera_frame_url200_response import GetCameraFrameUrl200Response
+from camera_system_integrator_dtos.models.get_camera_snapshot200_response import GetCameraSnapshot200Response
 
 from camera_system_integrator_dtos.api_client import ApiClient, RequestSerialized
 from camera_system_integrator_dtos.api_response import ApiResponse
@@ -38,6 +39,294 @@ class SnapshotsApi:
 
 
     @validate_call
+    def get_camera_frame_url(
+        self,
+        camera_id: StrictStr,
+        frame_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> GetCameraFrameUrl200Response:
+        """Get camera frame URL
+
+        Returns a URL link for a previously returned camera frame. The adapter may return an internal API URL, a CDN URL, or a signed vendor URL depending on the backing camera system.
+
+        :param camera_id: (required)
+        :type camera_id: str
+        :param frame_id: (required)
+        :type frame_id: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._get_camera_frame_url_serialize(
+            camera_id=camera_id,
+            frame_id=frame_id,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "GetCameraFrameUrl200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        ).data
+
+
+    @validate_call
+    def get_camera_frame_url_with_http_info(
+        self,
+        camera_id: StrictStr,
+        frame_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> ApiResponse[GetCameraFrameUrl200Response]:
+        """Get camera frame URL
+
+        Returns a URL link for a previously returned camera frame. The adapter may return an internal API URL, a CDN URL, or a signed vendor URL depending on the backing camera system.
+
+        :param camera_id: (required)
+        :type camera_id: str
+        :param frame_id: (required)
+        :type frame_id: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._get_camera_frame_url_serialize(
+            camera_id=camera_id,
+            frame_id=frame_id,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "GetCameraFrameUrl200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        response_data.read()
+        return self.api_client.response_deserialize(
+            response_data=response_data,
+            response_types_map=_response_types_map,
+        )
+
+
+    @validate_call
+    def get_camera_frame_url_without_preload_content(
+        self,
+        camera_id: StrictStr,
+        frame_id: StrictStr,
+        _request_timeout: Union[
+            None,
+            Annotated[StrictFloat, Field(gt=0)],
+            Tuple[
+                Annotated[StrictFloat, Field(gt=0)],
+                Annotated[StrictFloat, Field(gt=0)]
+            ]
+        ] = None,
+        _request_auth: Optional[Dict[StrictStr, Any]] = None,
+        _content_type: Optional[StrictStr] = None,
+        _headers: Optional[Dict[StrictStr, Any]] = None,
+        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
+    ) -> RESTResponseType:
+        """Get camera frame URL
+
+        Returns a URL link for a previously returned camera frame. The adapter may return an internal API URL, a CDN URL, or a signed vendor URL depending on the backing camera system.
+
+        :param camera_id: (required)
+        :type camera_id: str
+        :param frame_id: (required)
+        :type frame_id: str
+        :param _request_timeout: timeout setting for this request. If one
+                                 number provided, it will be total request
+                                 timeout. It can also be a pair (tuple) of
+                                 (connection, read) timeouts.
+        :type _request_timeout: int, tuple(int, int), optional
+        :param _request_auth: set to override the auth_settings for an a single
+                              request; this effectively ignores the
+                              authentication in the spec for a single request.
+        :type _request_auth: dict, optional
+        :param _content_type: force content-type for the request.
+        :type _content_type: str, Optional
+        :param _headers: set to override the headers for a single
+                         request; this effectively ignores the headers
+                         in the spec for a single request.
+        :type _headers: dict, optional
+        :param _host_index: set to override the host_index for a single
+                            request; this effectively ignores the host_index
+                            in the spec for a single request.
+        :type _host_index: int, optional
+        :return: Returns the result object.
+        """ # noqa: E501
+
+        _param = self._get_camera_frame_url_serialize(
+            camera_id=camera_id,
+            frame_id=frame_id,
+            _request_auth=_request_auth,
+            _content_type=_content_type,
+            _headers=_headers,
+            _host_index=_host_index
+        )
+
+        _response_types_map: Dict[str, Optional[str]] = {
+            '200': "GetCameraFrameUrl200Response",
+            '400': "InlineObject",
+            '401': "InlineObject",
+            '404': "InlineObject",
+            '500': "InlineObject",
+        }
+        response_data = self.api_client.call_api(
+            *_param,
+            _request_timeout=_request_timeout
+        )
+        return response_data.response
+
+
+    def _get_camera_frame_url_serialize(
+        self,
+        camera_id,
+        frame_id,
+        _request_auth,
+        _content_type,
+        _headers,
+        _host_index,
+    ) -> RequestSerialized:
+
+        _host = None
+
+        _collection_formats: Dict[str, str] = {
+        }
+
+        _path_params: Dict[str, str] = {}
+        _query_params: List[Tuple[str, str]] = []
+        _header_params: Dict[str, Optional[str]] = _headers or {}
+        _form_params: List[Tuple[str, str]] = []
+        _files: Dict[
+            str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
+        ] = {}
+        _body_params: Optional[bytes] = None
+
+        # process the path parameters
+        if camera_id is not None:
+            _path_params['cameraId'] = camera_id
+        if frame_id is not None:
+            _path_params['frameId'] = frame_id
+        # process the query parameters
+        # process the header parameters
+        # process the form parameters
+        # process the body parameter
+
+
+        # set the HTTP header `Accept`
+        if 'Accept' not in _header_params:
+            _header_params['Accept'] = self.api_client.select_header_accept(
+                [
+                    'application/json'
+                ]
+            )
+
+
+        # authentication setting
+        _auth_settings: List[str] = [
+            'basicAuth'
+        ]
+
+        return self.api_client.param_serialize(
+            method='GET',
+            resource_path='/cameras/{cameraId}/frames/{frameId}/url',
+            path_params=_path_params,
+            query_params=_query_params,
+            header_params=_header_params,
+            body=_body_params,
+            post_params=_form_params,
+            files=_files,
+            auth_settings=_auth_settings,
+            collection_formats=_collection_formats,
+            _host=_host,
+            _request_auth=_request_auth
+        )
+
+
+
+
+    @validate_call
     def get_camera_snapshot(
         self,
         camera_id: StrictStr,
@@ -53,10 +342,10 @@ class SnapshotsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> bytearray:
-        """Get camera snapshot image
+    ) -> GetCameraSnapshot200Response:
+        """Get camera snapshot frame metadata
 
-        Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+        Returns metadata for the current or next available camera frame, including a URL that can be used to retrieve/view the frame. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
 
         :param camera_id: (required)
         :type camera_id: str
@@ -91,7 +380,7 @@ class SnapshotsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "bytearray",
+            '200': "GetCameraSnapshot200Response",
             '400': "InlineObject",
             '401': "InlineObject",
             '404': "InlineObject",
@@ -124,10 +413,10 @@ class SnapshotsApi:
         _content_type: Optional[StrictStr] = None,
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[bytearray]:
-        """Get camera snapshot image
+    ) -> ApiResponse[GetCameraSnapshot200Response]:
+        """Get camera snapshot frame metadata
 
-        Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+        Returns metadata for the current or next available camera frame, including a URL that can be used to retrieve/view the frame. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
 
         :param camera_id: (required)
         :type camera_id: str
@@ -162,7 +451,7 @@ class SnapshotsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "bytearray",
+            '200': "GetCameraSnapshot200Response",
             '400': "InlineObject",
             '401': "InlineObject",
             '404': "InlineObject",
@@ -196,9 +485,9 @@ class SnapshotsApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """Get camera snapshot image
+        """Get camera snapshot frame metadata
 
-        Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+        Returns metadata for the current or next available camera frame, including a URL that can be used to retrieve/view the frame. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
 
         :param camera_id: (required)
         :type camera_id: str
@@ -233,7 +522,7 @@ class SnapshotsApi:
         )
 
         _response_types_map: Dict[str, Optional[str]] = {
-            '200': "bytearray",
+            '200': "GetCameraSnapshot200Response",
             '400': "InlineObject",
             '401': "InlineObject",
             '404': "InlineObject",
@@ -282,9 +571,6 @@ class SnapshotsApi:
         if 'Accept' not in _header_params:
             _header_params['Accept'] = self.api_client.select_header_accept(
                 [
-                    'image/jpeg', 
-                    'image/png', 
-                    'image/webp', 
                     'application/json'
                 ]
             )

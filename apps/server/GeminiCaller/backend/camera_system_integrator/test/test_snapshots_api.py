@@ -26,10 +26,17 @@ class TestSnapshotsApi(unittest.TestCase):
     def tearDown(self) -> None:
         pass
 
+    def test_get_camera_frame_url(self) -> None:
+        """Test case for get_camera_frame_url
+
+        Get camera frame URL
+        """
+        pass
+
     def test_get_camera_snapshot(self) -> None:
         """Test case for get_camera_snapshot
 
-        Get camera snapshot image
+        Get camera snapshot frame metadata
         """
         pass
 

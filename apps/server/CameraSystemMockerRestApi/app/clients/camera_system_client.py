@@ -9,6 +9,8 @@ from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 from app.dtos.camera_system import (
+    CameraFrameUrlResponseDto,
+    CameraSnapshotDto,
     CameraStreamDto,
     CameraSystemCameraDto,
     CameraSystemCameraListDto,
@@ -104,15 +106,11 @@ class CameraSystemClient:
     under backend/, because backend/ is generated code and may be recreated.
 
     Snapshot model:
-      The camera-system API exposes one simple snapshot endpoint:
+      GET /cameras/{cameraId}/snapshot returns metadata for the current frame,
+      including a URL pointing at the actual image resource.
 
-        GET /cameras/{cameraId}/snapshot
-
-      That endpoint returns image bytes directly.
-
-      There is no CameraSnapshot metadata DTO.
-      There is no /snapshot/image endpoint.
-      Historical snapshot retrieval is intentionally not implemented.
+      GET /cameras/{cameraId}/frames/{frameId}/url resolves a stored frameId
+      back to its URL.
     """
 
     def __init__(self, config: CameraSystemClientConfig) -> None:
@@ -302,28 +300,56 @@ class CameraSystemClient:
         )
         return CameraSystemCameraDto.from_json(data)
 
-    def get_snapshot_image(self, camera_id: str) -> bytes:
+    def get_snapshot(self, camera_id: str) -> CameraSnapshotDto:
         """
         Calls GET /cameras/{cameraId}/snapshot.
 
-        Returns image bytes directly.
+        Returns snapshot metadata including frame.url.
+        """
+        data = self._request_json(
+            "GET",
+            f"/cameras/{quote(camera_id, safe='')}/snapshot",
+        )
+        return CameraSnapshotDto.from_json(data)
 
-        This is the primary snapshot method.
+    def request_snapshot(self, camera_id: str) -> CameraSnapshotDto:
+        """
+        Backward-compatible alias for get_snapshot().
+        """
+        return self.get_snapshot(camera_id)
+
+    def get_frame_url(self, camera_id: str, frame_id: str) -> CameraFrameUrlResponseDto:
+        """
+        Calls GET /cameras/{cameraId}/frames/{frameId}/url.
+        """
+        data = self._request_json(
+            "GET",
+            (
+                f"/cameras/{quote(camera_id, safe='')}"
+                f"/frames/{quote(frame_id, safe='')}/url"
+            ),
+        )
+        return CameraFrameUrlResponseDto.from_json(data)
+
+    def get_frame_image(self, camera_id: str, frame_id: str) -> bytes:
+        """
+        Calls GET /cameras/{cameraId}/frames/{frameId}/image.
         """
         return self._request_bytes(
             "GET",
-            f"/cameras/{quote(camera_id, safe='')}/snapshot",
+            (
+                f"/cameras/{quote(camera_id, safe='')}"
+                f"/frames/{quote(frame_id, safe='')}/image"
+            ),
             accept="image/*",
         )
 
-    def request_snapshot(self, camera_id: str) -> bytes:
+    def get_snapshot_image(self, camera_id: str) -> bytes:
         """
-        Backward-compatible alias for get_snapshot_image().
-
-        Older code may call request_snapshot(), but the contract now returns
-        image bytes directly rather than snapshot metadata.
+        Compatibility helper: requests snapshot metadata, then fetches frame bytes.
         """
-        return self.get_snapshot_image(camera_id)
+        snapshot = self.get_snapshot(camera_id)
+        return self.get_frame_image(camera_id, snapshot.frame.frame_id)
 
     def get_stream(self, camera_id: str) -> CameraStreamDto:
         """

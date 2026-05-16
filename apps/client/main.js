@@ -1,86 +1,60 @@
-import {
-  normalizeOperatorActionsResponse,
-  normalizeStats,
-} from "./dtos/camBotDtos.js";
+import backend from "./repositories/BackEnd.js";
 
-async function fetchJson(url, options = {}) {
-  const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return res.json();
-}
+/**
+ * Static-client bootstrap.
+ *
+ * The large dashboard demo in index.html is still rendered by the inline script.
+ * This module is responsible for wiring the reusable repository/API wrapper into the
+ * page and runtime config without importing generated OpenAPI DTOs directly.
+ */
 
-async function updateAction(actionId, status) {
-  await fetchJson(`/api/operator-actions/${actionId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
-  });
-  await loadDashboard();
-}
+const runtimeConfig = window.CAMBOT_CONFIG || {};
 
-function renderStats(raw) {
-  const stats = normalizeStats(raw);
-  document.getElementById("stats").textContent =
-    `Open: ${stats.operatorActionsOpen} · ` +
-    `Acknowledged: ${stats.operatorActionsAcknowledged} · ` +
-    `Resolved: ${stats.operatorActionsResolved} · ` +
-    `Gemini calls today: ${stats.geminiCallsToday}`;
-}
+backend.configure({
+  cambotBaseUrl: runtimeConfig.cambotBaseUrl || runtimeConfig.cambotApiBasePath || "/api",
+  cameraSystemBaseUrl:
+    runtimeConfig.cameraSystemBaseUrl ||
+    runtimeConfig.cameraSystemApiBasePath ||
+    "/camera-system",
+});
 
-function renderActions(raw) {
-  const { actions } = normalizeOperatorActionsResponse(raw);
-  const container = document.getElementById("actions");
+window.CamBotBackend = backend;
 
-  if (actions.length === 0) {
-    container.textContent = "No operator actions yet.";
+function installBasicAuthBridge() {
+  const originalDoLogin = window.doLogin;
+
+  if (typeof originalDoLogin !== "function") {
     return;
   }
 
-  container.innerHTML = "";
+  window.doLogin = function doLoginWithBackendAuth() {
+    const username = document.getElementById("login-user")?.value?.trim() || "";
+    const password = document.getElementById("login-pass")?.value || "";
 
-  for (const action of actions) {
-    const card = document.createElement("article");
-    card.className = "card";
-    card.innerHTML = `
-      <img src="${action.snapshotUrl || ""}" alt="${action.cameraId}" />
-      <h3>${action.cameraId}</h3>
-      <p>
-        <span class="badge">${action.severity}</span>
-        <span class="badge">score ${Math.round(action.score * 100)}</span>
-        <span class="badge">${action.status}</span>
-      </p>
-      <p><strong>Classification:</strong> ${action.classification}</p>
-      <p><strong>Reason:</strong> ${action.reason}</p>
-      <p><strong>Recommended action:</strong> ${action.recommendedAction}</p>
-      <div>
-        <button data-status="acknowledged">Acknowledge</button>
-        <button data-status="resolved">Resolve</button>
-        <button data-status="dismissed">Dismiss</button>
-      </div>
-    `;
-
-    for (const button of card.querySelectorAll("button")) {
-      button.addEventListener("click", () => updateAction(action.id, button.dataset.status));
+    // The visible demo still allows an empty password for mock/local mode.
+    // Only configure Basic Auth when both values are present.
+    if (username && password) {
+      backend.setBasicAuth(username, password);
     }
 
-    container.appendChild(card);
-  }
+    return originalDoLogin.apply(this, arguments);
+  };
 }
 
-async function loadDashboard() {
-  try {
-    const [stats, actions] = await Promise.all([
-      fetchJson("/api/stats"),
-      fetchJson("/api/operator-actions"),
-    ]);
-    renderStats(stats);
-    renderActions(actions);
-  } catch (err) {
-    document.getElementById("actions").textContent = `Failed to load dashboard: ${err.message}`;
+function installLogoutBridge() {
+  const originalDoLogout = window.doLogout;
+
+  if (typeof originalDoLogout !== "function") {
+    return;
   }
+
+  window.doLogout = function doLogoutWithBackendCleanup() {
+    backend.clearBasicAuth();
+    return originalDoLogout.apply(this, arguments);
+  };
 }
 
-document.getElementById("refreshBtn").addEventListener("click", loadDashboard);
-loadDashboard();
+installBasicAuthBridge();
+installLogoutBridge();
+
+export { backend };

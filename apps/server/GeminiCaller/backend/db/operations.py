@@ -14,14 +14,38 @@ from db import models
 
 CREATE_OPERATION = """-- name: create_operation \\:one
 INSERT INTO operations (
-  id, operation_type, status, target_type, target_camera_id, target_camera_group_id,
-  saved_prompt_id, temporary_prompt_text, allowed, restriction_reason,
-  estimated_camera_count, estimated_prompt_count, estimated_token_count,
-  estimated_cost, max_estimated_cost
+  id,
+  operation_type,
+  status,
+  target_type,
+  target_camera_id,
+  target_camera_group_id,
+  saved_prompt_id,
+  temporary_prompt_text,
+  allowed,
+  restriction_reason,
+  estimated_camera_count,
+  estimated_prompt_count,
+  estimated_token_count,
+  estimated_cost,
+  max_estimated_cost
 )
 VALUES (
-  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text), :p2, COALESCE(:p3, 'pending'), :p4, :p5, :p6,
-  :p7, :p8, :p9, :p10, COALESCE(:p11, 0), COALESCE(:p12, 0), COALESCE(:p13, 0), COALESCE(:p14, 0), :p15
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
+  :p2,
+  COALESCE(:p3, 'pending'),
+  :p4,
+  :p5,
+  :p6,
+  :p7,
+  :p8,
+  :p9,
+  :p10,
+  COALESCE(:p11, 0),
+  COALESCE(:p12, 0),
+  COALESCE(:p13, 0),
+  COALESCE(:p14, 0),
+  :p15
 )
 RETURNING id, operation_type, status, target_type, target_camera_id, target_camera_group_id, saved_prompt_id, temporary_prompt_text, allowed, restriction_reason, estimated_camera_count, estimated_prompt_count, estimated_token_count, estimated_cost, max_estimated_cost, error_message, result_json, created_at, started_at, completed_at
 """
@@ -29,9 +53,9 @@ RETURNING id, operation_type, status, target_type, target_camera_id, target_came
 
 @dataclasses.dataclass()
 class CreateOperationParams:
-    column_1: Optional[Any]
+    id: Optional[Any]
     operation_type: str
-    column_3: Optional[Any]
+    status: Optional[Any]
     target_type: str
     target_camera_id: Optional[str]
     target_camera_group_id: Optional[str]
@@ -39,10 +63,10 @@ class CreateOperationParams:
     temporary_prompt_text: Optional[str]
     allowed: Optional[bool]
     restriction_reason: Optional[str]
-    column_11: Optional[Any]
-    column_12: Optional[Any]
-    column_13: Optional[Any]
-    column_14: Optional[Any]
+    estimated_camera_count: Optional[Any]
+    estimated_prompt_count: Optional[Any]
+    estimated_token_count: Optional[Any]
+    estimated_cost: Optional[Any]
     max_estimated_cost: Optional[decimal.Decimal]
 
 
@@ -55,22 +79,28 @@ WHERE id = :p1
 LIST_OPERATIONS = """-- name: list_operations \\:many
 SELECT id, operation_type, status, target_type, target_camera_id, target_camera_group_id, saved_prompt_id, temporary_prompt_text, allowed, restriction_reason, estimated_camera_count, estimated_prompt_count, estimated_token_count, estimated_cost, max_estimated_cost, error_message, result_json, created_at, started_at, completed_at FROM operations
 ORDER BY created_at DESC
-LIMIT :p1 OFFSET :p2
+LIMIT :p2 OFFSET :p1
 """
 
 
 MARK_OPERATION_COMPLETED = """-- name: mark_operation_completed \\:one
 UPDATE operations
-SET status = 'completed', result_json = COALESCE(:p2, '{}'\\:\\:jsonb), completed_at = now()
-WHERE id = :p1
+SET
+  status = 'completed',
+  result_json = COALESCE(:p1, '{}'\\:\\:jsonb),
+  completed_at = now()
+WHERE id = :p2
 RETURNING id, operation_type, status, target_type, target_camera_id, target_camera_group_id, saved_prompt_id, temporary_prompt_text, allowed, restriction_reason, estimated_camera_count, estimated_prompt_count, estimated_token_count, estimated_cost, max_estimated_cost, error_message, result_json, created_at, started_at, completed_at
 """
 
 
 MARK_OPERATION_FAILED = """-- name: mark_operation_failed \\:one
 UPDATE operations
-SET status = 'failed', error_message = :p2, completed_at = now()
-WHERE id = :p1
+SET
+  status = 'failed',
+  error_message = :p1,
+  completed_at = now()
+WHERE id = :p2
 RETURNING id, operation_type, status, target_type, target_camera_id, target_camera_group_id, saved_prompt_id, temporary_prompt_text, allowed, restriction_reason, estimated_camera_count, estimated_prompt_count, estimated_token_count, estimated_cost, max_estimated_cost, error_message, result_json, created_at, started_at, completed_at
 """
 
@@ -89,9 +119,9 @@ class Querier:
 
     def create_operation(self, arg: CreateOperationParams) -> Optional[models.Operation]:
         row = self._conn.execute(sqlalchemy.text(CREATE_OPERATION), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.operation_type,
-            "p3": arg.column_3,
+            "p3": arg.status,
             "p4": arg.target_type,
             "p5": arg.target_camera_id,
             "p6": arg.target_camera_group_id,
@@ -99,10 +129,10 @@ class Querier:
             "p8": arg.temporary_prompt_text,
             "p9": arg.allowed,
             "p10": arg.restriction_reason,
-            "p11": arg.column_11,
-            "p12": arg.column_12,
-            "p13": arg.column_13,
-            "p14": arg.column_14,
+            "p11": arg.estimated_camera_count,
+            "p12": arg.estimated_prompt_count,
+            "p13": arg.estimated_token_count,
+            "p14": arg.estimated_cost,
             "p15": arg.max_estimated_cost,
         }).first()
         if row is None:
@@ -157,8 +187,8 @@ class Querier:
             completed_at=row[19],
         )
 
-    def list_operations(self, *, limit: int, offset: int) -> Iterator[models.Operation]:
-        result = self._conn.execute(sqlalchemy.text(LIST_OPERATIONS), {"p1": limit, "p2": offset})
+    def list_operations(self, *, offset_count: int, limit_count: int) -> Iterator[models.Operation]:
+        result = self._conn.execute(sqlalchemy.text(LIST_OPERATIONS), {"p1": offset_count, "p2": limit_count})
         for row in result:
             yield models.Operation(
                 id=row[0],
@@ -183,8 +213,8 @@ class Querier:
                 completed_at=row[19],
             )
 
-    def mark_operation_completed(self, *, id: str, result_json: Any) -> Optional[models.Operation]:
-        row = self._conn.execute(sqlalchemy.text(MARK_OPERATION_COMPLETED), {"p1": id, "p2": result_json}).first()
+    def mark_operation_completed(self, *, result_json: Any, id: str) -> Optional[models.Operation]:
+        row = self._conn.execute(sqlalchemy.text(MARK_OPERATION_COMPLETED), {"p1": result_json, "p2": id}).first()
         if row is None:
             return None
         return models.Operation(
@@ -210,8 +240,8 @@ class Querier:
             completed_at=row[19],
         )
 
-    def mark_operation_failed(self, *, id: str, error_message: Optional[str]) -> Optional[models.Operation]:
-        row = self._conn.execute(sqlalchemy.text(MARK_OPERATION_FAILED), {"p1": id, "p2": error_message}).first()
+    def mark_operation_failed(self, *, error_message: Optional[str], id: str) -> Optional[models.Operation]:
+        row = self._conn.execute(sqlalchemy.text(MARK_OPERATION_FAILED), {"p1": error_message, "p2": id}).first()
         if row is None:
             return None
         return models.Operation(
@@ -271,9 +301,9 @@ class AsyncQuerier:
 
     async def create_operation(self, arg: CreateOperationParams) -> Optional[models.Operation]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATION), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.operation_type,
-            "p3": arg.column_3,
+            "p3": arg.status,
             "p4": arg.target_type,
             "p5": arg.target_camera_id,
             "p6": arg.target_camera_group_id,
@@ -281,10 +311,10 @@ class AsyncQuerier:
             "p8": arg.temporary_prompt_text,
             "p9": arg.allowed,
             "p10": arg.restriction_reason,
-            "p11": arg.column_11,
-            "p12": arg.column_12,
-            "p13": arg.column_13,
-            "p14": arg.column_14,
+            "p11": arg.estimated_camera_count,
+            "p12": arg.estimated_prompt_count,
+            "p13": arg.estimated_token_count,
+            "p14": arg.estimated_cost,
             "p15": arg.max_estimated_cost,
         })).first()
         if row is None:
@@ -339,8 +369,8 @@ class AsyncQuerier:
             completed_at=row[19],
         )
 
-    async def list_operations(self, *, limit: int, offset: int) -> AsyncIterator[models.Operation]:
-        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATIONS), {"p1": limit, "p2": offset})
+    async def list_operations(self, *, offset_count: int, limit_count: int) -> AsyncIterator[models.Operation]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATIONS), {"p1": offset_count, "p2": limit_count})
         async for row in result:
             yield models.Operation(
                 id=row[0],
@@ -365,8 +395,8 @@ class AsyncQuerier:
                 completed_at=row[19],
             )
 
-    async def mark_operation_completed(self, *, id: str, result_json: Any) -> Optional[models.Operation]:
-        row = (await self._conn.execute(sqlalchemy.text(MARK_OPERATION_COMPLETED), {"p1": id, "p2": result_json})).first()
+    async def mark_operation_completed(self, *, result_json: Any, id: str) -> Optional[models.Operation]:
+        row = (await self._conn.execute(sqlalchemy.text(MARK_OPERATION_COMPLETED), {"p1": result_json, "p2": id})).first()
         if row is None:
             return None
         return models.Operation(
@@ -392,8 +422,8 @@ class AsyncQuerier:
             completed_at=row[19],
         )
 
-    async def mark_operation_failed(self, *, id: str, error_message: Optional[str]) -> Optional[models.Operation]:
-        row = (await self._conn.execute(sqlalchemy.text(MARK_OPERATION_FAILED), {"p1": id, "p2": error_message})).first()
+    async def mark_operation_failed(self, *, error_message: Optional[str], id: str) -> Optional[models.Operation]:
+        row = (await self._conn.execute(sqlalchemy.text(MARK_OPERATION_FAILED), {"p1": error_message, "p2": id})).first()
         if row is None:
             return None
         return models.Operation(

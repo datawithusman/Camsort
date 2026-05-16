@@ -9,8 +9,12 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from urllib.parse import quote
 
 from app.dtos.camera_system import (
+    CameraFrameMetadataDto,
+    CameraFrameUrlResponseDto,
+    CameraSnapshotDto,
     CameraStreamDto,
     CameraSystemCameraDto,
     CameraSystemCameraListDto,
@@ -34,10 +38,14 @@ CONFIG_PATH = Path(
     )
 )
 
+PUBLIC_BASE_PATH = os.environ.get("CAMERA_SYSTEM_PUBLIC_BASE_PATH", "/camera-system").rstrip("/")
+
 state_lock = threading.Lock()
 
 # Per-camera cursor used to advance mock snapshots.
 camera_cursors: dict[str, int] = {}
+# Per-camera monotonically increasing sequence number for generated snapshot/frame references.
+camera_sequences: dict[str, int] = {}
 
 JsonObject = dict[str, Any]
 
@@ -461,14 +469,72 @@ def get_camera(camera_id: str) -> JsonObject:
     return camera_to_dto(camera).to_json()
 
 
+def frame_id_for(camera_id: str, sequence_number: int, frame_index: int) -> str:
+    safe_camera_id = quote(camera_id, safe="")
+    return f"frame-{safe_camera_id}-{sequence_number:08d}-idx-{frame_index:06d}"
+
+
+def frame_url_for(camera_id: str, frame_id: str) -> str:
+    encoded_camera_id = quote(camera_id, safe="")
+    encoded_frame_id = quote(frame_id, safe="")
+    return (
+        f"{PUBLIC_BASE_PATH}/cameras/{encoded_camera_id}"
+        f"/frames/{encoded_frame_id}/image"
+    )
+
+
+def frame_index_from_frame_id(frame_id: str) -> int | None:
+    marker = "-idx-"
+    if marker not in frame_id:
+        return None
+
+    suffix = frame_id.rsplit(marker, 1)[1]
+    if not suffix.isdigit():
+        return None
+
+    return int(suffix)
+
+
+def get_frame_path_or_404(camera_id: str, frame_id: str) -> Path:
+    camera = get_camera_or_404(camera_id)
+    frames = list_image_files(camera)
+
+    if not frames:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "No snapshot frames found for camera.",
+                "details": {
+                    "cameraId": camera_id,
+                    "mediaFolder": camera.get("mediaFolder") or camera_id,
+                },
+            },
+        )
+
+    frame_index = frame_index_from_frame_id(frame_id)
+
+    if frame_index is None or frame_index < 0 or frame_index >= len(frames):
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Frame not found.",
+                "details": {
+                    "cameraId": camera_id,
+                    "frameId": frame_id,
+                },
+            },
+        )
+
+    return frames[frame_index]
+
+
 @app.get("/cameras/{camera_id}/snapshot")
-def get_snapshot_image(camera_id: str) -> FileResponse:
+def get_snapshot(camera_id: str) -> JsonObject:
     """
-    Returns the next/current snapshot image for this camera.
+    Returns metadata for the next/current snapshot frame.
 
-    This endpoint returns the image blob directly.
-
-    Historical snapshot lookup is intentionally not supported.
+    The raw image is not returned here. The response includes a frame URL that
+    clients can fetch separately and that CamBot can store as a frame ref.
     """
 
     camera = get_camera_or_404(camera_id)
@@ -489,9 +555,56 @@ def get_snapshot_image(camera_id: str) -> FileResponse:
     with state_lock:
         cursor = camera_cursors.get(camera_id, 0)
         frame_index = cursor % len(frames)
+        sequence_number = camera_sequences.get(camera_id, 0) + 1
 
         path = frames[frame_index]
         camera_cursors[camera_id] = (frame_index + 1) % len(frames)
+        camera_sequences[camera_id] = sequence_number
+
+    frame_id = frame_id_for(camera_id, sequence_number, frame_index)
+    snapshot_id = f"snapshot-{quote(camera_id, safe='')}-{sequence_number:08d}"
+    captured_at = utc_now_iso()
+
+    return CameraSnapshotDto(
+        snapshot_id=snapshot_id,
+        camera_id=camera_id,
+        frame=CameraFrameMetadataDto(
+            frame_id=frame_id,
+            sequence_number=sequence_number,
+            captured_at=captured_at,
+            url=frame_url_for(camera_id, frame_id),
+            mime_type=content_type_for(path),
+            width=None,
+            height=None,
+            expires_at=None,
+        ),
+    ).to_json()
+
+
+@app.get("/cameras/{camera_id}/frames/{frame_id}/url")
+def get_frame_url(camera_id: str, frame_id: str) -> JsonObject:
+    """
+    Returns the URL for an already-issued frame reference.
+    """
+
+    path = get_frame_path_or_404(camera_id, frame_id)
+
+    return CameraFrameUrlResponseDto(
+        camera_id=camera_id,
+        frame_id=frame_id,
+        url=frame_url_for(camera_id, frame_id),
+        mime_type=content_type_for(path),
+        expires_at=None,
+    ).to_json()
+
+
+@app.get("/cameras/{camera_id}/frames/{frame_id}/image")
+def get_frame_image(camera_id: str, frame_id: str) -> FileResponse:
+    """
+    Serves the image bytes for a frame reference.
+    """
+
+    path = get_frame_path_or_404(camera_id, frame_id)
 
     return FileResponse(
         path,

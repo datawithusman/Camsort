@@ -79,6 +79,41 @@ CREATE INDEX IF NOT EXISTS idx_operations_target_camera_id ON operations (target
 CREATE INDEX IF NOT EXISTS idx_operations_target_camera_group_id ON operations (target_camera_group_id);
 CREATE INDEX IF NOT EXISTS idx_operations_created_at ON operations (created_at DESC);
 
+
+CREATE TABLE IF NOT EXISTS camera_frame_refs (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  camera_id TEXT NOT NULL,
+  frame_id TEXT NOT NULL,
+  snapshot_id TEXT,
+  frame_url TEXT NOT NULL,
+  sequence_number BIGINT,
+  captured_at TIMESTAMPTZ NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'image/jpeg',
+  width INTEGER,
+  height INTEGER,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (camera_id, frame_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_camera_frame_refs_camera_id ON camera_frame_refs (camera_id);
+CREATE INDEX IF NOT EXISTS idx_camera_frame_refs_captured_at ON camera_frame_refs (captured_at DESC);
+CREATE INDEX IF NOT EXISTS idx_camera_frame_refs_camera_latest ON camera_frame_refs (camera_id, captured_at DESC);
+CREATE INDEX IF NOT EXISTS idx_camera_frame_refs_frame_url ON camera_frame_refs (frame_url);
+
+CREATE TABLE IF NOT EXISTS operation_frame_refs (
+  operation_id TEXT NOT NULL REFERENCES operations(id) ON DELETE CASCADE,
+  frame_ref_id TEXT NOT NULL REFERENCES camera_frame_refs(id) ON DELETE RESTRICT,
+  purpose TEXT NOT NULL DEFAULT 'input' CHECK (purpose IN ('input', 'evidence', 'result', 'debug')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (operation_id, frame_ref_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_operation_frame_refs_operation_id ON operation_frame_refs (operation_id);
+CREATE INDEX IF NOT EXISTS idx_operation_frame_refs_frame_ref_id ON operation_frame_refs (frame_ref_id);
+CREATE INDEX IF NOT EXISTS idx_operation_frame_refs_purpose ON operation_frame_refs (purpose);
+
 CREATE TABLE IF NOT EXISTS operator_queue_items (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   operation_id TEXT REFERENCES operations(id) ON DELETE SET NULL,
@@ -166,6 +201,10 @@ CREATE TRIGGER trg_prompt_bindings_updated_at BEFORE UPDATE ON prompt_bindings F
 
 DROP TRIGGER IF EXISTS trg_operator_queue_items_updated_at ON operator_queue_items;
 CREATE TRIGGER trg_operator_queue_items_updated_at BEFORE UPDATE ON operator_queue_items FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+DROP TRIGGER IF EXISTS trg_camera_frame_refs_updated_at ON camera_frame_refs;
+CREATE TRIGGER trg_camera_frame_refs_updated_at BEFORE UPDATE ON camera_frame_refs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 DROP TRIGGER IF EXISTS trg_gemini_caller_settings_updated_at ON gemini_caller_settings;
 CREATE TRIGGER trg_gemini_caller_settings_updated_at BEFORE UPDATE ON gemini_caller_settings FOR EACH ROW EXECUTE FUNCTION set_updated_at();

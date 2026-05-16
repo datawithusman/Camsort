@@ -13,6 +13,9 @@
 
 
 import ApiClient from './ApiClient';
+import GetCameraFrameUrl200Response from './model/GetCameraFrameUrl200Response';
+import GetCameraSnapshot200Response from './model/GetCameraSnapshot200Response';
+import GetCameraSnapshot200ResponseFrame from './model/GetCameraSnapshot200ResponseFrame';
 import GetCameraStream200Response from './model/GetCameraStream200Response';
 import GetCameraSystemStatus200Response from './model/GetCameraSystemStatus200Response';
 import InlineObject from './model/InlineObject';
@@ -64,6 +67,24 @@ export {
      * @property {module:ApiClient}
      */
     ApiClient,
+
+    /**
+     * The GetCameraFrameUrl200Response model constructor.
+     * @property {module:model/GetCameraFrameUrl200Response}
+     */
+    GetCameraFrameUrl200Response,
+
+    /**
+     * The GetCameraSnapshot200Response model constructor.
+     * @property {module:model/GetCameraSnapshot200Response}
+     */
+    GetCameraSnapshot200Response,
+
+    /**
+     * The GetCameraSnapshot200ResponseFrame model constructor.
+     * @property {module:model/GetCameraSnapshot200ResponseFrame}
+     */
+    GetCameraSnapshot200ResponseFrame,
 
     /**
      * The GetCameraStream200Response model constructor.

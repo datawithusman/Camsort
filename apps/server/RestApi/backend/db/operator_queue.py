@@ -13,13 +13,34 @@ from db import models
 
 CREATE_OPERATOR_QUEUE_ITEM = """-- name: create_operator_queue_item \\:one
 INSERT INTO operator_queue_items (
-  id, operation_id, camera_id, camera_group_id, saved_prompt_id,
-  title, description, recommended_action,
-  confidence, urgency, risk, overall, status
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  saved_prompt_id,
+  title,
+  description,
+  recommended_action,
+  confidence,
+  urgency,
+  risk,
+  overall,
+  status
 )
 VALUES (
-  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text), :p2, :p3, :p4, :p5,
-  :p6, :p7, :p8, COALESCE(:p9, 0), COALESCE(:p10, 0), COALESCE(:p11, 0), COALESCE(:p12, 0), COALESCE(:p13, 'pending')
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
+  :p2,
+  :p3,
+  :p4,
+  :p5,
+  :p6,
+  :p7,
+  :p8,
+  COALESCE(:p9, 0),
+  COALESCE(:p10, 0),
+  COALESCE(:p11, 0),
+  COALESCE(:p12, 0),
+  COALESCE(:p13, 'pending')
 )
 RETURNING id, operation_id, camera_id, camera_group_id, saved_prompt_id, title, description, recommended_action, confidence, urgency, risk, overall, status, operator_note, created_at, updated_at
 """
@@ -27,7 +48,7 @@ RETURNING id, operation_id, camera_id, camera_group_id, saved_prompt_id, title, 
 
 @dataclasses.dataclass()
 class CreateOperatorQueueItemParams:
-    column_1: Optional[Any]
+    id: Optional[Any]
     operation_id: Optional[str]
     camera_id: str
     camera_group_id: Optional[str]
@@ -35,11 +56,11 @@ class CreateOperatorQueueItemParams:
     title: str
     description: str
     recommended_action: Optional[str]
-    column_9: Optional[Any]
-    column_10: Optional[Any]
-    column_11: Optional[Any]
-    column_12: Optional[Any]
-    column_13: Optional[Any]
+    confidence: Optional[Any]
+    urgency: Optional[Any]
+    risk: Optional[Any]
+    overall: Optional[Any]
+    status: Optional[Any]
 
 
 LIST_OPERATOR_QUEUE_ITEMS = """-- name: list_operator_queue_items \\:many
@@ -55,14 +76,16 @@ ORDER BY
   END,
   overall DESC,
   created_at DESC
-LIMIT :p1 OFFSET :p2
+LIMIT :p2 OFFSET :p1
 """
 
 
 UPDATE_OPERATOR_QUEUE_ITEM_STATUS = """-- name: update_operator_queue_item_status \\:one
 UPDATE operator_queue_items
-SET status = :p2, operator_note = COALESCE(:p3, operator_note)
-WHERE id = :p1
+SET
+  status = :p1,
+  operator_note = COALESCE(:p2, operator_note)
+WHERE id = :p3
 RETURNING id, operation_id, camera_id, camera_group_id, saved_prompt_id, title, description, recommended_action, confidence, urgency, risk, overall, status, operator_note, created_at, updated_at
 """
 
@@ -73,7 +96,7 @@ class Querier:
 
     def create_operator_queue_item(self, arg: CreateOperatorQueueItemParams) -> Optional[models.OperatorQueueItem]:
         row = self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.operation_id,
             "p3": arg.camera_id,
             "p4": arg.camera_group_id,
@@ -81,11 +104,11 @@ class Querier:
             "p6": arg.title,
             "p7": arg.description,
             "p8": arg.recommended_action,
-            "p9": arg.column_9,
-            "p10": arg.column_10,
-            "p11": arg.column_11,
-            "p12": arg.column_12,
-            "p13": arg.column_13,
+            "p9": arg.confidence,
+            "p10": arg.urgency,
+            "p11": arg.risk,
+            "p12": arg.overall,
+            "p13": arg.status,
         }).first()
         if row is None:
             return None
@@ -108,8 +131,8 @@ class Querier:
             updated_at=row[15],
         )
 
-    def list_operator_queue_items(self, *, limit: int, offset: int) -> Iterator[models.OperatorQueueItem]:
-        result = self._conn.execute(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": limit, "p2": offset})
+    def list_operator_queue_items(self, *, offset_count: int, limit_count: int) -> Iterator[models.OperatorQueueItem]:
+        result = self._conn.execute(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": offset_count, "p2": limit_count})
         for row in result:
             yield models.OperatorQueueItem(
                 id=row[0],
@@ -130,8 +153,8 @@ class Querier:
                 updated_at=row[15],
             )
 
-    def update_operator_queue_item_status(self, *, id: str, status: str, operator_note: Optional[str]) -> Optional[models.OperatorQueueItem]:
-        row = self._conn.execute(sqlalchemy.text(UPDATE_OPERATOR_QUEUE_ITEM_STATUS), {"p1": id, "p2": status, "p3": operator_note}).first()
+    def update_operator_queue_item_status(self, *, status: str, operator_note: Optional[str], id: str) -> Optional[models.OperatorQueueItem]:
+        row = self._conn.execute(sqlalchemy.text(UPDATE_OPERATOR_QUEUE_ITEM_STATUS), {"p1": status, "p2": operator_note, "p3": id}).first()
         if row is None:
             return None
         return models.OperatorQueueItem(
@@ -160,7 +183,7 @@ class AsyncQuerier:
 
     async def create_operator_queue_item(self, arg: CreateOperatorQueueItemParams) -> Optional[models.OperatorQueueItem]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.operation_id,
             "p3": arg.camera_id,
             "p4": arg.camera_group_id,
@@ -168,11 +191,11 @@ class AsyncQuerier:
             "p6": arg.title,
             "p7": arg.description,
             "p8": arg.recommended_action,
-            "p9": arg.column_9,
-            "p10": arg.column_10,
-            "p11": arg.column_11,
-            "p12": arg.column_12,
-            "p13": arg.column_13,
+            "p9": arg.confidence,
+            "p10": arg.urgency,
+            "p11": arg.risk,
+            "p12": arg.overall,
+            "p13": arg.status,
         })).first()
         if row is None:
             return None
@@ -195,8 +218,8 @@ class AsyncQuerier:
             updated_at=row[15],
         )
 
-    async def list_operator_queue_items(self, *, limit: int, offset: int) -> AsyncIterator[models.OperatorQueueItem]:
-        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": limit, "p2": offset})
+    async def list_operator_queue_items(self, *, offset_count: int, limit_count: int) -> AsyncIterator[models.OperatorQueueItem]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": offset_count, "p2": limit_count})
         async for row in result:
             yield models.OperatorQueueItem(
                 id=row[0],
@@ -217,8 +240,8 @@ class AsyncQuerier:
                 updated_at=row[15],
             )
 
-    async def update_operator_queue_item_status(self, *, id: str, status: str, operator_note: Optional[str]) -> Optional[models.OperatorQueueItem]:
-        row = (await self._conn.execute(sqlalchemy.text(UPDATE_OPERATOR_QUEUE_ITEM_STATUS), {"p1": id, "p2": status, "p3": operator_note})).first()
+    async def update_operator_queue_item_status(self, *, status: str, operator_note: Optional[str], id: str) -> Optional[models.OperatorQueueItem]:
+        row = (await self._conn.execute(sqlalchemy.text(UPDATE_OPERATOR_QUEUE_ITEM_STATUS), {"p1": status, "p2": operator_note, "p3": id})).first()
         if row is None:
             return None
         return models.OperatorQueueItem(

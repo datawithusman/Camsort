@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-import os
 from datetime import datetime, timezone
 from typing import Any
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Query, Response
 
+from app.clients.camera_system_client import CameraSystemClient, CameraSystemClientError
 from app.db.connection import check_database_connection
-from app.repositories.camera_groups_repository import CameraGroupsRepository
+from repositories.camera_frame_refs_repository import CameraFrameRefsRepository
+from repositories.camera_groups_repository import CameraGroupsRepository
 
 
 app = FastAPI(title="CamBot REST API")
@@ -21,51 +20,12 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def camera_system_client() -> CameraSystemClient:
+    return CameraSystemClient.from_env()
+
+
 def check_camera_system() -> JsonObject:
-    base_url = os.environ.get(
-        "CAMERA_SYSTEM_BASE_URL",
-        "http://camera-system-mocker-rest-api:8080",
-    ).rstrip("/")
-
-    url = f"{base_url}/health"
-
-    try:
-        request = Request(
-            url,
-            method="GET",
-            headers={"Accept": "application/json"},
-        )
-
-        with urlopen(request, timeout=5) as response:
-            return {
-                "status": "ok",
-                "url": url,
-                "httpStatus": response.status,
-            }
-
-    except HTTPError as exc:
-        return {
-            "status": "error",
-            "url": url,
-            "httpStatus": exc.code,
-            "error": str(exc),
-        }
-
-    except URLError as exc:
-        return {
-            "status": "error",
-            "url": url,
-            "httpStatus": None,
-            "error": str(exc.reason),
-        }
-
-    except Exception as exc:
-        return {
-            "status": "error",
-            "url": url,
-            "httpStatus": None,
-            "error": str(exc),
-        }
+    return camera_system_client().health()
 
 
 def not_found(entity: str, entity_id: str) -> None:
@@ -76,6 +36,22 @@ def not_found(entity: str, entity_id: str) -> None:
             "details": entity_id,
         },
     )
+
+
+def raise_camera_system_error(exc: CameraSystemClientError) -> None:
+    status_code = exc.status_code or 502
+    if status_code < 400:
+        status_code = 502
+
+    raise HTTPException(
+        status_code=status_code,
+        detail={
+            "error": "Camera system request failed.",
+            "message": str(exc),
+            "details": exc.body,
+            "url": exc.url,
+        },
+    ) from exc
 
 
 @app.get("/health")
@@ -103,6 +79,153 @@ def health() -> JsonObject:
 @app.get("/camera-system/health")
 def camera_system_health() -> JsonObject:
     return check_camera_system()
+
+
+@app.get("/camera-system/status")
+def camera_system_status() -> JsonObject:
+    try:
+        return camera_system_client().system_status()
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+
+@app.get("/camera-system/cameras")
+def list_camera_system_cameras(
+    group_id: str | None = Query(default=None, alias="groupId"),
+    search: str | None = None,
+) -> JsonObject:
+    try:
+        return camera_system_client().list_cameras(
+            group_id=group_id,
+            search=search,
+        )
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+
+@app.get("/camera-system/cameras/{camera_id}")
+def get_camera_system_camera(camera_id: str) -> JsonObject:
+    try:
+        return camera_system_client().get_camera(camera_id)
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+
+@app.get("/camera-system/cameras/{camera_id}/snapshot")
+def get_camera_system_snapshot(camera_id: str) -> JsonObject:
+    """
+    Requests a camera snapshot from the integrator/mocker.
+
+    The integrator returns metadata containing a frame URL. RestApi stores that
+    URL as a camera_frame_refs row for audit/history, but never stores raw image
+    bytes in Postgres.
+    """
+    try:
+        snapshot = camera_system_client().get_snapshot(camera_id)
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+    frame_ref = CameraFrameRefsRepository().create_from_snapshot(snapshot)
+
+    response = dict(snapshot)
+    response["frameRef"] = frame_ref
+    return response
+
+
+@app.get("/camera-system/cameras/{camera_id}/frames/{frame_id}/url")
+def get_camera_system_frame_url(camera_id: str, frame_id: str) -> JsonObject:
+    try:
+        frame_url = camera_system_client().get_frame_url(camera_id, frame_id)
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+    frame_ref = CameraFrameRefsRepository().get_camera_frame_ref(
+        camera_id=camera_id,
+        frame_id=frame_id,
+    )
+
+    if frame_ref is not None:
+        frame_url["frameRef"] = frame_ref
+
+    return frame_url
+
+
+@app.get("/camera-system/cameras/{camera_id}/stream")
+def get_camera_system_stream(camera_id: str) -> JsonObject:
+    try:
+        return camera_system_client().get_stream(camera_id)
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+
+@app.get("/camera-system/source-camera-groups")
+def list_camera_system_source_groups() -> JsonObject:
+    try:
+        return camera_system_client().list_camera_groups()
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+
+@app.get("/camera-system/source-camera-groups/{group_id}")
+def get_camera_system_source_group(group_id: str) -> JsonObject:
+    try:
+        return camera_system_client().get_camera_group(group_id)
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+
+@app.get("/camera-system/source-camera-groups/{group_id}/cameras")
+def list_camera_system_cameras_for_source_group(group_id: str) -> JsonObject:
+    try:
+        return camera_system_client().list_cameras_for_group(group_id)
+    except CameraSystemClientError as exc:
+        raise_camera_system_error(exc)
+
+
+@app.get("/camera-system/cameras/{camera_id}/frame-refs")
+def list_camera_frame_refs(
+    camera_id: str,
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> JsonObject:
+    return {
+        "frameRefs": CameraFrameRefsRepository().list_for_camera(
+            camera_id=camera_id,
+            limit_count=limit,
+            offset_count=offset,
+        )
+    }
+
+
+@app.get("/camera-system/cameras/{camera_id}/frame-refs/latest")
+def get_latest_camera_frame_ref(camera_id: str) -> JsonObject:
+    frame_ref = CameraFrameRefsRepository().get_latest_for_camera(camera_id)
+
+    if frame_ref is None:
+        not_found("Camera frame ref", camera_id)
+
+    return frame_ref
+
+
+@app.get("/operations/{operation_id}/frame-refs")
+def list_operation_frame_refs(operation_id: str) -> JsonObject:
+    return {
+        "frameRefs": CameraFrameRefsRepository().list_for_operation(operation_id)
+    }
+
+
+@app.post("/operations/{operation_id}/frame-refs/{frame_ref_id}", status_code=204)
+def attach_frame_ref_to_operation(
+    operation_id: str,
+    frame_ref_id: str,
+    payload: JsonObject | None = None,
+) -> Response:
+    CameraFrameRefsRepository().attach_to_operation(
+        operation_id=operation_id,
+        frame_ref_id=frame_ref_id,
+        purpose=(payload or {}).get("purpose", "input"),
+    )
+    return Response(status_code=204)
 
 
 @app.get("/camera-groups")

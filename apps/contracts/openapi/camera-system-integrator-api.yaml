@@ -1,221 +1,238 @@
 openapi: 3.1.0
-
 info:
   title: Camera System Integrator API
   version: 0.1.0
-  description: Contract implemented by camera system adapters. The Camera System Mocker implements this API for demo/testing.
-
+  description: Contract implemented by camera system adapters. The Camera System Mocker
+    implements this API for demo/testing.
 servers:
-  - url: /camera-system
-    description: Camera system integrator API root
-
+- url: /camera-system
+  description: Camera system integrator API root
 security:
-  - basicAuth: []
-
+- basicAuth: []
 tags:
-  - name: System
-  - name: Cameras
-  - name: Source Camera Groups
-  - name: Snapshots
-  - name: Streams
-
+- name: System
+- name: Cameras
+- name: Source Camera Groups
+- name: Snapshots
+- name: Streams
 paths:
   /system/status:
     get:
-      tags: [System]
+      tags:
+      - System
       summary: Get camera system status
       operationId: getCameraSystemStatus
       responses:
-        "200":
+        '200':
           description: System status returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/camera-system-integrator/system-status.yaml#/components/schemas/SystemStatus"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/system-status.yaml#/components/schemas/SystemStatus
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /cameras:
     get:
-      tags: [Cameras]
+      tags:
+      - Cameras
       summary: List cameras from the camera system
       operationId: listIntegratorCameras
       parameters:
-        - name: groupId
-          in: query
-          required: false
-          schema:
-            type: string
-        - name: search
-          in: query
-          required: false
-          schema:
-            type: string
+      - name: groupId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Cameras returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /cameras/{cameraId}:
     get:
-      tags: [Cameras]
+      tags:
+      - Cameras
       summary: Get camera details from the camera system
       operationId: getIntegratorCamera
       parameters:
-        - $ref: "#/components/parameters/CameraId"
+      - $ref: '#/components/parameters/CameraId'
       responses:
-        "200":
+        '200':
           description: Camera returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/Camera"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/camera.yaml#/components/schemas/Camera
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /cameras/{cameraId}/snapshot:
     get:
-      tags: [Snapshots]
-      summary: Get camera snapshot image
-      description: Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+      tags:
+      - Snapshots
+      summary: Get camera snapshot frame metadata
+      description: Returns metadata for the current or next available camera frame,
+        including a URL that can be used to retrieve/view the frame. Historical snapshot
+        lookup is intentionally not supported. Each call may advance a mock camera
+        to the next available frame.
       operationId: getCameraSnapshot
       parameters:
-        - $ref: "#/components/parameters/CameraId"
+      - $ref: '#/components/parameters/CameraId'
       responses:
-        "200":
-          description: Snapshot image bytes returned
+        '200':
+          description: Snapshot frame metadata returned
           content:
-            image/jpeg:
+            application/json:
               schema:
-                type: string
-                format: binary
-            image/png:
+                $ref: ./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraSnapshot
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /cameras/{cameraId}/frames/{frameId}/url:
+    get:
+      tags:
+      - Snapshots
+      summary: Get camera frame URL
+      description: Returns a URL link for a previously returned camera frame. The
+        adapter may return an internal API URL, a CDN URL, or a signed vendor URL
+        depending on the backing camera system.
+      operationId: getCameraFrameUrl
+      parameters:
+      - $ref: '#/components/parameters/CameraId'
+      - $ref: '#/components/parameters/FrameId'
+      responses:
+        '200':
+          description: Frame URL returned
+          content:
+            application/json:
               schema:
-                type: string
-                format: binary
-            image/webp:
-              schema:
-                type: string
-                format: binary
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraFrameUrlResponse
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /cameras/{cameraId}/stream:
     get:
-      tags: [Streams]
+      tags:
+      - Streams
       summary: Get camera stream descriptor
       operationId: getCameraStream
       parameters:
-        - $ref: "#/components/parameters/CameraId"
+      - $ref: '#/components/parameters/CameraId'
       responses:
-        "200":
+        '200':
           description: Stream descriptor returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/camera-system-integrator/stream.yaml#/components/schemas/CameraStream"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/stream.yaml#/components/schemas/CameraStream
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /camera-groups:
     get:
-      tags: [Source Camera Groups]
+      tags:
+      - Source Camera Groups
       summary: List source camera groups from the camera system
       operationId: listIntegratorCameraGroups
       responses:
-        "200":
+        '200':
           description: Source camera groups returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroupListResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroupListResponse
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /camera-groups/{groupId}:
     get:
-      tags: [Source Camera Groups]
+      tags:
+      - Source Camera Groups
       summary: Get source camera group details
       operationId: getIntegratorCameraGroup
       parameters:
-        - $ref: "#/components/parameters/GroupId"
+      - $ref: '#/components/parameters/GroupId'
       responses:
-        "200":
+        '200':
           description: Source camera group returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroup"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroup
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /camera-groups/{groupId}/cameras:
     get:
-      tags: [Source Camera Groups]
+      tags:
+      - Source Camera Groups
       summary: List cameras in a source camera group
       operationId: listIntegratorCameraGroupCameras
       parameters:
-        - $ref: "#/components/parameters/GroupId"
+      - $ref: '#/components/parameters/GroupId'
       responses:
-        "200":
+        '200':
           description: Cameras returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
+                $ref: ./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   securitySchemes:
     basicAuth:
       type: http
       scheme: basic
-      description: HTTP Basic authentication using the operator username and password. Send credentials with the Authorization header.
-
+      description: HTTP Basic authentication using the operator username and password.
+        Send credentials with the Authorization header.
   parameters:
     CameraId:
       name: cameraId
@@ -223,39 +240,40 @@ components:
       required: true
       schema:
         type: string
-
     GroupId:
       name: groupId
       in: path
       required: true
       schema:
         type: string
-
+    FrameId:
+      name: frameId
+      in: path
+      required: true
+      schema:
+        type: string
   responses:
     BadRequest:
       description: Bad request
       content:
         application/json:
           schema:
-            $ref: "./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse"
-
+            $ref: ./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse
     Unauthorized:
       description: Unauthorized
       content:
         application/json:
           schema:
-            $ref: "./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse"
-
+            $ref: ./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse
     NotFound:
       description: Requested camera, group, or resource was not found
       content:
         application/json:
           schema:
-            $ref: "./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse"
-
+            $ref: ./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse
     InternalServerError:
       description: Camera system adapter error
       content:
         application/json:
           schema:
-            $ref: "./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse"
+            $ref: ./schemas/camera-system-integrator/error.yaml#/components/schemas/ErrorResponse

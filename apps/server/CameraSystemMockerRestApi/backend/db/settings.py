@@ -55,14 +55,15 @@ class GetUsageLimitSettingsRow:
 
 UPDATE_GEMINI_CALLER_SETTINGS = """-- name: update_gemini_caller_settings \\:one
 UPDATE gemini_caller_settings
-SET enabled = COALESCE(:p1, enabled),
-    model_name = COALESCE(:p2, model_name),
-    max_requests_per_minute = COALESCE(:p3, max_requests_per_minute),
-    max_tokens_per_request = COALESCE(:p4, max_tokens_per_request),
-    max_cost_per_operation = COALESCE(:p5, max_cost_per_operation),
-    max_cost_per_day = COALESCE(:p6, max_cost_per_day),
-    max_cost_per_month = COALESCE(:p7, max_cost_per_month),
-    allow_emergency_override = COALESCE(:p8, allow_emergency_override)
+SET
+  enabled = COALESCE(:p1, enabled),
+  model_name = COALESCE(:p2, model_name),
+  max_requests_per_minute = COALESCE(:p3, max_requests_per_minute),
+  max_tokens_per_request = COALESCE(:p4, max_tokens_per_request),
+  max_cost_per_operation = COALESCE(:p5, max_cost_per_operation),
+  max_cost_per_day = COALESCE(:p6, max_cost_per_day),
+  max_cost_per_month = COALESCE(:p7, max_cost_per_month),
+  allow_emergency_override = COALESCE(:p8, allow_emergency_override)
 WHERE id = true
 RETURNING id, enabled, model_name, max_requests_per_minute, max_tokens_per_request, max_cost_per_operation, max_cost_per_day, max_cost_per_month, allow_emergency_override, updated_at
 """
@@ -82,11 +83,12 @@ class UpdateGeminiCallerSettingsParams:
 
 UPDATE_USAGE_LIMIT_SETTINGS = """-- name: update_usage_limit_settings \\:one
 UPDATE usage_limit_settings
-SET max_scans_per_day = COALESCE(:p1, max_scans_per_day),
-    max_scans_per_month = COALESCE(:p2, max_scans_per_month),
-    max_estimated_cost_per_day = COALESCE(:p3, max_estimated_cost_per_day),
-    max_estimated_cost_per_month = COALESCE(:p4, max_estimated_cost_per_month),
-    block_operations_when_limit_reached = COALESCE(:p5, block_operations_when_limit_reached)
+SET
+  max_scans_per_day = COALESCE(:p1, max_scans_per_day),
+  max_scans_per_month = COALESCE(:p2, max_scans_per_month),
+  max_estimated_cost_per_day = COALESCE(:p3, max_estimated_cost_per_day),
+  max_estimated_cost_per_month = COALESCE(:p4, max_estimated_cost_per_month),
+  block_operations_when_limit_reached = COALESCE(:p5, block_operations_when_limit_reached)
 WHERE id = true
 RETURNING id, max_scans_per_day, max_scans_per_month, max_estimated_cost_per_day, max_estimated_cost_per_month, block_operations_when_limit_reached, updated_at
 """

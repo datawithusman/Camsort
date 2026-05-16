@@ -16,6 +16,9 @@ camera_system_integrator_dtos/api_response.py
 camera_system_integrator_dtos/configuration.py
 camera_system_integrator_dtos/exceptions.py
 camera_system_integrator_dtos/models/__init__.py
+camera_system_integrator_dtos/models/get_camera_frame_url200_response.py
+camera_system_integrator_dtos/models/get_camera_snapshot200_response.py
+camera_system_integrator_dtos/models/get_camera_snapshot200_response_frame.py
 camera_system_integrator_dtos/models/get_camera_stream200_response.py
 camera_system_integrator_dtos/models/get_camera_system_status200_response.py
 camera_system_integrator_dtos/models/inline_object.py
@@ -26,6 +29,9 @@ camera_system_integrator_dtos/models/list_integrator_cameras200_response_cameras
 camera_system_integrator_dtos/py.typed
 camera_system_integrator_dtos/rest.py
 docs/CamerasApi.md
+docs/GetCameraFrameUrl200Response.md
+docs/GetCameraSnapshot200Response.md
+docs/GetCameraSnapshot200ResponseFrame.md
 docs/GetCameraStream200Response.md
 docs/GetCameraSystemStatus200Response.md
 docs/InlineObject.md
@@ -45,6 +51,9 @@ setup.py
 test-requirements.txt
 test/__init__.py
 test/test_cameras_api.py
+test/test_get_camera_frame_url200_response.py
+test/test_get_camera_snapshot200_response.py
+test/test_get_camera_snapshot200_response_frame.py
 test/test_get_camera_stream200_response.py
 test/test_get_camera_system_status200_response.py
 test/test_inline_object.py

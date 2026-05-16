@@ -3,19 +3,19 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Any
+from datetime import date, datetime
+from typing import Any, Callable
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
-from app.dtos.camera_system import (
-    CameraStreamDto,
-    CameraSystemCameraDto,
-    CameraSystemCameraListDto,
-    CameraSystemGroupDto,
-    CameraSystemGroupListDto,
-    CameraSystemStatusDto,
-)
+from camera_system_integrator_dtos.api.cameras_api import CamerasApi
+from camera_system_integrator_dtos.api.snapshots_api import SnapshotsApi
+from camera_system_integrator_dtos.api.source_camera_groups_api import SourceCameraGroupsApi
+from camera_system_integrator_dtos.api.streams_api import StreamsApi
+from camera_system_integrator_dtos.api.system_api import SystemApi
+from camera_system_integrator_dtos.api_client import ApiClient
+from camera_system_integrator_dtos.configuration import Configuration
+from camera_system_integrator_dtos.exceptions import ApiException
 
 
 JsonObject = dict[str, Any]
@@ -25,20 +25,8 @@ class CameraSystemClientError(Exception):
     """
     Error raised when the camera-system API request fails.
 
-    This wrapper raises CameraSystemClientError for:
-      - HTTP 4xx/5xx responses
-      - network failures
-      - malformed/unexpected response bodies
-
-    Attributes:
-      status_code:
-        HTTP status code, or None for network/client-side failures.
-
-      body:
-        Parsed JSON error body when available, otherwise text/None.
-
-      url:
-        Full URL that failed.
+    The FastAPI app should catch this wrapper exception instead of leaking
+    generated OpenAPI-client exception types into route handlers.
     """
 
     def __init__(
@@ -58,26 +46,14 @@ class CameraSystemClientError(Exception):
 @dataclass(frozen=True)
 class CameraSystemClientConfig:
     """
-    Configuration for internal RestApi -> CameraSystem calls.
+    Configuration for internal RestApi -> Camera System calls.
 
-    Important:
-      This config is for internal pod-to-pod calls.
+    This wrapper uses the generated Python OpenAPI client from:
 
-      Public browser calls go through nginx:
-        https://host/camera-system/...
+      backend/camera_system_integrator/camera_system_integrator_dtos
 
-      Internal RestApi calls should go directly to the service:
-        http://camera-system-mocker-rest-api:8080
-
-      Because nginx owns public authentication, this internal wrapper does not
-      send Basic Auth.
-
-    Environment:
-      CAMERA_SYSTEM_BASE_URL:
-        Base URL for the internal camera-system service.
-
-      CAMERA_SYSTEM_TIMEOUT_SECONDS:
-        HTTP timeout for camera-system calls.
+    Do not add duplicated DTO definitions in app/. The generated OpenAPI DTOs
+    are the source of truth for external camera-system response shapes.
     """
 
     base_url: str
@@ -89,275 +65,267 @@ class CameraSystemClientConfig:
             base_url=os.environ.get(
                 "CAMERA_SYSTEM_BASE_URL",
                 "http://camera-system-mocker-rest-api:8080",
-            ),
+            ).rstrip("/"),
             timeout_seconds=float(
                 os.environ.get("CAMERA_SYSTEM_TIMEOUT_SECONDS", "30")
             ),
         )
 
 
+def _to_json_value(value: Any) -> Any:
+    """
+    Convert generated OpenAPI DTOs/Pydantic models into FastAPI-safe JSON data.
+
+    Generated DTOs stay in backend/. This wrapper normalizes those DTOs to plain
+    dict/list/scalar values at the boundary so route handlers do not depend on a
+    second handwritten DTO layer.
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, (str, int, float, bool)):
+        return value
+
+    if isinstance(value, (datetime, date)):
+        return value.isoformat().replace("+00:00", "Z")
+
+    if isinstance(value, list):
+        return [_to_json_value(item) for item in value]
+
+    if isinstance(value, tuple):
+        return [_to_json_value(item) for item in value]
+
+    if isinstance(value, dict):
+        return {
+            str(key): _to_json_value(item)
+            for key, item in value.items()
+            if item is not None
+        }
+
+    if hasattr(value, "to_dict"):
+        return _to_json_value(value.to_dict())
+
+    if hasattr(value, "model_dump"):
+        return _to_json_value(
+            value.model_dump(by_alias=True, exclude_none=True)
+        )
+
+    return value
+
+
+def _model_to_json_dict(value: Any) -> JsonObject:
+    normalized = _to_json_value(value)
+    if normalized is None:
+        return {}
+    if isinstance(normalized, dict):
+        return normalized
+    raise CameraSystemClientError(
+        f"Expected camera-system response object, got {type(value).__name__}"
+    )
+
+
 class CameraSystemClient:
     """
-    Backend-facing wrapper around the Camera System Integrator API.
-
-    This is handwritten application code. It should live under app/clients, not
-    under backend/, because backend/ is generated code and may be recreated.
+    Thin, stable wrapper over the generated Camera System Integrator client.
 
     Snapshot model:
-      The camera-system API exposes one simple snapshot endpoint:
+      GET /cameras/{cameraId}/snapshot returns JSON metadata containing a
+      frame URL. It does not return raw image bytes.
 
-        GET /cameras/{cameraId}/snapshot
-
-      That endpoint returns image bytes directly.
-
-      There is no CameraSnapshot metadata DTO.
-      There is no /snapshot/image endpoint.
-      Historical snapshot retrieval is intentionally not implemented.
+    Frame model:
+      The camera-system/mocker owns image serving. RestApi stores only the
+      returned frame URL/reference in Postgres when it wants auditability.
     """
 
     def __init__(self, config: CameraSystemClientConfig) -> None:
         self.config = config
         self.base_url = config.base_url.rstrip("/")
 
+        generated_config = Configuration(host=self.base_url)
+        self._api_client = ApiClient(generated_config)
+
+        self._cameras = CamerasApi(self._api_client)
+        self._snapshots = SnapshotsApi(self._api_client)
+        self._streams = StreamsApi(self._api_client)
+        self._system = SystemApi(self._api_client)
+        self._groups = SourceCameraGroupsApi(self._api_client)
+
     @staticmethod
     def from_env() -> "CameraSystemClient":
         return CameraSystemClient(CameraSystemClientConfig.from_env())
 
-    def _url(self, path: str, query: dict[str, str] | None = None) -> str:
+    def _timeout(self) -> float:
+        return self.config.timeout_seconds
+
+    def _url(self, path: str) -> str:
         clean_path = path if path.startswith("/") else f"/{path}"
-        url = f"{self.base_url}{clean_path}"
+        return f"{self.base_url}{clean_path}"
 
-        if query:
-            url = f"{url}?{urlencode(query)}"
+    def _wrap_generated_error(self, exc: ApiException) -> CameraSystemClientError:
+        body: Any = exc.body
+        if isinstance(body, str):
+            try:
+                body = json.loads(body)
+            except json.JSONDecodeError:
+                pass
 
-        return url
-
-    def _request_json(
-        self,
-        method: str,
-        path: str,
-        *,
-        query: dict[str, str] | None = None,
-    ) -> JsonObject:
-        body = self._request(
-            method,
-            path,
-            query=query,
-            accept="application/json",
-        )
-
-        if body is None:
-            return {}
-
-        if not isinstance(body, dict):
-            raise CameraSystemClientError(
-                "Camera system returned a non-object JSON response.",
-                status_code=None,
-                body=body,
-                url=self._url(path, query=query),
-            )
-
-        return body
-
-    def _request_bytes(
-        self,
-        method: str,
-        path: str,
-        *,
-        query: dict[str, str] | None = None,
-        accept: str = "application/octet-stream",
-    ) -> bytes:
-        body = self._request(
-            method,
-            path,
-            query=query,
-            accept=accept,
-        )
-
-        if isinstance(body, bytes):
-            return body
-
-        raise CameraSystemClientError(
-            "Camera system returned a non-bytes response.",
-            status_code=None,
+        return CameraSystemClientError(
+            f"Camera system request failed: {exc.status}",
+            status_code=exc.status,
             body=body,
-            url=self._url(path, query=query),
         )
 
-    def _request(
-        self,
-        method: str,
-        path: str,
-        *,
-        query: dict[str, str] | None = None,
-        accept: str = "application/json",
-    ) -> Any:
-        url = self._url(path, query=query)
-
-        request = Request(
-            url,
-            method=method.upper(),
-            headers={
-                "Accept": accept,
-            },
-        )
-
+    def _call(self, callback: Callable[[], Any]) -> JsonObject:
         try:
-            with urlopen(request, timeout=self.config.timeout_seconds) as response:
-                content_type = response.headers.get("content-type", "")
-                raw_body = response.read()
-
-                if "application/json" in content_type:
-                    if not raw_body:
-                        return None
-
-                    return json.loads(raw_body.decode("utf-8"))
-
-                return raw_body
-
-        except HTTPError as exc:
-            body = self._read_error_body(exc)
+            return _model_to_json_dict(callback())
+        except CameraSystemClientError:
+            raise
+        except ApiException as exc:
+            raise self._wrap_generated_error(exc) from exc
+        except Exception as exc:
             raise CameraSystemClientError(
-                f"Camera system request failed: {exc.code}",
-                status_code=exc.code,
-                body=body,
-                url=url,
-            ) from exc
-
-        except URLError as exc:
-            raise CameraSystemClientError(
-                f"Camera system request failed: {exc.reason}",
+                f"Camera system request failed: {exc}",
                 status_code=None,
                 body=None,
-                url=url,
             ) from exc
-
-        except json.JSONDecodeError as exc:
-            raise CameraSystemClientError(
-                "Camera system returned invalid JSON.",
-                status_code=None,
-                body=None,
-                url=url,
-            ) from exc
-
-    @staticmethod
-    def _read_error_body(exc: HTTPError) -> Any:
-        try:
-            raw = exc.read()
-            if not raw:
-                return None
-
-            text = raw.decode("utf-8", errors="replace")
-            content_type = exc.headers.get("content-type", "")
-
-            if "application/json" in content_type:
-                return json.loads(text)
-
-            return text
-        except Exception:
-            return None
 
     def health(self) -> JsonObject:
         """
         Calls GET /health.
 
-        Returns raw health JSON because this is mostly a debug/ops endpoint.
+        The generated integrator OpenAPI client covers system status, but the
+        mocker also has a simple /health endpoint. This remains a lightweight
+        operational probe.
         """
-        return self._request_json("GET", "/health")
+        url = self._url("/health")
 
-    def system_status(self) -> CameraSystemStatusDto:
-        """
-        Calls GET /system/status.
-        """
-        data = self._request_json("GET", "/system/status")
-        return CameraSystemStatusDto.from_json(data)
+        try:
+            request = Request(
+                url,
+                method="GET",
+                headers={"Accept": "application/json"},
+            )
+
+            with urlopen(request, timeout=min(self.config.timeout_seconds, 5)) as response:
+                raw = response.read()
+                if raw:
+                    try:
+                        body = json.loads(raw.decode("utf-8"))
+                    except json.JSONDecodeError:
+                        body = {"body": raw.decode("utf-8", errors="replace")}
+                else:
+                    body = {}
+
+                return {
+                    "status": "ok",
+                    "url": url,
+                    "httpStatus": response.status,
+                    **body,
+                }
+
+        except HTTPError as exc:
+            return {
+                "status": "error",
+                "url": url,
+                "httpStatus": exc.code,
+                "error": str(exc),
+            }
+
+        except URLError as exc:
+            return {
+                "status": "error",
+                "url": url,
+                "httpStatus": None,
+                "error": str(exc.reason),
+            }
+
+        except Exception as exc:
+            return {
+                "status": "error",
+                "url": url,
+                "httpStatus": None,
+                "error": str(exc),
+            }
+
+    def system_status(self) -> JsonObject:
+        return self._call(
+            lambda: self._system.get_camera_system_status(
+                _request_timeout=self._timeout(),
+            )
+        )
 
     def list_cameras(
         self,
         *,
         group_id: str | None = None,
         search: str | None = None,
-    ) -> CameraSystemCameraListDto:
-        """
-        Calls GET /cameras.
-        """
-        query: dict[str, str] = {}
-
-        if group_id:
-            query["groupId"] = group_id
-
-        if search:
-            query["search"] = search
-
-        data = self._request_json("GET", "/cameras", query=query or None)
-        return CameraSystemCameraListDto.from_json(data)
-
-    def get_camera(self, camera_id: str) -> CameraSystemCameraDto:
-        """
-        Calls GET /cameras/{cameraId}.
-        """
-        data = self._request_json(
-            "GET",
-            f"/cameras/{quote(camera_id, safe='')}",
-        )
-        return CameraSystemCameraDto.from_json(data)
-
-    def get_snapshot_image(self, camera_id: str) -> bytes:
-        """
-        Calls GET /cameras/{cameraId}/snapshot.
-
-        Returns image bytes directly.
-
-        This is the primary snapshot method.
-        """
-        return self._request_bytes(
-            "GET",
-            f"/cameras/{quote(camera_id, safe='')}/snapshot",
-            accept="image/*",
+    ) -> JsonObject:
+        return self._call(
+            lambda: self._cameras.list_integrator_cameras(
+                group_id=group_id,
+                search=search,
+                _request_timeout=self._timeout(),
+            )
         )
 
-    def request_snapshot(self, camera_id: str) -> bytes:
-        """
-        Backward-compatible alias for get_snapshot_image().
-
-        Older code may call request_snapshot(), but the contract now returns
-        image bytes directly rather than snapshot metadata.
-        """
-        return self.get_snapshot_image(camera_id)
-
-    def get_stream(self, camera_id: str) -> CameraStreamDto:
-        """
-        Calls GET /cameras/{cameraId}/stream.
-        """
-        data = self._request_json(
-            "GET",
-            f"/cameras/{quote(camera_id, safe='')}/stream",
+    def get_camera(self, camera_id: str) -> JsonObject:
+        return self._call(
+            lambda: self._cameras.get_integrator_camera(
+                camera_id,
+                _request_timeout=self._timeout(),
+            )
         )
-        return CameraStreamDto.from_json(data)
 
-    def list_camera_groups(self) -> CameraSystemGroupListDto:
-        """
-        Calls GET /camera-groups.
-        """
-        data = self._request_json("GET", "/camera-groups")
-        return CameraSystemGroupListDto.from_json(data)
-
-    def get_camera_group(self, group_id: str) -> CameraSystemGroupDto:
-        """
-        Calls GET /camera-groups/{groupId}.
-        """
-        data = self._request_json(
-            "GET",
-            f"/camera-groups/{quote(group_id, safe='')}",
+    def get_snapshot(self, camera_id: str) -> JsonObject:
+        return self._call(
+            lambda: self._snapshots.get_camera_snapshot(
+                camera_id,
+                _request_timeout=self._timeout(),
+            )
         )
-        return CameraSystemGroupDto.from_json(data)
 
-    def list_cameras_for_group(self, group_id: str) -> CameraSystemCameraListDto:
+    def request_snapshot(self, camera_id: str) -> JsonObject:
         """
-        Calls GET /camera-groups/{groupId}/cameras.
+        Backward-compatible name. Returns metadata, not image bytes.
         """
-        data = self._request_json(
-            "GET",
-            f"/camera-groups/{quote(group_id, safe='')}/cameras",
+        return self.get_snapshot(camera_id)
+
+    def get_frame_url(self, camera_id: str, frame_id: str) -> JsonObject:
+        return self._call(
+            lambda: self._snapshots.get_camera_frame_url(
+                camera_id,
+                frame_id,
+                _request_timeout=self._timeout(),
+            )
         )
-        return CameraSystemCameraListDto.from_json(data)
+
+    def get_stream(self, camera_id: str) -> JsonObject:
+        return self._call(
+            lambda: self._streams.get_camera_stream(
+                camera_id,
+                _request_timeout=self._timeout(),
+            )
+        )
+
+    def list_camera_groups(self) -> JsonObject:
+        return self._call(
+            lambda: self._groups.list_integrator_camera_groups(
+                _request_timeout=self._timeout(),
+            )
+        )
+
+    def get_camera_group(self, group_id: str) -> JsonObject:
+        return self._call(
+            lambda: self._groups.get_integrator_camera_group(
+                group_id,
+                _request_timeout=self._timeout(),
+            )
+        )
+
+    def list_cameras_for_group(self, group_id: str) -> JsonObject:
+        return self._call(
+            lambda: self._groups.list_integrator_camera_group_cameras(
+                group_id,
+                _request_timeout=self._timeout(),
+            )
+        )

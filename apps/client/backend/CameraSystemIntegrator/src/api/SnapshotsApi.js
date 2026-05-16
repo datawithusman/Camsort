@@ -13,6 +13,8 @@
 
 
 import ApiClient from "../ApiClient";
+import GetCameraFrameUrl200Response from '../model/GetCameraFrameUrl200Response';
+import GetCameraSnapshot200Response from '../model/GetCameraSnapshot200Response';
 import InlineObject from '../model/InlineObject';
 
 /**
@@ -36,10 +38,65 @@ export default class SnapshotsApi {
 
 
     /**
-     * Get camera snapshot image
-     * Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+     * Get camera frame URL
+     * Returns a URL link for a previously returned camera frame. The adapter may return an internal API URL, a CDN URL, or a signed vendor URL depending on the backing camera system.
      * @param {String} cameraId 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link File} and HTTP response
+     * @param {String} frameId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/GetCameraFrameUrl200Response} and HTTP response
+     */
+    getCameraFrameUrlWithHttpInfo(cameraId, frameId) {
+      let postBody = null;
+      // verify the required parameter 'cameraId' is set
+      if (cameraId === undefined || cameraId === null) {
+        throw new Error("Missing the required parameter 'cameraId' when calling getCameraFrameUrl");
+      }
+      // verify the required parameter 'frameId' is set
+      if (frameId === undefined || frameId === null) {
+        throw new Error("Missing the required parameter 'frameId' when calling getCameraFrameUrl");
+      }
+
+      let pathParams = {
+        'cameraId': cameraId,
+        'frameId': frameId
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = GetCameraFrameUrl200Response;
+      return this.apiClient.callApi(
+        '/cameras/{cameraId}/frames/{frameId}/url', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Get camera frame URL
+     * Returns a URL link for a previously returned camera frame. The adapter may return an internal API URL, a CDN URL, or a signed vendor URL depending on the backing camera system.
+     * @param {String} cameraId 
+     * @param {String} frameId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/GetCameraFrameUrl200Response}
+     */
+    getCameraFrameUrl(cameraId, frameId) {
+      return this.getCameraFrameUrlWithHttpInfo(cameraId, frameId)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * Get camera snapshot frame metadata
+     * Returns metadata for the current or next available camera frame, including a URL that can be used to retrieve/view the frame. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+     * @param {String} cameraId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/GetCameraSnapshot200Response} and HTTP response
      */
     getCameraSnapshotWithHttpInfo(cameraId) {
       let postBody = null;
@@ -60,8 +117,8 @@ export default class SnapshotsApi {
 
       let authNames = ['basicAuth'];
       let contentTypes = [];
-      let accepts = ['image/jpeg', 'image/png', 'image/webp', 'application/json'];
-      let returnType = File;
+      let accepts = ['application/json'];
+      let returnType = GetCameraSnapshot200Response;
       return this.apiClient.callApi(
         '/cameras/{cameraId}/snapshot', 'GET',
         pathParams, queryParams, headerParams, formParams, postBody,
@@ -70,10 +127,10 @@ export default class SnapshotsApi {
     }
 
     /**
-     * Get camera snapshot image
-     * Returns the current or next available snapshot image bytes for the camera. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
+     * Get camera snapshot frame metadata
+     * Returns metadata for the current or next available camera frame, including a URL that can be used to retrieve/view the frame. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
      * @param {String} cameraId 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link File}
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/GetCameraSnapshot200Response}
      */
     getCameraSnapshot(cameraId) {
       return this.getCameraSnapshotWithHttpInfo(cameraId)

@@ -250,18 +250,107 @@ class CameraStreamDto:
         }
 
 
-# Snapshot note:
-#
-# There is intentionally no CameraSnapshotDto anymore.
-#
-# The camera-system contract now says:
-#
-#   GET /cameras/{cameraId}/snapshot
-#
-# returns image bytes directly, usually image/jpeg.
-#
-# Python wrapper methods should return:
-#
-#   bytes
-#
-# for snapshot calls.
+@dataclass(frozen=True)
+class CameraFrameMetadataDto:
+    """
+    Metadata for a frame owned by the camera-system mocker/integrator.
+
+    The URL points to the image resource. The raw image bytes are not embedded
+    in the snapshot response and should not be stored in Postgres.
+    """
+
+    frame_id: str
+    sequence_number: int
+    captured_at: str
+    url: str
+    mime_type: str = "image/jpeg"
+    width: int | None = None
+    height: int | None = None
+    expires_at: str | None = None
+
+    @staticmethod
+    def from_json(data: JsonObject) -> "CameraFrameMetadataDto":
+        return CameraFrameMetadataDto(
+            frame_id=str(data.get("frameId", "")),
+            sequence_number=int(data.get("sequenceNumber", 0) or 0),
+            captured_at=str(data.get("capturedAt", "")),
+            url=str(data.get("url", "")),
+            mime_type=str(data.get("mimeType", "image/jpeg")),
+            width=_optional_int(data.get("width")),
+            height=_optional_int(data.get("height")),
+            expires_at=_optional_str(data.get("expiresAt")),
+        )
+
+    def to_json(self) -> JsonObject:
+        return {
+            "frameId": self.frame_id,
+            "sequenceNumber": self.sequence_number,
+            "capturedAt": self.captured_at,
+            "url": self.url,
+            "mimeType": self.mime_type,
+            "width": self.width,
+            "height": self.height,
+            "expiresAt": self.expires_at,
+        }
+
+
+@dataclass(frozen=True)
+class CameraSnapshotDto:
+    """
+    Snapshot metadata response for GET /cameras/{cameraId}/snapshot.
+    """
+
+    snapshot_id: str
+    camera_id: str
+    frame: CameraFrameMetadataDto
+
+    @staticmethod
+    def from_json(data: JsonObject) -> "CameraSnapshotDto":
+        frame = data.get("frame")
+        if not isinstance(frame, dict):
+            frame = {}
+
+        return CameraSnapshotDto(
+            snapshot_id=str(data.get("snapshotId", "")),
+            camera_id=str(data.get("cameraId", "")),
+            frame=CameraFrameMetadataDto.from_json(frame),
+        )
+
+    def to_json(self) -> JsonObject:
+        return {
+            "snapshotId": self.snapshot_id,
+            "cameraId": self.camera_id,
+            "frame": self.frame.to_json(),
+        }
+
+
+@dataclass(frozen=True)
+class CameraFrameUrlResponseDto:
+    """
+    Response for GET /cameras/{cameraId}/frames/{frameId}/url.
+    """
+
+    camera_id: str
+    frame_id: str
+    url: str
+    mime_type: str = "image/jpeg"
+    expires_at: str | None = None
+
+    @staticmethod
+    def from_json(data: JsonObject) -> "CameraFrameUrlResponseDto":
+        return CameraFrameUrlResponseDto(
+            camera_id=str(data.get("cameraId", "")),
+            frame_id=str(data.get("frameId", "")),
+            url=str(data.get("url", "")),
+            mime_type=str(data.get("mimeType", "image/jpeg")),
+            expires_at=_optional_str(data.get("expiresAt")),
+        )
+
+    def to_json(self) -> JsonObject:
+        return {
+            "cameraId": self.camera_id,
+            "frameId": self.frame_id,
+            "url": self.url,
+            "mimeType": self.mime_type,
+            "expiresAt": self.expires_at,
+        }

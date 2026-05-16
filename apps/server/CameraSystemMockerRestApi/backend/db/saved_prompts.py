@@ -13,22 +13,40 @@ from db import models
 
 
 CREATE_SAVED_PROMPT = """-- name: create_saved_prompt \\:one
-INSERT INTO saved_prompts (id, name, prompt_type, description, prompt_text, default_priority, default_max_estimated_cost, enabled)
-VALUES (COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text), :p2, :p3, :p4, :p5, COALESCE(:p6, 'normal'), :p7, COALESCE(:p8, true))
+INSERT INTO saved_prompts (
+  id,
+  name,
+  prompt_type,
+  description,
+  prompt_text,
+  default_priority,
+  default_max_estimated_cost,
+  enabled
+)
+VALUES (
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
+  :p2,
+  :p3,
+  :p4,
+  :p5,
+  COALESCE(:p6, 'normal'),
+  :p7,
+  COALESCE(:p8, true)
+)
 RETURNING id, name, prompt_type, description, prompt_text, default_priority, default_max_estimated_cost, enabled, created_at, updated_at
 """
 
 
 @dataclasses.dataclass()
 class CreateSavedPromptParams:
-    column_1: Optional[Any]
+    id: Optional[Any]
     name: str
     prompt_type: str
     description: Optional[str]
     prompt_text: str
-    column_6: Optional[Any]
+    default_priority: Optional[Any]
     default_max_estimated_cost: Optional[decimal.Decimal]
-    column_8: Optional[Any]
+    enabled: Optional[Any]
 
 
 DELETE_SAVED_PROMPT = """-- name: delete_saved_prompt \\:exec
@@ -53,21 +71,21 @@ ORDER BY created_at DESC
 
 UPDATE_SAVED_PROMPT = """-- name: update_saved_prompt \\:one
 UPDATE saved_prompts
-SET name = COALESCE(:p2, name),
-    prompt_type = COALESCE(:p3, prompt_type),
-    description = COALESCE(:p4, description),
-    prompt_text = COALESCE(:p5, prompt_text),
-    default_priority = COALESCE(:p6, default_priority),
-    default_max_estimated_cost = COALESCE(:p7, default_max_estimated_cost),
-    enabled = COALESCE(:p8, enabled)
-WHERE id = :p1
+SET
+  name = COALESCE(:p1, name),
+  prompt_type = COALESCE(:p2, prompt_type),
+  description = COALESCE(:p3, description),
+  prompt_text = COALESCE(:p4, prompt_text),
+  default_priority = COALESCE(:p5, default_priority),
+  default_max_estimated_cost = COALESCE(:p6, default_max_estimated_cost),
+  enabled = COALESCE(:p7, enabled)
+WHERE id = :p8
 RETURNING id, name, prompt_type, description, prompt_text, default_priority, default_max_estimated_cost, enabled, created_at, updated_at
 """
 
 
 @dataclasses.dataclass()
 class UpdateSavedPromptParams:
-    id: str
     name: str
     prompt_type: str
     description: Optional[str]
@@ -75,6 +93,7 @@ class UpdateSavedPromptParams:
     default_priority: str
     default_max_estimated_cost: Optional[decimal.Decimal]
     enabled: bool
+    id: str
 
 
 class Querier:
@@ -83,14 +102,14 @@ class Querier:
 
     def create_saved_prompt(self, arg: CreateSavedPromptParams) -> Optional[models.SavedPrompt]:
         row = self._conn.execute(sqlalchemy.text(CREATE_SAVED_PROMPT), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.name,
             "p3": arg.prompt_type,
             "p4": arg.description,
             "p5": arg.prompt_text,
-            "p6": arg.column_6,
+            "p6": arg.default_priority,
             "p7": arg.default_max_estimated_cost,
-            "p8": arg.column_8,
+            "p8": arg.enabled,
         }).first()
         if row is None:
             return None
@@ -145,14 +164,14 @@ class Querier:
 
     def update_saved_prompt(self, arg: UpdateSavedPromptParams) -> Optional[models.SavedPrompt]:
         row = self._conn.execute(sqlalchemy.text(UPDATE_SAVED_PROMPT), {
-            "p1": arg.id,
-            "p2": arg.name,
-            "p3": arg.prompt_type,
-            "p4": arg.description,
-            "p5": arg.prompt_text,
-            "p6": arg.default_priority,
-            "p7": arg.default_max_estimated_cost,
-            "p8": arg.enabled,
+            "p1": arg.name,
+            "p2": arg.prompt_type,
+            "p3": arg.description,
+            "p4": arg.prompt_text,
+            "p5": arg.default_priority,
+            "p6": arg.default_max_estimated_cost,
+            "p7": arg.enabled,
+            "p8": arg.id,
         }).first()
         if row is None:
             return None
@@ -176,14 +195,14 @@ class AsyncQuerier:
 
     async def create_saved_prompt(self, arg: CreateSavedPromptParams) -> Optional[models.SavedPrompt]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_SAVED_PROMPT), {
-            "p1": arg.column_1,
+            "p1": arg.id,
             "p2": arg.name,
             "p3": arg.prompt_type,
             "p4": arg.description,
             "p5": arg.prompt_text,
-            "p6": arg.column_6,
+            "p6": arg.default_priority,
             "p7": arg.default_max_estimated_cost,
-            "p8": arg.column_8,
+            "p8": arg.enabled,
         })).first()
         if row is None:
             return None
@@ -238,14 +257,14 @@ class AsyncQuerier:
 
     async def update_saved_prompt(self, arg: UpdateSavedPromptParams) -> Optional[models.SavedPrompt]:
         row = (await self._conn.execute(sqlalchemy.text(UPDATE_SAVED_PROMPT), {
-            "p1": arg.id,
-            "p2": arg.name,
-            "p3": arg.prompt_type,
-            "p4": arg.description,
-            "p5": arg.prompt_text,
-            "p6": arg.default_priority,
-            "p7": arg.default_max_estimated_cost,
-            "p8": arg.enabled,
+            "p1": arg.name,
+            "p2": arg.prompt_type,
+            "p3": arg.description,
+            "p4": arg.prompt_text,
+            "p5": arg.default_priority,
+            "p6": arg.default_max_estimated_cost,
+            "p7": arg.enabled,
+            "p8": arg.id,
         })).first()
         if row is None:
             return None

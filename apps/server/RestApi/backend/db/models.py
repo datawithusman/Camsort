@@ -8,6 +8,23 @@ from typing import Any, List, Optional
 
 
 @dataclasses.dataclass()
+class CameraFrameRef:
+    id: str
+    camera_id: str
+    frame_id: str
+    snapshot_id: Optional[str]
+    frame_url: str
+    sequence_number: Optional[int]
+    captured_at: datetime.datetime
+    mime_type: str
+    width: Optional[int]
+    height: Optional[int]
+    expires_at: Optional[datetime.datetime]
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
+@dataclasses.dataclass()
 class CameraGroup:
     id: str
     name: str
@@ -53,6 +70,14 @@ class Operation:
     created_at: datetime.datetime
     started_at: Optional[datetime.datetime]
     completed_at: Optional[datetime.datetime]
+
+
+@dataclasses.dataclass()
+class OperationFrameRef:
+    operation_id: str
+    frame_ref_id: str
+    purpose: str
+    created_at: datetime.datetime
 
 
 @dataclasses.dataclass()

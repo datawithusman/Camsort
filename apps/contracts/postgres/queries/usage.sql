@@ -1,6 +1,22 @@
 -- name: CreateUsageEvent :one
-INSERT INTO usage_events (id, operation_id, camera_id, camera_group_id, event_type, estimated_cost, token_count)
-VALUES (COALESCE(NULLIF($1, ''), gen_random_uuid()::text), $2, $3, $4, $5, COALESCE($6, 0), COALESCE($7, 0))
+INSERT INTO usage_events (
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  event_type,
+  estimated_cost,
+  token_count
+)
+VALUES (
+  COALESCE(NULLIF(sqlc.arg(id), ''), gen_random_uuid()::text),
+  sqlc.arg(operation_id),
+  sqlc.arg(camera_id),
+  sqlc.arg(camera_group_id),
+  sqlc.arg(event_type),
+  COALESCE(sqlc.arg(estimated_cost), 0),
+  COALESCE(sqlc.arg(token_count), 0)
+)
 RETURNING *;
 
 -- name: GetUsageSummary :one
@@ -20,7 +36,7 @@ SELECT
   COALESCE(SUM(estimated_cost) FILTER (WHERE created_at >= date_trunc('month', now())), 0)::numeric AS estimated_cost_this_month,
   now() AS last_updated_at
 FROM usage_events
-WHERE camera_id = $1;
+WHERE camera_id = sqlc.arg(camera_id);
 
 -- name: GetUsageSummaryForCameraGroup :one
 SELECT
@@ -30,4 +46,4 @@ SELECT
   COALESCE(SUM(estimated_cost) FILTER (WHERE created_at >= date_trunc('month', now())), 0)::numeric AS estimated_cost_this_month,
   now() AS last_updated_at
 FROM usage_events
-WHERE camera_group_id = $1;
+WHERE camera_group_id = sqlc.arg(camera_group_id);
