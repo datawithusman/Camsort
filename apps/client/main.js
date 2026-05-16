@@ -13,6 +13,7 @@ backend.configure({
 window.CamBotBackend = backend;
 
 const STORAGE_KEY = "cambot.client.prompts.v1";
+const AUTH_STORAGE_KEY = "cambot.client.basicAuth.v1";
 
 const state = {
   prompts: loadPrompts(),
@@ -62,6 +63,7 @@ const el = {
 installEventHandlers();
 bootstrapPromptState();
 renderAll();
+restoreCachedLogin();
 
 function installEventHandlers() {
   el.loginForm.addEventListener("submit", async (event) => {
@@ -70,13 +72,13 @@ function installEventHandlers() {
   });
 
   el.logoutBtn.addEventListener("click", () => {
+    clearCachedLogin();
     backend.clearBasicAuth();
     for (const timer of state.scheduleTimers.values()) {
       window.clearInterval(timer);
     }
     state.scheduleTimers.clear();
-    el.dashboardView.hidden = true;
-    el.loginView.hidden = false;
+    showLoginView();
   });
 
   el.refreshCamerasBtn.addEventListener("click", async () => {
@@ -106,6 +108,72 @@ function installEventHandlers() {
   });
 }
 
+async function restoreCachedLogin() {
+  const cached = readCachedLogin();
+  if (!cached) {
+    showLoginView();
+    return;
+  }
+
+  el.loginUser.value = cached.username || "";
+  el.loginPass.value = cached.password || "";
+
+  try {
+    backend.setBasicAuth(cached.username, cached.password);
+    await checkHealth();
+    showDashboardView();
+    await refreshCameras();
+  } catch (error) {
+    clearCachedLogin();
+    backend.clearBasicAuth();
+    showLoginView();
+    showLoginError(`Saved login failed: ${errorToMessage(error)}`);
+  }
+}
+
+function showDashboardView() {
+  el.loginView.hidden = true;
+  el.dashboardView.hidden = false;
+  document.body.classList.add("is-authenticated");
+}
+
+function showLoginView() {
+  el.dashboardView.hidden = true;
+  el.loginView.hidden = false;
+  document.body.classList.remove("is-authenticated");
+}
+
+function cacheLogin(username, password) {
+  try {
+    window.localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ username, password })
+    );
+  } catch {
+    // Browser storage may be blocked. The session can still continue.
+  }
+}
+
+function readCachedLogin() {
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.username || !parsed?.password) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearCachedLogin() {
+  try {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 async function connect() {
   const username = el.loginUser.value.trim();
   const password = el.loginPass.value;
@@ -120,11 +188,12 @@ async function connect() {
 
   try {
     await checkHealth();
-    el.loginView.hidden = true;
-    el.dashboardView.hidden = false;
+    cacheLogin(username, password);
+    showDashboardView();
     await refreshCameras();
     showToast("Connected to CamBot RestApi.", "good");
   } catch (error) {
+    clearCachedLogin();
     backend.clearBasicAuth();
     showLoginError(errorToMessage(error));
   }
@@ -254,6 +323,7 @@ function editPrompt(promptId) {
   el.promptName.value = prompt.name;
   el.promptType.value = prompt.type;
   el.promptText.value = prompt.text;
+  document.querySelector(".prompt-editor")?.setAttribute("open", "");
 }
 
 function deletePrompt(promptId) {
