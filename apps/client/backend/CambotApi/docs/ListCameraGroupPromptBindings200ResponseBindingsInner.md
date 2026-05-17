@@ -7,41 +7,9 @@ Name | Type | Description | Notes
 **id** | **String** |  | 
 **cameraGroupId** | **String** |  | 
 **promptId** | **String** |  | 
-**enabled** | **Boolean** |  | 
-**scanFrequency** | **String** |  | [optional] 
-**priorityOverride** | **String** |  | [optional] 
-**maxEstimatedCostOverride** | **Number** |  | [optional] 
+**enabled** | **Boolean** | When true, this prompt/camera-group pair participates in the global continuous scan cycle and can also be run manually. | 
+**lastRunAt** | **Date** | Last time this prompt binding was executed by a manual or scheduled operation. | [optional] 
 **createdAt** | **Date** |  | [optional] 
 **updatedAt** | **Date** |  | [optional] 
-
-
-
-## Enum: ScanFrequencyEnum
-
-
-* `manual` (value: `"manual"`)
-
-* `hourly` (value: `"hourly"`)
-
-* `daily` (value: `"daily"`)
-
-* `continuous` (value: `"continuous"`)
-
-
-
-
-
-## Enum: PriorityOverrideEnum
-
-
-* `low` (value: `"low"`)
-
-* `normal` (value: `"normal"`)
-
-* `high` (value: `"high"`)
-
-* `emergency` (value: `"emergency"`)
-
-
 
 

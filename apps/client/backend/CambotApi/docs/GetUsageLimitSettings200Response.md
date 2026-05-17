@@ -9,5 +9,6 @@ Name | Type | Description | Notes
 **maxEstimatedCostPerDay** | **Number** |  | [optional] 
 **maxEstimatedCostPerMonth** | **Number** |  | [optional] 
 **blockOperationsWhenLimitReached** | **Boolean** |  | [optional] 
+**updatedAt** | **Date** |  | [optional] 
 
 

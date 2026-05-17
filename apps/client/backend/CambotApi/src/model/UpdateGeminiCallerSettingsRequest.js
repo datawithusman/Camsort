@@ -53,14 +53,26 @@ class UpdateGeminiCallerSettingsRequest {
             if (data.hasOwnProperty('modelName')) {
                 obj['modelName'] = ApiClient.convertToType(data['modelName'], 'String');
             }
-            if (data.hasOwnProperty('maxRequestsPerMinute')) {
-                obj['maxRequestsPerMinute'] = ApiClient.convertToType(data['maxRequestsPerMinute'], 'Number');
+            if (data.hasOwnProperty('continuousScanEnabled')) {
+                obj['continuousScanEnabled'] = ApiClient.convertToType(data['continuousScanEnabled'], 'Boolean');
+            }
+            if (data.hasOwnProperty('continuousScanIntervalSeconds')) {
+                obj['continuousScanIntervalSeconds'] = ApiClient.convertToType(data['continuousScanIntervalSeconds'], 'Number');
+            }
+            if (data.hasOwnProperty('lastContinuousScanAt')) {
+                obj['lastContinuousScanAt'] = ApiClient.convertToType(data['lastContinuousScanAt'], 'Date');
+            }
+            if (data.hasOwnProperty('nextContinuousScanAt')) {
+                obj['nextContinuousScanAt'] = ApiClient.convertToType(data['nextContinuousScanAt'], 'Date');
+            }
+            if (data.hasOwnProperty('geminiCallDelayMs')) {
+                obj['geminiCallDelayMs'] = ApiClient.convertToType(data['geminiCallDelayMs'], 'Number');
+            }
+            if (data.hasOwnProperty('maxConcurrentGeminiCalls')) {
+                obj['maxConcurrentGeminiCalls'] = ApiClient.convertToType(data['maxConcurrentGeminiCalls'], 'Number');
             }
             if (data.hasOwnProperty('maxTokensPerRequest')) {
                 obj['maxTokensPerRequest'] = ApiClient.convertToType(data['maxTokensPerRequest'], 'Number');
-            }
-            if (data.hasOwnProperty('maxCostPerOperation')) {
-                obj['maxCostPerOperation'] = ApiClient.convertToType(data['maxCostPerOperation'], 'Number');
             }
             if (data.hasOwnProperty('maxCostPerDay')) {
                 obj['maxCostPerDay'] = ApiClient.convertToType(data['maxCostPerDay'], 'Number');
@@ -105,19 +117,39 @@ UpdateGeminiCallerSettingsRequest.prototype['enabled'] = undefined;
 UpdateGeminiCallerSettingsRequest.prototype['modelName'] = undefined;
 
 /**
- * @member {Number} maxRequestsPerMinute
+ * @member {Boolean} continuousScanEnabled
  */
-UpdateGeminiCallerSettingsRequest.prototype['maxRequestsPerMinute'] = undefined;
+UpdateGeminiCallerSettingsRequest.prototype['continuousScanEnabled'] = undefined;
+
+/**
+ * @member {Number} continuousScanIntervalSeconds
+ */
+UpdateGeminiCallerSettingsRequest.prototype['continuousScanIntervalSeconds'] = undefined;
+
+/**
+ * @member {Date} lastContinuousScanAt
+ */
+UpdateGeminiCallerSettingsRequest.prototype['lastContinuousScanAt'] = undefined;
+
+/**
+ * @member {Date} nextContinuousScanAt
+ */
+UpdateGeminiCallerSettingsRequest.prototype['nextContinuousScanAt'] = undefined;
+
+/**
+ * @member {Number} geminiCallDelayMs
+ */
+UpdateGeminiCallerSettingsRequest.prototype['geminiCallDelayMs'] = undefined;
+
+/**
+ * @member {Number} maxConcurrentGeminiCalls
+ */
+UpdateGeminiCallerSettingsRequest.prototype['maxConcurrentGeminiCalls'] = undefined;
 
 /**
  * @member {Number} maxTokensPerRequest
  */
 UpdateGeminiCallerSettingsRequest.prototype['maxTokensPerRequest'] = undefined;
-
-/**
- * @member {Number} maxCostPerOperation
- */
-UpdateGeminiCallerSettingsRequest.prototype['maxCostPerOperation'] = undefined;
 
 /**
  * @member {Number} maxCostPerDay

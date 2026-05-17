@@ -25,7 +25,7 @@ class ListCameraGroupPromptBindings200ResponseBindingsInner {
      * @param id {String} 
      * @param cameraGroupId {String} 
      * @param promptId {String} 
-     * @param enabled {Boolean} 
+     * @param enabled {Boolean} When true, this prompt/camera-group pair participates in the global continuous scan cycle and can also be run manually.
      */
     constructor(id, cameraGroupId, promptId, enabled) { 
         
@@ -67,14 +67,8 @@ class ListCameraGroupPromptBindings200ResponseBindingsInner {
             if (data.hasOwnProperty('enabled')) {
                 obj['enabled'] = ApiClient.convertToType(data['enabled'], 'Boolean');
             }
-            if (data.hasOwnProperty('scanFrequency')) {
-                obj['scanFrequency'] = ApiClient.convertToType(data['scanFrequency'], 'String');
-            }
-            if (data.hasOwnProperty('priorityOverride')) {
-                obj['priorityOverride'] = ApiClient.convertToType(data['priorityOverride'], 'String');
-            }
-            if (data.hasOwnProperty('maxEstimatedCostOverride')) {
-                obj['maxEstimatedCostOverride'] = ApiClient.convertToType(data['maxEstimatedCostOverride'], 'Number');
+            if (data.hasOwnProperty('lastRunAt')) {
+                obj['lastRunAt'] = ApiClient.convertToType(data['lastRunAt'], 'Date');
             }
             if (data.hasOwnProperty('createdAt')) {
                 obj['createdAt'] = ApiClient.convertToType(data['createdAt'], 'Date');
@@ -110,14 +104,6 @@ class ListCameraGroupPromptBindings200ResponseBindingsInner {
         if (data['promptId'] && !(typeof data['promptId'] === 'string' || data['promptId'] instanceof String)) {
             throw new Error("Expected the field `promptId` to be a primitive type in the JSON string but got " + data['promptId']);
         }
-        // ensure the json data is a string
-        if (data['scanFrequency'] && !(typeof data['scanFrequency'] === 'string' || data['scanFrequency'] instanceof String)) {
-            throw new Error("Expected the field `scanFrequency` to be a primitive type in the JSON string but got " + data['scanFrequency']);
-        }
-        // ensure the json data is a string
-        if (data['priorityOverride'] && !(typeof data['priorityOverride'] === 'string' || data['priorityOverride'] instanceof String)) {
-            throw new Error("Expected the field `priorityOverride` to be a primitive type in the JSON string but got " + data['priorityOverride']);
-        }
 
         return true;
     }
@@ -143,24 +129,16 @@ ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['cameraGroupId']
 ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['promptId'] = undefined;
 
 /**
+ * When true, this prompt/camera-group pair participates in the global continuous scan cycle and can also be run manually.
  * @member {Boolean} enabled
  */
 ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['enabled'] = undefined;
 
 /**
- * @member {module:model/ListCameraGroupPromptBindings200ResponseBindingsInner.ScanFrequencyEnum} scanFrequency
+ * Last time this prompt binding was executed by a manual or scheduled operation.
+ * @member {Date} lastRunAt
  */
-ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['scanFrequency'] = undefined;
-
-/**
- * @member {module:model/ListCameraGroupPromptBindings200ResponseBindingsInner.PriorityOverrideEnum} priorityOverride
- */
-ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['priorityOverride'] = undefined;
-
-/**
- * @member {Number} maxEstimatedCostOverride
- */
-ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['maxEstimatedCostOverride'] = undefined;
+ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['lastRunAt'] = undefined;
 
 /**
  * @member {Date} createdAt
@@ -174,72 +152,6 @@ ListCameraGroupPromptBindings200ResponseBindingsInner.prototype['updatedAt'] = u
 
 
 
-
-
-/**
- * Allowed values for the <code>scanFrequency</code> property.
- * @enum {String}
- * @readonly
- */
-ListCameraGroupPromptBindings200ResponseBindingsInner['ScanFrequencyEnum'] = {
-
-    /**
-     * value: "manual"
-     * @const
-     */
-    "manual": "manual",
-
-    /**
-     * value: "hourly"
-     * @const
-     */
-    "hourly": "hourly",
-
-    /**
-     * value: "daily"
-     * @const
-     */
-    "daily": "daily",
-
-    /**
-     * value: "continuous"
-     * @const
-     */
-    "continuous": "continuous"
-};
-
-
-/**
- * Allowed values for the <code>priorityOverride</code> property.
- * @enum {String}
- * @readonly
- */
-ListCameraGroupPromptBindings200ResponseBindingsInner['PriorityOverrideEnum'] = {
-
-    /**
-     * value: "low"
-     * @const
-     */
-    "low": "low",
-
-    /**
-     * value: "normal"
-     * @const
-     */
-    "normal": "normal",
-
-    /**
-     * value: "high"
-     * @const
-     */
-    "high": "high",
-
-    /**
-     * value: "emergency"
-     * @const
-     */
-    "emergency": "emergency"
-};
 
 
 

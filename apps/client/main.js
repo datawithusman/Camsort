@@ -2,21 +2,21 @@ const state = {
   base: '/api',
   auth: null,
   prompts: [],
-  appGroups: [],
-  sourceGroups: [],
+  groups: [],
+  bindings: [],
+  operations: [],
   selectedPromptId: null,
-  selectedGroupKey: null,
-  selectedBinding: null,
+  selectedGroupId: null,
   imageUrls: new Map(),
   showingFirstPass: false,
 };
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-const camIds = (g) => g?.cameraIds || g?.camera_ids || [];
 const nowish = (v) => v ? new Date(v).toLocaleString() : '—';
 const num = (v, fallback = 0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
 const fmtMoney = (v) => Number.isFinite(Number(v)) ? `$${Number(v).toFixed(2)}` : '—';
+const normalizeId = (v) => String(v ?? '').trim();
 
 function authHeader() {
   return state.auth ? { Authorization: 'Basic ' + btoa(`${state.auth.user}:${state.auth.pass}`) } : {};
@@ -50,39 +50,60 @@ function logout() {
 }
 
 async function refreshAll() {
-  await Promise.all([loadPrompts(), loadGroups(), loadSettings(), loadQueue(), loadUsage()]);
+  await Promise.all([loadPrompts(), loadGroups(), loadOperations(), loadSettings(), loadQueue(), loadUsage()]);
   selectInitialPromptAndGroup();
+  await loadBindings();
   renderPrompts();
-  renderGroupSelect();
-  await loadBindingStatus();
+  renderGroupSelects();
   await loadResults();
 }
 
 function selectInitialPromptAndGroup() {
   if (!state.selectedPromptId && state.prompts.length) state.selectedPromptId = state.prompts[0].id;
-  if (!state.selectedGroupKey) {
-    if (state.appGroups.length) state.selectedGroupKey = `app:${state.appGroups[0].id}`;
-    else if (state.sourceGroups.length) state.selectedGroupKey = `source:${state.sourceGroups[0].id}`;
-  }
+  if (!state.selectedGroupId && state.groups.length) state.selectedGroupId = state.groups[0].id;
 }
 
 function normalizePrompt(p) {
   return {
     ...p,
+    id: p.id,
     promptText: p.promptText ?? p.prompt_text ?? '',
     createdAt: p.createdAt ?? p.created_at,
     updatedAt: p.updatedAt ?? p.updated_at,
   };
 }
 
-function normalizeGroup(g, source) {
+function normalizeGroup(g) {
   return {
     ...g,
     id: g.id,
     name: g.name || g.id,
     description: g.description || '',
-    cameraIds: camIds(g),
-    source,
+    cameraIds: g.cameraIds || g.camera_ids || [],
+  };
+}
+
+function normalizeBinding(b) {
+  return {
+    ...b,
+    id: b.id,
+    promptId: b.promptId ?? b.prompt_id,
+    cameraGroupId: b.cameraGroupId ?? b.camera_group_id,
+    lastRunAt: b.lastRunAt ?? b.last_run_at,
+  };
+}
+
+function normalizeOperation(o) {
+  return {
+    ...o,
+    id: o.id,
+    promptId: o.promptId ?? o.prompt_id,
+    cameraGroupId: o.cameraGroupId ?? o.camera_group_id,
+    status: o.status || 'unknown',
+    trigger: o.trigger || o.triggerType || o.trigger_type,
+    createdAt: o.createdAt ?? o.created_at,
+    startedAt: o.startedAt ?? o.started_at,
+    completedAt: o.completedAt ?? o.completed_at,
   };
 }
 
@@ -92,128 +113,130 @@ async function loadPrompts() {
 }
 
 async function loadGroups() {
-  const [appRes, sourceRes] = await Promise.allSettled([
-    api('/camera-groups'),
-    api('/camera-system/source-camera-groups'),
-  ]);
+  const data = await api('/camera-groups');
+  state.groups = (data.groups || []).map(normalizeGroup);
+}
 
-  state.appGroups = appRes.status === 'fulfilled' ? (appRes.value.groups || []).map(g => normalizeGroup(g, 'app')) : [];
-  state.sourceGroups = sourceRes.status === 'fulfilled' ? (sourceRes.value.groups || []).map(g => normalizeGroup(g, 'source')) : [];
+async function loadOperations() {
+  try {
+    const data = await api('/operations?limit=100&offset=0');
+    state.operations = (data.operations || []).map(normalizeOperation);
+  } catch {
+    state.operations = [];
+  }
+}
+
+async function loadBindings() {
+  const all = [];
+  for (const group of state.groups) {
+    try {
+      const data = await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings`);
+      for (const b of (data.bindings || [])) all.push(normalizeBinding(b));
+    } catch {
+      // Keep UI usable even if binding endpoint is not ready.
+    }
+  }
+  state.bindings = all;
+}
+
+function getSelectedPrompt() { return state.prompts.find(p => p.id === state.selectedPromptId) || null; }
+function getSelectedGroup() { return state.groups.find(g => g.id === state.selectedGroupId) || null; }
+function getPromptBindings(promptId) { return state.bindings.filter(b => b.promptId === promptId && b.enabled !== false); }
+function getSelectedBinding() { return state.bindings.find(b => b.promptId === state.selectedPromptId && b.cameraGroupId === state.selectedGroupId) || null; }
+function isPromptScanning(promptId) {
+  return state.operations.some(o => o.promptId === promptId && ['queued', 'running', 'first_pass_running', 'second_pass_running'].includes(String(o.status).toLowerCase()));
 }
 
 function renderPrompts() {
-  const selected = getSelectedPrompt();
-  $('promptList').innerHTML = state.prompts.length ? state.prompts.map(p => `
-    <div class="item prompt-item ${p.id === state.selectedPromptId ? 'active' : ''}" data-prompt-id="${esc(p.id)}">
-      <div class="prompt-title"><span>${esc(p.name)}</span><span class="pill ${p.enabled ? 'ok' : 'danger'}">${p.enabled ? 'enabled' : 'disabled'}</span></div>
-      <p class="prompt-text-preview">${esc(p.promptText || 'No prompt text yet.')}</p>
-      <div class="muted small">Updated ${esc(nowish(p.updatedAt || p.createdAt))}</div>
-    </div>`).join('') : '<div class="empty">No prompts yet. Create one with + New Prompt.</div>';
+  const list = $('promptList');
+  if (!state.prompts.length) {
+    list.innerHTML = '<div class="empty">No prompts yet. Create a new prompt to begin.</div>';
+    return;
+  }
 
-  document.querySelectorAll('[data-prompt-id]').forEach(el => {
-    el.onclick = async () => {
-      state.selectedPromptId = el.dataset.promptId;
+  list.innerHTML = state.prompts.map(prompt => {
+    const scheduled = getPromptBindings(prompt.id).length > 0;
+    const scanning = isPromptScanning(prompt.id);
+    const active = prompt.id === state.selectedPromptId;
+    const groupNames = getPromptBindings(prompt.id)
+      .map(b => state.groups.find(g => g.id === b.cameraGroupId)?.name || b.cameraGroupId)
+      .join(', ');
+    return `
+      <article class="prompt-row ${active ? 'active' : ''}" data-prompt-id="${esc(prompt.id)}" tabindex="0">
+        <div class="prompt-main">
+          <div class="prompt-title-line">
+            <strong>${esc(prompt.name || prompt.id)}</strong>
+            <span class="prompt-badges">
+              ${scheduled ? `<span class="pill ok" title="Scheduled on background${groupNames ? `: ${esc(groupNames)}` : ''}">Scheduled</span>` : '<span class="pill soft">Manual</span>'}
+              ${scanning ? '<span class="pill warn">Scanning</span>' : ''}
+              ${prompt.enabled === false ? '<span class="pill danger">Disabled</span>' : ''}
+            </span>
+          </div>
+          <p class="prompt-preview">${esc(prompt.promptText || 'No prompt text.')}</p>
+        </div>
+        <button class="edit-prompt-btn secondary" data-edit-prompt-id="${esc(prompt.id)}" title="Edit prompt">Edit</button>
+      </article>
+    `;
+  }).join('');
+
+  document.querySelectorAll('.prompt-row').forEach(row => {
+    row.onclick = async (event) => {
+      if (event.target.closest('.edit-prompt-btn')) return;
+      state.selectedPromptId = row.dataset.promptId;
       renderPrompts();
-      fillPromptEditor();
-      await loadBindingStatus();
+      await loadBindings();
+      updateBindingStatus();
+      await loadResults();
+    };
+    row.onkeydown = async (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      state.selectedPromptId = row.dataset.promptId;
+      renderPrompts();
+      await loadBindings();
+      updateBindingStatus();
       await loadResults();
     };
   });
 
-  fillPromptEditor(selected);
+  document.querySelectorAll('.edit-prompt-btn').forEach(btn => {
+    btn.onclick = async (event) => {
+      event.stopPropagation();
+      state.selectedPromptId = btn.dataset.editPromptId;
+      renderPrompts();
+      await openPromptModal(getSelectedPrompt());
+    };
+  });
 }
 
-function fillPromptEditor(prompt = getSelectedPrompt()) {
-  if (!prompt) {
-    $('editorTitle').textContent = 'New Prompt';
-    $('selectedPromptPill').textContent = 'none selected';
-    $('promptId').value = '';
-    $('promptName').value = '';
-    $('promptDescription').value = '';
-    $('promptText').value = '';
-    $('promptEnabled').checked = true;
-    return;
-  }
-  $('editorTitle').textContent = 'Edit Prompt';
-  $('selectedPromptPill').textContent = prompt.name || prompt.id;
-  $('promptId').value = prompt.id;
-  $('promptName').value = prompt.name || '';
-  $('promptDescription').value = prompt.description || '';
-  $('promptText').value = prompt.promptText || '';
-  $('promptEnabled').checked = prompt.enabled !== false;
+function renderGroupSelects() {
+  const options = state.groups.map(g => `<option value="${esc(g.id)}">${esc(g.name)} · ${g.cameraIds.length} cams</option>`).join('');
+  $('resultGroupSelect').innerHTML = options || '<option value="">No camera groups</option>';
+  $('modalGroupSelect').innerHTML = options || '<option value="">No camera groups</option>';
+  if (state.selectedGroupId && [...$('resultGroupSelect').options].some(o => o.value === state.selectedGroupId)) $('resultGroupSelect').value = state.selectedGroupId;
+  if (state.selectedGroupId && [...$('modalGroupSelect').options].some(o => o.value === state.selectedGroupId)) $('modalGroupSelect').value = state.selectedGroupId;
 }
 
-function renderGroupSelect() {
-  const options = [];
-  if (state.appGroups.length) {
-    options.push('<optgroup label="Prompt Camera Groups">');
-    for (const g of state.appGroups) options.push(`<option value="app:${esc(g.id)}">${esc(g.name)} · ${g.cameraIds.length} cams</option>`);
-    options.push('</optgroup>');
-  }
-  if (state.sourceGroups.length) {
-    options.push('<optgroup label="Source Camera System Groups">');
-    for (const g of state.sourceGroups) options.push(`<option value="source:${esc(g.id)}">${esc(g.name)} · source group</option>`);
-    options.push('</optgroup>');
-  }
-  $('groupSelect').innerHTML = options.join('') || '<option value="">No camera groups found</option>';
-  if (state.selectedGroupKey && [...$('groupSelect').options].some(o => o.value === state.selectedGroupKey)) $('groupSelect').value = state.selectedGroupKey;
-  else if ($('groupSelect').options.length) state.selectedGroupKey = $('groupSelect').value;
-  updateGroupHelp();
+async function openPromptModal(prompt = null) {
+  if (!state.groups.length) await loadGroups();
+  if (!state.selectedGroupId && state.groups.length) state.selectedGroupId = state.groups[0].id;
+  renderGroupSelects();
+
+  const isNew = !prompt;
+  $('promptModalTitle').textContent = isNew ? 'Create New Prompt' : 'Edit Prompt';
+  $('modalSubtitle').textContent = isNew ? 'Create the prompt, then choose a camera group to run or schedule it.' : 'Edit the prompt or run/schedule it on a camera group.';
+  $('promptId').value = prompt?.id || '';
+  $('promptName').value = prompt?.name || '';
+  $('promptDescription').value = prompt?.description || '';
+  $('promptText').value = prompt?.promptText || '';
+  $('promptEnabled').checked = prompt?.enabled !== false;
+  $('deletePromptBtn').hidden = isNew;
+  $('promptModal').hidden = false;
+  updateBindingStatus();
+  setTimeout(() => $('promptName').focus(), 0);
 }
 
-function getSelectedPrompt() { return state.prompts.find(p => p.id === state.selectedPromptId) || null; }
-function parseGroupKey(key = state.selectedGroupKey) { const [kind, ...rest] = String(key || '').split(':'); return { kind, id: rest.join(':') }; }
-function getSelectedGroup() {
-  const { kind, id } = parseGroupKey();
-  return kind === 'source' ? state.sourceGroups.find(g => g.id === id) : state.appGroups.find(g => g.id === id);
-}
-
-function updateGroupHelp() {
-  const group = getSelectedGroup();
-  if (!group) {
-    $('selectedGroupPill').textContent = 'no group';
-    $('groupHelp').textContent = 'No group selected.';
-    return;
-  }
-  const countText = group.source === 'app' ? `${group.cameraIds.length} cameras` : 'source group; will be imported before scan/binding';
-  $('selectedGroupPill').textContent = group.name;
-  $('groupHelp').innerHTML = group.source === 'source'
-    ? `<span class="group-warning">${esc(group.name)} is a source camera-system group. CamBot will create/update a prompt camera group from it before scanning.</span>`
-    : `${esc(group.name)} is a prompt camera group with ${esc(countText)}.`;
-}
-
-async function getSourceGroupCameraIds(sourceGroupId) {
-  const data = await api(`/camera-system/source-camera-groups/${encodeURIComponent(sourceGroupId)}/cameras`);
-  const cameras = data.cameras || data.cameraIds || data.camera_ids || [];
-  if (Array.isArray(cameras) && cameras.length && typeof cameras[0] === 'object') return cameras.map(c => c.id || c.cameraId).filter(Boolean);
-  return cameras.filter(Boolean);
-}
-
-async function ensureScanGroup() {
-  const selected = getSelectedGroup();
-  if (!selected) throw new Error('Select a camera group first.');
-  if (selected.source === 'app') return selected.id;
-
-  const cameraIds = selected.cameraIds.length ? selected.cameraIds : await getSourceGroupCameraIds(selected.id);
-  const payload = {
-    id: selected.id,
-    name: selected.name || selected.id,
-    description: selected.description || `Imported from source camera group ${selected.id}`,
-    cameraIds,
-  };
-
-  try {
-    await api('/camera-groups', { method: 'POST', body: JSON.stringify(payload) });
-  } catch (err) {
-    await api(`/camera-groups/${encodeURIComponent(selected.id)}`, { method: 'PUT', body: JSON.stringify({ name: payload.name, description: payload.description }) });
-    await api(`/camera-groups/${encodeURIComponent(selected.id)}/cameras`, { method: 'PUT', body: JSON.stringify({ cameraIds }) });
-  }
-
-  await loadGroups();
-  state.selectedGroupKey = `app:${selected.id}`;
-  renderGroupSelect();
-  return selected.id;
-}
+function closePromptModal() { $('promptModal').hidden = true; }
 
 async function savePrompt() {
   const id = $('promptId').value.trim();
@@ -228,9 +251,11 @@ async function savePrompt() {
     ? await api(`/saved-prompts/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) })
     : await api('/saved-prompts', { method: 'POST', body: JSON.stringify(payload) });
   await loadPrompts();
-  state.selectedPromptId = saved.id || id;
+  state.selectedPromptId = saved?.id || id || state.prompts.find(p => p.name === payload.name)?.id || state.selectedPromptId;
+  await loadBindings();
   renderPrompts();
-  await loadBindingStatus();
+  updateBindingStatus();
+  await loadResults();
 }
 
 async function deletePrompt() {
@@ -238,201 +263,175 @@ async function deletePrompt() {
   if (!prompt) return;
   if (!confirm(`Delete prompt "${prompt.name}"?`)) return;
   await api(`/saved-prompts/${encodeURIComponent(prompt.id)}`, { method: 'DELETE' });
+  closePromptModal();
   state.selectedPromptId = null;
-  await loadPrompts();
-  selectInitialPromptAndGroup();
-  renderPrompts();
-  await loadResults();
+  await refreshAll();
 }
 
-function newPrompt() {
-  state.selectedPromptId = null;
-  document.querySelectorAll('.prompt-item.active').forEach(el => el.classList.remove('active'));
-  fillPromptEditor(null);
-  $('resultContext').textContent = 'Create or select a prompt.';
-  $('resultList').innerHTML = '<div class="empty">No prompt selected.</div>';
-}
-
-async function runScan() {
-  const prompt = getSelectedPrompt();
-  if (!prompt) throw new Error('Select or save a prompt first.');
-  const cameraGroupId = await ensureScanGroup();
-  const operation = await api('/operations', { method: 'POST', body: JSON.stringify({ promptId: prompt.id, cameraGroupId, trigger: 'manual' }) });
-  $('resultContext').textContent = `Manual scan queued: ${operation.id || 'operation created'}. Refresh results after GeminiCaller processes it.`;
-}
-
-async function loadBindingStatus() {
+async function runSingleScan() {
   const prompt = getSelectedPrompt();
   const group = getSelectedGroup();
-  state.selectedBinding = null;
-  if (!prompt || !group) {
-    $('bindingStatus').textContent = 'Select a prompt and camera group.';
-    return;
-  }
-  if (group.source === 'source') {
-    $('bindingStatus').textContent = 'Source group selected. It will be imported before enabling continuous scan.';
-    return;
-  }
-  try {
-    const data = await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings`);
-    const binding = (data.bindings || []).find(b => (b.promptId || b.prompt_id) === prompt.id);
-    state.selectedBinding = binding || null;
-    $('bindingStatus').innerHTML = binding
-      ? `Continuous scan binding: <strong>${binding.enabled ? 'enabled' : 'disabled'}</strong>. Last run: ${esc(nowish(binding.lastRunAt || binding.last_run_at))}`
-      : 'No continuous scan binding for this prompt/group.';
-  } catch (err) {
-    $('bindingStatus').textContent = err.message;
-  }
-}
-
-async function setContinuousBinding(enabled) {
-  const prompt = getSelectedPrompt();
   if (!prompt) throw new Error('Select or save a prompt first.');
-  const cameraGroupId = await ensureScanGroup();
-  await api(`/camera-groups/${encodeURIComponent(cameraGroupId)}/prompt-bindings`, {
+  if (!group) throw new Error('Select a camera group first.');
+  const operation = await api('/operations', {
     method: 'POST',
-    body: JSON.stringify({ promptId: prompt.id, enabled }),
+    body: JSON.stringify({ promptId: prompt.id, cameraGroupId: group.id, trigger: 'manual' }),
   });
-  await loadBindingStatus();
+  closePromptModal();
+  await loadOperations();
+  renderPrompts();
+  alert(`Queued single scan: ${operation?.id || 'operation created'}`);
 }
 
-async function loadResults() {
+async function enableContinuous() {
   const prompt = getSelectedPrompt();
   const group = getSelectedGroup();
-  if (!prompt || !group) {
-    $('resultContext').textContent = 'Select a prompt and camera group.';
-    $('resultList').innerHTML = '<div class="empty">No result context selected.</div>';
+  if (!prompt) throw new Error('Select or save a prompt first.');
+  if (!group) throw new Error('Select a camera group first.');
+  await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings`, {
+    method: 'POST',
+    body: JSON.stringify({ promptId: prompt.id, enabled: true }),
+  });
+  await loadBindings();
+  renderPrompts();
+  updateBindingStatus();
+}
+
+async function disableContinuous() {
+  const binding = getSelectedBinding();
+  const group = getSelectedGroup();
+  if (!binding || !group) return;
+  await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings/${encodeURIComponent(binding.id)}`, { method: 'DELETE' });
+  await loadBindings();
+  renderPrompts();
+  updateBindingStatus();
+}
+
+function updateBindingStatus() {
+  const prompt = getSelectedPrompt();
+  const group = getSelectedGroup();
+  const binding = getSelectedBinding();
+  if (!prompt) {
+    $('bindingStatus').textContent = 'Save or select a prompt before scheduling.';
     return;
   }
-  const cameraGroupId = group.source === 'app' ? group.id : group.id;
-  const pass = state.showingFirstPass ? 'first-pass' : 'second-pass';
-  const titlePass = state.showingFirstPass ? 'first pass/intermediate' : 'second pass/global';
-  $('resultContext').textContent = `${titlePass} results for "${prompt.name}" on "${group.name}".`;
-
-  try {
-    const data = await api(`/prompt-results/latest/${pass}?promptId=${encodeURIComponent(prompt.id)}&cameraGroupId=${encodeURIComponent(cameraGroupId)}`);
-    const rows = data.results || [];
-    renderResults(rows, state.showingFirstPass);
-  } catch (err) {
-    $('resultList').innerHTML = `<div class="empty">${esc(err.message)}</div>`;
+  if (!group) {
+    $('bindingStatus').textContent = 'Select a camera group before scheduling.';
+    return;
   }
+  $('bindingStatus').innerHTML = binding
+    ? `<span class="pill ok">Scheduled</span> ${esc(prompt.name)} runs on ${esc(group.name)} during the global continuous scan cycle. Last run: ${esc(nowish(binding.lastRunAt))}`
+    : `<span class="pill soft">Not scheduled</span> ${esc(prompt.name)} is not scheduled on ${esc(group.name)}.`;
+}
+
+async function imageObjectUrl(frameUrl) {
+  if (!frameUrl) return null;
+  if (state.imageUrls.has(frameUrl)) return state.imageUrls.get(frameUrl);
+  const response = await fetch(frameUrl.startsWith('http') ? frameUrl : frameUrl, { headers: authHeader() });
+  if (!response.ok) return null;
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  state.imageUrls.set(frameUrl, url);
+  return url;
 }
 
 function normalizeResult(r) {
   return {
-    ...r,
+    id: r.id,
     cameraId: r.cameraId ?? r.camera_id,
     frameUrl: r.frameUrl ?? r.frame_url,
-    include: r.include,
-    firstPassPromptScore: r.firstPassPromptScore ?? r.first_pass_prompt_score,
     promptScore: r.promptScore ?? r.prompt_score ?? r.firstPassPromptScore ?? r.first_pass_prompt_score,
     operatorPriorityScore: r.operatorPriorityScore ?? r.operator_priority_score,
     operatorAction: r.operatorAction ?? r.operator_action ?? r.recommendedAction ?? r.recommended_action,
     reason: r.reason,
     globalRank: r.globalRank ?? r.global_rank,
-    updatedAt: r.updatedAt ?? r.updated_at,
+    createdAt: r.createdAt ?? r.created_at ?? r.updatedAt ?? r.updated_at,
   };
 }
 
-function renderResults(rows, firstPass) {
-  const normalized = rows.map(normalizeResult);
-  if (!normalized.length) {
-    $('resultList').innerHTML = `<div class="empty">No ${firstPass ? 'first-pass' : 'second-pass'} results yet.</div>`;
+async function loadResults() {
+  const prompt = getSelectedPrompt();
+  const group = getSelectedGroup();
+  $('resultContext').textContent = prompt && group
+    ? `${prompt.name} · ${group.name} · ${state.showingFirstPass ? 'first pass/intermediate' : 'second pass/global'} results`
+    : 'Select a prompt and camera group.';
+  if (!prompt || !group) {
+    $('resultList').innerHTML = '<div class="empty">Select a prompt and camera group to see results.</div>';
     return;
   }
-  $('resultList').innerHTML = normalized.map((r, idx) => `
-    <article class="result-card">
-      ${r.frameUrl ? `<img data-frame-url="${esc(r.frameUrl)}" alt="snapshot for ${esc(r.cameraId)}">` : ''}
-      <div class="score-row">
-        <div><span class="muted small">${firstPass ? 'First-pass score' : 'Prompt score'}</span><div class="big-score">${Math.round(num(r.promptScore))}</div></div>
-        <div><span class="muted small">Operator priority</span><div class="priority-score">${Math.round(num(r.operatorPriorityScore))}</div></div>
-      </div>
-      <div>
-        <span class="pill">${esc(r.cameraId)}</span>
-        ${r.globalRank ? `<span class="pill ok">rank ${esc(r.globalRank)}</span>` : `<span class="pill soft">#${idx + 1}</span>`}
-        ${r.include === false ? '<span class="pill danger">excluded</span>' : '<span class="pill ok">included</span>'}
-      </div>
-      <p><strong>Operator action:</strong> ${esc(r.operatorAction || 'Review this camera.')}</p>
-      <p class="muted">${esc(r.reason || '')}</p>
-      <p class="muted small">Updated ${esc(nowish(r.updatedAt))}</p>
-    </article>
-  `).join('');
-  hydrateImages();
+  const pass = state.showingFirstPass ? 'first' : 'second';
+  try {
+    const data = await api(`/prompt-results/latest/${pass}?promptId=${encodeURIComponent(prompt.id)}&cameraGroupId=${encodeURIComponent(group.id)}`);
+    const results = (data.results || []).map(normalizeResult);
+    await renderResults(results);
+  } catch (err) {
+    $('resultList').innerHTML = `<div class="empty">Could not load results yet.<br><small>${esc(err.message || err)}</small></div>`;
+  }
 }
 
-async function hydrateImages() {
-  const imgs = [...document.querySelectorAll('img[data-frame-url]')];
-  for (const img of imgs) {
-    const frameUrl = img.dataset.frameUrl;
-    if (!frameUrl) continue;
-    if (state.imageUrls.has(frameUrl)) { img.src = state.imageUrls.get(frameUrl); continue; }
-    try {
-      const response = await fetch(frameUrl.startsWith('http') ? frameUrl : frameUrl, { headers: authHeader() });
-      if (!response.ok) throw new Error(`image ${response.status}`);
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      state.imageUrls.set(frameUrl, objectUrl);
-      img.src = objectUrl;
-    } catch (err) {
-      img.replaceWith(Object.assign(document.createElement('div'), { className: 'empty', textContent: `Could not load snapshot: ${err.message}` }));
-    }
+async function renderResults(results) {
+  if (!results.length) {
+    $('resultList').innerHTML = '<div class="empty">No results yet. Run a single scan or wait for the background scanner.</div>';
+    return;
+  }
+  $('resultList').innerHTML = results.map((r, index) => `
+    <article class="result-card" data-frame-url="${esc(r.frameUrl || '')}">
+      <div class="image-slot"><span>Loading snapshot...</span></div>
+      <div class="score-row">
+        <div><span class="muted small">Prompt Score</span><div class="big-score">${esc(num(r.promptScore, 0).toFixed(0))}</div></div>
+        <div><span class="muted small">Operator Priority</span><div class="priority-score">${esc(num(r.operatorPriorityScore, 0).toFixed(0))}</div></div>
+      </div>
+      <h3>${esc(r.cameraId || `Camera ${index + 1}`)} ${r.globalRank ? `<span class="pill soft">#${esc(r.globalRank)}</span>` : ''}</h3>
+      <p><strong>Action:</strong> ${esc(r.operatorAction || 'Review this camera.')}</p>
+      <p class="muted"><strong>Reason:</strong> ${esc(r.reason || 'No reason provided.')}</p>
+      <p class="muted small">Updated: ${esc(nowish(r.createdAt))}</p>
+    </article>
+  `).join('');
+  for (const card of document.querySelectorAll('.result-card')) {
+    const frameUrl = card.dataset.frameUrl;
+    const slot = card.querySelector('.image-slot');
+    const url = await imageObjectUrl(frameUrl);
+    slot.innerHTML = url ? `<img src="${esc(url)}" alt="camera snapshot">` : '<span>No snapshot image</span>';
   }
 }
 
 async function loadQueue() {
   try {
     const data = await api('/operator-queue');
-    renderQueue(data.items || []);
+    const items = data.items || [];
+    $('queueList').innerHTML = items.length ? items.map(item => {
+      const cameraId = item.cameraId ?? item.camera_id;
+      const action = item.operatorAction ?? item.operator_action ?? item.recommendedAction ?? item.recommended_action;
+      const score = item.operatorPriorityScore ?? item.operator_priority_score;
+      const status = item.status || 'queued';
+      return `
+        <article class="item queue-item">
+          <div>
+            <strong>${esc(cameraId)} · ${esc(action || 'Operator action')}</strong>
+            <p class="muted">${esc(item.reason || '')}</p>
+          </div>
+          <div class="queue-meta">
+            <span class="pill ${status === 'queued' ? 'warn' : 'soft'}">${esc(status)}</span>
+            <div class="priority-score">${esc(num(score, 0).toFixed(0))}</div>
+          </div>
+        </article>
+      `;
+    }).join('') : '<div class="empty">No operator actions yet.</div>';
   } catch (err) {
-    $('queueList').innerHTML = `<div class="empty">${esc(err.message)}</div>`;
+    $('queueList').innerHTML = `<div class="empty">Could not load queue.<br><small>${esc(err.message || err)}</small></div>`;
   }
-}
-
-function normalizeQueueItem(i) {
-  return {
-    ...i,
-    cameraId: i.cameraId ?? i.camera_id,
-    status: i.status,
-    promptScore: i.promptScore ?? i.prompt_score,
-    operatorPriorityScore: i.operatorPriorityScore ?? i.operator_priority_score,
-    operatorAction: i.operatorAction ?? i.operator_action,
-    reason: i.reason,
-    createdAt: i.createdAt ?? i.created_at,
-  };
-}
-
-function renderQueue(items) {
-  const normalized = items.map(normalizeQueueItem);
-  if (!normalized.length) {
-    $('queueList').innerHTML = '<div class="empty">Operator queue is empty.</div>';
-    return;
-  }
-  $('queueList').innerHTML = normalized.map(i => `
-    <div class="item queue-item">
-      <div>
-        <strong>${esc(i.operatorAction || 'Review camera')}</strong>
-        <p class="muted">${esc(i.reason || '')}</p>
-        <span class="pill">${esc(i.cameraId)}</span><span class="pill ${i.status === 'queued' ? 'warn' : 'soft'}">${esc(i.status)}</span>
-      </div>
-      <div class="queue-meta">
-        <div class="priority-score">${Math.round(num(i.operatorPriorityScore))}</div>
-        <div class="muted small">prompt ${Math.round(num(i.promptScore))}</div>
-        <div class="muted small">${esc(nowish(i.createdAt))}</div>
-      </div>
-    </div>
-  `).join('');
 }
 
 async function loadSettings() {
   try {
     const s = await api('/settings/gemini');
-    $('continuousEnabled').checked = !!(s.continuousScanEnabled ?? s.continuous_scan_enabled);
+    $('continuousEnabled').checked = Boolean(s.continuousScanEnabled ?? s.continuous_scan_enabled);
     $('continuousInterval').value = s.continuousScanIntervalSeconds ?? s.continuous_scan_interval_seconds ?? 900;
     $('geminiDelay').value = s.geminiCallDelayMs ?? s.gemini_call_delay_ms ?? 2000;
-    $('maxCostDay').value = s.maxCostPerDay ?? s.max_cost_per_day ?? 10;
+    $('maxCostDay').value = s.maxEstimatedCostPerDay ?? s.max_estimated_cost_per_day ?? '';
     $('nextScanAt').textContent = nowish(s.nextContinuousScanAt ?? s.next_continuous_scan_at);
-  } catch (err) {
-    $('usageSummary').textContent = err.message;
+  } catch {
+    // Settings endpoint may not be ready during early dev.
   }
 }
 
@@ -441,9 +440,9 @@ async function saveSettings() {
     method: 'PUT',
     body: JSON.stringify({
       continuousScanEnabled: $('continuousEnabled').checked,
-      continuousScanIntervalSeconds: Number($('continuousInterval').value),
-      geminiCallDelayMs: Number($('geminiDelay').value),
-      maxCostPerDay: Number($('maxCostDay').value),
+      continuousScanIntervalSeconds: Number($('continuousInterval').value || 900),
+      geminiCallDelayMs: Number($('geminiDelay').value || 2000),
+      maxEstimatedCostPerDay: Number($('maxCostDay').value || 0),
     }),
   });
   await loadSettings();
@@ -452,42 +451,58 @@ async function saveSettings() {
 async function loadUsage() {
   try {
     const u = await api('/usage/summary');
-    $('usageSummary').textContent = JSON.stringify(u, null, 2);
-    $('prevDayCost').textContent = fmtMoney(u.previousDayCost ?? u.previous_day_cost ?? u.yesterdayCost ?? u.yesterday_cost);
-    $('monthCost').textContent = fmtMoney(u.monthToDateCost ?? u.month_to_date_cost ?? u.monthlyCost ?? u.monthly_cost);
+    $('prevDayCost').textContent = fmtMoney(u.previousDayCost ?? u.previous_day_cost);
+    $('monthCost').textContent = fmtMoney(u.monthToDateCost ?? u.month_to_date_cost);
     $('projectedCost').textContent = fmtMoney(u.projectedCostPerDay ?? u.projected_cost_per_day);
-  } catch (err) {
-    $('usageSummary').textContent = err.message;
+    $('usageSummary').textContent = JSON.stringify(u, null, 2);
+  } catch {
+    $('usageSummary').textContent = 'Usage summary unavailable.';
   }
 }
 
-function wire() {
-  $('loginBtn').onclick = () => login().catch(e => $('loginMsg').textContent = e.message);
-  $('logoutBtn').onclick = logout;
-  $('newPromptBtn').onclick = newPrompt;
-  $('refreshPromptsBtn').onclick = () => loadPrompts().then(renderPrompts).catch(alert);
-  $('savePromptBtn').onclick = () => savePrompt().catch(e => alert(e.message));
-  $('deletePromptBtn').onclick = () => deletePrompt().catch(e => alert(e.message));
-  $('runBtn').onclick = () => runScan().catch(e => alert(e.message));
-  $('enableContinuousBtn').onclick = () => setContinuousBinding(true).catch(e => alert(e.message));
-  $('disableContinuousBtn').onclick = () => setContinuousBinding(false).catch(e => alert(e.message));
-  $('refreshResultsBtn').onclick = () => loadResults().catch(e => alert(e.message));
-  $('showFirstPassBtn').onclick = () => { state.showingFirstPass = !state.showingFirstPass; $('showFirstPassBtn').textContent = state.showingFirstPass ? 'Show Second Pass' : 'Show First Pass'; loadResults().catch(alert); };
-  $('refreshQueueBtn').onclick = () => loadQueue().catch(e => alert(e.message));
-  $('saveSettingsBtn').onclick = () => saveSettings().then(loadUsage).catch(e => alert(e.message));
-  $('groupSelect').onchange = async () => { state.selectedGroupKey = $('groupSelect').value; updateGroupHelp(); await loadBindingStatus(); await loadResults(); };
+async function guard(fn) {
+  try { await fn(); }
+  catch (err) { alert(err.message || String(err)); }
 }
 
-wire();
-loadAuth();
-if (state.auth) {
-  $('login').hidden = true;
-  $('dashboard').hidden = false;
-  refreshAll().catch(err => {
-    console.error(err);
-    localStorage.removeItem('cambotAuth');
-    $('login').hidden = false;
-    $('dashboard').hidden = true;
-    $('loginMsg').textContent = err.message;
+function wireEvents() {
+  $('loginBtn').onclick = () => guard(login);
+  $('password').onkeydown = e => { if (e.key === 'Enter') guard(login); };
+  $('logoutBtn').onclick = logout;
+  $('refreshPromptsBtn').onclick = () => guard(async () => { await loadPrompts(); await loadOperations(); await loadBindings(); renderPrompts(); });
+  $('newPromptBtn').onclick = () => guard(async () => openPromptModal(null));
+  $('closePromptModalBtn').onclick = closePromptModal;
+  $('promptModal').onclick = e => { if (e.target.id === 'promptModal') closePromptModal(); };
+  $('savePromptBtn').onclick = () => guard(savePrompt);
+  $('deletePromptBtn').onclick = () => guard(deletePrompt);
+  $('runBtn').onclick = () => guard(runSingleScan);
+  $('enableContinuousBtn').onclick = () => guard(enableContinuous);
+  $('disableContinuousBtn').onclick = () => guard(disableContinuous);
+  $('modalGroupSelect').onchange = async () => { state.selectedGroupId = $('modalGroupSelect').value; $('resultGroupSelect').value = state.selectedGroupId; updateBindingStatus(); await loadResults(); };
+  $('resultGroupSelect').onchange = async () => { state.selectedGroupId = $('resultGroupSelect').value; $('modalGroupSelect').value = state.selectedGroupId; await loadBindings(); updateBindingStatus(); await loadResults(); };
+  $('refreshResultsBtn').onclick = () => guard(loadResults);
+  $('showFirstPassBtn').onclick = () => guard(async () => {
+    state.showingFirstPass = !state.showingFirstPass;
+    $('showFirstPassBtn').textContent = state.showingFirstPass ? 'Show Second Pass' : 'Show First Pass';
+    await loadResults();
   });
+  $('refreshQueueBtn').onclick = () => guard(loadQueue);
+  $('saveSettingsBtn').onclick = () => guard(saveSettings);
 }
+
+async function boot() {
+  wireEvents();
+  loadAuth();
+  if (state.auth) {
+    try {
+      await api('/health');
+      $('login').hidden = true;
+      $('dashboard').hidden = false;
+      await refreshAll();
+    } catch {
+      localStorage.removeItem('cambotAuth');
+    }
+  }
+}
+
+boot();

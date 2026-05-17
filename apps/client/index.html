@@ -23,7 +23,7 @@
       <header class="topbar">
         <div>
           <h1>CamBot Dashboard</h1>
-          <p class="muted">Prompt scans, global results, operator actions, and system settings.</p>
+          <p class="muted">Prompt scans, global results, operator actions, and settings.</p>
         </div>
         <button id="logoutBtn" class="secondary">Logout</button>
       </header>
@@ -32,67 +32,29 @@
         <div class="widget-header">
           <div>
             <h2>Prompt Library</h2>
-            <p class="muted">Create prompts, edit prompts, run a single scan, or enable continuous scanning for a camera group.</p>
+            <p class="muted">Click a prompt to view results. Use Edit to change, run once, or schedule on the background scanner.</p>
           </div>
-          <button id="newPromptBtn">+ New Prompt</button>
-        </div>
-
-        <div class="prompt-layout">
-          <aside class="prompt-list-shell">
-            <div class="mini-header">
-              <span>Prompts</span>
-              <button id="refreshPromptsBtn" class="ghost">Refresh</button>
-            </div>
-            <div id="promptList" class="stack"></div>
-          </aside>
-
-          <div class="editor-card">
-            <div class="mini-header">
-              <span id="editorTitle">New Prompt</span>
-              <span id="selectedPromptPill" class="pill soft">none selected</span>
-            </div>
-            <input id="promptId" type="hidden">
-            <label>Prompt name</label>
-            <input id="promptName" placeholder="Example: Find obstructed cameras">
-            <label>Description</label>
-            <input id="promptDescription" placeholder="Optional short note">
-            <label>Operator prompt</label>
-            <textarea id="promptText" placeholder="Example: Find cameras where the view is obstructed or hazardous."></textarea>
-            <label class="check-row"><input id="promptEnabled" type="checkbox" checked> Prompt enabled</label>
-            <div class="button-row">
-              <button id="savePromptBtn">Save Prompt</button>
-              <button id="deletePromptBtn" class="danger secondary">Delete</button>
-            </div>
-          </div>
-
-          <div class="run-card">
-            <div class="mini-header"><span>Run / Schedule</span><span id="selectedGroupPill" class="pill soft">no group</span></div>
-            <label>Camera group for this prompt</label>
-            <select id="groupSelect"></select>
-            <p id="groupHelp" class="muted small"></p>
-            <div class="button-row vertical-buttons">
-              <button id="runBtn">Run Single Scan Now</button>
-              <button id="enableContinuousBtn" class="secondary">Enable Continuous Scan</button>
-              <button id="disableContinuousBtn" class="secondary">Disable Continuous Scan</button>
-            </div>
-            <p class="muted small">Continuous scans use the global interval in settings. Manual scans are queued ahead of scheduled scans after the current operation finishes.</p>
-            <div id="bindingStatus" class="status-box muted">No binding loaded.</div>
+          <div class="button-row">
+            <button id="refreshPromptsBtn" class="secondary">Refresh</button>
+            <button id="newPromptBtn">Create New Prompt</button>
           </div>
         </div>
+        <div id="promptList" class="prompt-list"></div>
       </section>
 
       <section class="widget" id="resultViewerWidget">
         <div class="widget-header">
           <div>
             <h2>Prompt Result Viewer</h2>
-            <p class="muted">Shows latest second-pass/global results for the selected prompt and camera group.</p>
+            <p class="muted">Latest second-pass/global camera list for the selected prompt and camera group.</p>
           </div>
           <div class="button-row">
+            <select id="resultGroupSelect" class="compact-select"></select>
             <button id="refreshResultsBtn" class="secondary">Refresh Results</button>
             <button id="showFirstPassBtn" class="ghost">Show First Pass</button>
           </div>
         </div>
-        <div id="resultContext" class="context-line muted">Select a prompt and camera group.</div>
+        <div id="resultContext" class="context-line muted">Select a prompt.</div>
         <div id="resultList" class="result-grid"></div>
       </section>
 
@@ -133,6 +95,46 @@
         </details>
       </section>
     </section>
+
+    <div id="promptModal" class="modal-backdrop" hidden>
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="promptModalTitle">
+        <div class="widget-header modal-header">
+          <div>
+            <h2 id="promptModalTitle">Edit Prompt</h2>
+            <p id="modalSubtitle" class="muted">Edit the prompt or run/schedule it.</p>
+          </div>
+          <button id="closePromptModalBtn" class="secondary">Close</button>
+        </div>
+
+        <input id="promptId" type="hidden">
+        <div class="modal-section">
+          <label>Prompt name</label>
+          <input id="promptName" placeholder="Example: Find hazardous areas">
+          <label>Description</label>
+          <input id="promptDescription" placeholder="Optional short note">
+          <label>Operator prompt</label>
+          <textarea id="promptText" placeholder="Example: Find cameras showing hazardous areas, blocked exits, or unsafe floor conditions."></textarea>
+          <label class="check-row"><input id="promptEnabled" type="checkbox" checked> Prompt enabled</label>
+          <div class="button-row left-buttons">
+            <button id="savePromptBtn">Save Prompt</button>
+            <button id="deletePromptBtn" class="danger secondary">Delete Prompt</button>
+          </div>
+        </div>
+
+        <div class="modal-section run-section">
+          <h3>Run or Schedule</h3>
+          <label>Camera group</label>
+          <select id="modalGroupSelect"></select>
+          <p id="bindingStatus" class="status-box muted">No binding loaded.</p>
+          <div class="button-row left-buttons wrap-buttons">
+            <button id="runBtn">Run Single Scan</button>
+            <button id="enableContinuousBtn" class="secondary">Schedule on Background</button>
+            <button id="disableContinuousBtn" class="secondary">Remove Background Schedule</button>
+          </div>
+          <p class="muted small">Background schedules use the global continuous scan interval. Manual scans are queued ahead of scheduled scans after the current operation finishes.</p>
+        </div>
+      </section>
+    </div>
   </main>
   <script src="main.js"></script>
 </body>
