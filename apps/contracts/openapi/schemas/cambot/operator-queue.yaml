@@ -12,20 +12,20 @@ components:
       type: object
       required:
         - id
-        - operationResultId
+        - secondPassResultId
         - operationId
         - cameraId
         - frameRefId
         - frameUrl
-        - recommendedAction
-        - reason
-        - promptMatchScore
+        - promptScore
         - operatorPriorityScore
+        - operatorAction
+        - reason
         - status
       properties:
         id:
           type: string
-        operationResultId:
+        secondPassResultId:
           type: string
         operationId:
           type: string
@@ -41,20 +41,21 @@ components:
           type: string
         frameUrl:
           type: string
-        recommendedAction:
-          type: string
-        reason:
-          type: string
-        promptMatchScore:
+        promptScore:
           type: number
           format: double
           minimum: 0
           maximum: 100
+          description: Final global prompt score from the second pass.
         operatorPriorityScore:
           type: number
           format: double
           minimum: 0
           maximum: 100
+        operatorAction:
+          type: string
+        reason:
+          type: string
         status:
           $ref: "#/components/schemas/OperatorQueueStatus"
         operatorNote:
@@ -70,11 +71,11 @@ components:
     CreateOperatorQueueItemRequest:
       type: object
       required:
-        - operationResultId
+        - secondPassResultId
       properties:
-        operationResultId:
+        secondPassResultId:
           type: string
-          description: Creates a queue item from a stored Gemini operation result.
+          description: Creates a queue item from a stored second-pass/global prompt result.
 
     UpdateOperatorQueueItemRequest:
       type: object

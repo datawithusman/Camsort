@@ -27,13 +27,17 @@ class ListOperations200ResponseOperationsInner {
      * @param cameraGroupId {String} 
      * @param trigger {module:model/ListOperations200ResponseOperationsInner.TriggerEnum} 
      * @param status {module:model/ListOperations200ResponseOperationsInner.StatusEnum} 
+     * @param firstPassStatus {module:model/ListOperations200ResponseOperationsInner.FirstPassStatusEnum} 
+     * @param secondPassStatus {module:model/ListOperations200ResponseOperationsInner.SecondPassStatusEnum} 
      * @param totalCameras {Number} 
      * @param processedCameras {Number} 
+     * @param firstPassResultCount {Number} 
+     * @param secondPassResultCount {Number} 
      * @param matchedCameras {Number} 
      */
-    constructor(id, promptId, cameraGroupId, trigger, status, totalCameras, processedCameras, matchedCameras) { 
+    constructor(id, promptId, cameraGroupId, trigger, status, firstPassStatus, secondPassStatus, totalCameras, processedCameras, firstPassResultCount, secondPassResultCount, matchedCameras) { 
         
-        ListOperations200ResponseOperationsInner.initialize(this, id, promptId, cameraGroupId, trigger, status, totalCameras, processedCameras, matchedCameras);
+        ListOperations200ResponseOperationsInner.initialize(this, id, promptId, cameraGroupId, trigger, status, firstPassStatus, secondPassStatus, totalCameras, processedCameras, firstPassResultCount, secondPassResultCount, matchedCameras);
     }
 
     /**
@@ -41,14 +45,18 @@ class ListOperations200ResponseOperationsInner {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, promptId, cameraGroupId, trigger, status, totalCameras, processedCameras, matchedCameras) { 
+    static initialize(obj, id, promptId, cameraGroupId, trigger, status, firstPassStatus, secondPassStatus, totalCameras, processedCameras, firstPassResultCount, secondPassResultCount, matchedCameras) { 
         obj['id'] = id;
         obj['promptId'] = promptId;
         obj['cameraGroupId'] = cameraGroupId;
         obj['trigger'] = trigger;
         obj['status'] = status;
+        obj['firstPassStatus'] = firstPassStatus;
+        obj['secondPassStatus'] = secondPassStatus;
         obj['totalCameras'] = totalCameras;
         obj['processedCameras'] = processedCameras;
+        obj['firstPassResultCount'] = firstPassResultCount;
+        obj['secondPassResultCount'] = secondPassResultCount;
         obj['matchedCameras'] = matchedCameras;
     }
 
@@ -81,17 +89,32 @@ class ListOperations200ResponseOperationsInner {
             if (data.hasOwnProperty('status')) {
                 obj['status'] = ApiClient.convertToType(data['status'], 'String');
             }
+            if (data.hasOwnProperty('firstPassStatus')) {
+                obj['firstPassStatus'] = ApiClient.convertToType(data['firstPassStatus'], 'String');
+            }
+            if (data.hasOwnProperty('secondPassStatus')) {
+                obj['secondPassStatus'] = ApiClient.convertToType(data['secondPassStatus'], 'String');
+            }
             if (data.hasOwnProperty('totalCameras')) {
                 obj['totalCameras'] = ApiClient.convertToType(data['totalCameras'], 'Number');
             }
             if (data.hasOwnProperty('processedCameras')) {
                 obj['processedCameras'] = ApiClient.convertToType(data['processedCameras'], 'Number');
             }
+            if (data.hasOwnProperty('firstPassResultCount')) {
+                obj['firstPassResultCount'] = ApiClient.convertToType(data['firstPassResultCount'], 'Number');
+            }
+            if (data.hasOwnProperty('secondPassResultCount')) {
+                obj['secondPassResultCount'] = ApiClient.convertToType(data['secondPassResultCount'], 'Number');
+            }
             if (data.hasOwnProperty('matchedCameras')) {
                 obj['matchedCameras'] = ApiClient.convertToType(data['matchedCameras'], 'Number');
             }
             if (data.hasOwnProperty('estimatedGeminiCalls')) {
                 obj['estimatedGeminiCalls'] = ApiClient.convertToType(data['estimatedGeminiCalls'], 'Number');
+            }
+            if (data.hasOwnProperty('estimatedTokenCount')) {
+                obj['estimatedTokenCount'] = ApiClient.convertToType(data['estimatedTokenCount'], 'Number');
             }
             if (data.hasOwnProperty('estimatedCost')) {
                 obj['estimatedCost'] = ApiClient.convertToType(data['estimatedCost'], 'Number');
@@ -155,6 +178,14 @@ class ListOperations200ResponseOperationsInner {
             throw new Error("Expected the field `status` to be a primitive type in the JSON string but got " + data['status']);
         }
         // ensure the json data is a string
+        if (data['firstPassStatus'] && !(typeof data['firstPassStatus'] === 'string' || data['firstPassStatus'] instanceof String)) {
+            throw new Error("Expected the field `firstPassStatus` to be a primitive type in the JSON string but got " + data['firstPassStatus']);
+        }
+        // ensure the json data is a string
+        if (data['secondPassStatus'] && !(typeof data['secondPassStatus'] === 'string' || data['secondPassStatus'] instanceof String)) {
+            throw new Error("Expected the field `secondPassStatus` to be a primitive type in the JSON string but got " + data['secondPassStatus']);
+        }
+        // ensure the json data is a string
         if (data['errorMessage'] && !(typeof data['errorMessage'] === 'string' || data['errorMessage'] instanceof String)) {
             throw new Error("Expected the field `errorMessage` to be a primitive type in the JSON string but got " + data['errorMessage']);
         }
@@ -165,7 +196,7 @@ class ListOperations200ResponseOperationsInner {
 
 }
 
-ListOperations200ResponseOperationsInner.RequiredProperties = ["id", "promptId", "cameraGroupId", "trigger", "status", "totalCameras", "processedCameras", "matchedCameras"];
+ListOperations200ResponseOperationsInner.RequiredProperties = ["id", "promptId", "cameraGroupId", "trigger", "status", "firstPassStatus", "secondPassStatus", "totalCameras", "processedCameras", "firstPassResultCount", "secondPassResultCount", "matchedCameras"];
 
 /**
  * @member {String} id
@@ -198,6 +229,16 @@ ListOperations200ResponseOperationsInner.prototype['trigger'] = undefined;
 ListOperations200ResponseOperationsInner.prototype['status'] = undefined;
 
 /**
+ * @member {module:model/ListOperations200ResponseOperationsInner.FirstPassStatusEnum} firstPassStatus
+ */
+ListOperations200ResponseOperationsInner.prototype['firstPassStatus'] = undefined;
+
+/**
+ * @member {module:model/ListOperations200ResponseOperationsInner.SecondPassStatusEnum} secondPassStatus
+ */
+ListOperations200ResponseOperationsInner.prototype['secondPassStatus'] = undefined;
+
+/**
  * @member {Number} totalCameras
  */
 ListOperations200ResponseOperationsInner.prototype['totalCameras'] = undefined;
@@ -208,6 +249,16 @@ ListOperations200ResponseOperationsInner.prototype['totalCameras'] = undefined;
 ListOperations200ResponseOperationsInner.prototype['processedCameras'] = undefined;
 
 /**
+ * @member {Number} firstPassResultCount
+ */
+ListOperations200ResponseOperationsInner.prototype['firstPassResultCount'] = undefined;
+
+/**
+ * @member {Number} secondPassResultCount
+ */
+ListOperations200ResponseOperationsInner.prototype['secondPassResultCount'] = undefined;
+
+/**
  * @member {Number} matchedCameras
  */
 ListOperations200ResponseOperationsInner.prototype['matchedCameras'] = undefined;
@@ -216,6 +267,11 @@ ListOperations200ResponseOperationsInner.prototype['matchedCameras'] = undefined
  * @member {Number} estimatedGeminiCalls
  */
 ListOperations200ResponseOperationsInner.prototype['estimatedGeminiCalls'] = undefined;
+
+/**
+ * @member {Number} estimatedTokenCount
+ */
+ListOperations200ResponseOperationsInner.prototype['estimatedTokenCount'] = undefined;
 
 /**
  * @member {Number} estimatedCost
@@ -313,6 +369,84 @@ ListOperations200ResponseOperationsInner['StatusEnum'] = {
      * @const
      */
     "cancelled": "cancelled"
+};
+
+
+/**
+ * Allowed values for the <code>firstPassStatus</code> property.
+ * @enum {String}
+ * @readonly
+ */
+ListOperations200ResponseOperationsInner['FirstPassStatusEnum'] = {
+
+    /**
+     * value: "pending"
+     * @const
+     */
+    "pending": "pending",
+
+    /**
+     * value: "running"
+     * @const
+     */
+    "running": "running",
+
+    /**
+     * value: "completed"
+     * @const
+     */
+    "completed": "completed",
+
+    /**
+     * value: "failed"
+     * @const
+     */
+    "failed": "failed",
+
+    /**
+     * value: "skipped"
+     * @const
+     */
+    "skipped": "skipped"
+};
+
+
+/**
+ * Allowed values for the <code>secondPassStatus</code> property.
+ * @enum {String}
+ * @readonly
+ */
+ListOperations200ResponseOperationsInner['SecondPassStatusEnum'] = {
+
+    /**
+     * value: "pending"
+     * @const
+     */
+    "pending": "pending",
+
+    /**
+     * value: "running"
+     * @const
+     */
+    "running": "running",
+
+    /**
+     * value: "completed"
+     * @const
+     */
+    "completed": "completed",
+
+    /**
+     * value: "failed"
+     * @const
+     */
+    "failed": "failed",
+
+    /**
+     * value: "skipped"
+     * @const
+     */
+    "skipped": "skipped"
 };
 
 

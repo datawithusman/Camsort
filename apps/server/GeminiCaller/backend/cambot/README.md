@@ -105,9 +105,12 @@ Class | Method | HTTP request | Description
 *OperationsApi* | [**create_operation**](docs/OperationsApi.md#create_operation) | **POST** /operations | Create a prompt scan operation
 *OperationsApi* | [**estimate_operation**](docs/OperationsApi.md#estimate_operation) | **POST** /operations/estimate | Estimate prompt scan usage and cost
 *OperationsApi* | [**get_operation**](docs/OperationsApi.md#get_operation) | **GET** /operations/{operationId} | Get a prompt scan operation
-*OperationsApi* | [**list_operation_results**](docs/OperationsApi.md#list_operation_results) | **GET** /operations/{operationId}/results | List Gemini camera results for an operation
+*OperationsApi* | [**list_latest_first_pass_results**](docs/OperationsApi.md#list_latest_first_pass_results) | **GET** /prompt-results/latest/first-pass | List latest first-pass results for a prompt and camera group
+*OperationsApi* | [**list_latest_second_pass_results**](docs/OperationsApi.md#list_latest_second_pass_results) | **GET** /prompt-results/latest/second-pass | List latest second-pass global results for a prompt and camera group
+*OperationsApi* | [**list_operation_first_pass_results**](docs/OperationsApi.md#list_operation_first_pass_results) | **GET** /operations/{operationId}/first-pass-results | List first-pass image results for an operation
+*OperationsApi* | [**list_operation_second_pass_results**](docs/OperationsApi.md#list_operation_second_pass_results) | **GET** /operations/{operationId}/second-pass-results | List second-pass global prompt results for an operation
 *OperationsApi* | [**list_operations**](docs/OperationsApi.md#list_operations) | **GET** /operations | List prompt scan operations
-*OperatorQueueApi* | [**create_operator_queue_item**](docs/OperatorQueueApi.md#create_operator_queue_item) | **POST** /operator-queue | Create an operator queue item from an operation result
+*OperatorQueueApi* | [**create_operator_queue_item**](docs/OperatorQueueApi.md#create_operator_queue_item) | **POST** /operator-queue | Create an operator queue item from a second-pass result
 *OperatorQueueApi* | [**list_operator_queue_items**](docs/OperatorQueueApi.md#list_operator_queue_items) | **GET** /operator-queue | List operator queue items
 *OperatorQueueApi* | [**update_operator_queue_item**](docs/OperatorQueueApi.md#update_operator_queue_item) | **PUT** /operator-queue/{queueItemId} | Update operator queue item status
 *PromptBindingsApi* | [**create_camera_group_prompt_binding**](docs/PromptBindingsApi.md#create_camera_group_prompt_binding) | **POST** /camera-groups/{groupId}/prompt-bindings | Apply a saved prompt to a camera group
@@ -143,8 +146,14 @@ Class | Method | HTTP request | Description
  - [ListCameraGroups200Response](docs/ListCameraGroups200Response.md)
  - [ListCameraGroups200ResponseGroupsInner](docs/ListCameraGroups200ResponseGroupsInner.md)
  - [ListCameraGroups200ResponseGroupsInnerStats](docs/ListCameraGroups200ResponseGroupsInnerStats.md)
- - [ListOperationResults200Response](docs/ListOperationResults200Response.md)
- - [ListOperationResults200ResponseResultsInner](docs/ListOperationResults200ResponseResultsInner.md)
+ - [ListLatestFirstPassResults200Response](docs/ListLatestFirstPassResults200Response.md)
+ - [ListLatestFirstPassResults200ResponseResultsInner](docs/ListLatestFirstPassResults200ResponseResultsInner.md)
+ - [ListLatestSecondPassResults200Response](docs/ListLatestSecondPassResults200Response.md)
+ - [ListLatestSecondPassResults200ResponseResultsInner](docs/ListLatestSecondPassResults200ResponseResultsInner.md)
+ - [ListOperationFirstPassResults200Response](docs/ListOperationFirstPassResults200Response.md)
+ - [ListOperationFirstPassResults200ResponseResultsInner](docs/ListOperationFirstPassResults200ResponseResultsInner.md)
+ - [ListOperationSecondPassResults200Response](docs/ListOperationSecondPassResults200Response.md)
+ - [ListOperationSecondPassResults200ResponseResultsInner](docs/ListOperationSecondPassResults200ResponseResultsInner.md)
  - [ListOperations200Response](docs/ListOperations200Response.md)
  - [ListOperations200ResponseOperationsInner](docs/ListOperations200ResponseOperationsInner.md)
  - [ListOperatorQueueItems200Response](docs/ListOperatorQueueItems200Response.md)

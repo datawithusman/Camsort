@@ -7,7 +7,10 @@ Method | HTTP request | Description
 [**create_operation**](OperationsApi.md#create_operation) | **POST** /operations | Create a prompt scan operation
 [**estimate_operation**](OperationsApi.md#estimate_operation) | **POST** /operations/estimate | Estimate prompt scan usage and cost
 [**get_operation**](OperationsApi.md#get_operation) | **GET** /operations/{operationId} | Get a prompt scan operation
-[**list_operation_results**](OperationsApi.md#list_operation_results) | **GET** /operations/{operationId}/results | List Gemini camera results for an operation
+[**list_latest_first_pass_results**](OperationsApi.md#list_latest_first_pass_results) | **GET** /prompt-results/latest/first-pass | List latest first-pass results for a prompt and camera group
+[**list_latest_second_pass_results**](OperationsApi.md#list_latest_second_pass_results) | **GET** /prompt-results/latest/second-pass | List latest second-pass global results for a prompt and camera group
+[**list_operation_first_pass_results**](OperationsApi.md#list_operation_first_pass_results) | **GET** /operations/{operationId}/first-pass-results | List first-pass image results for an operation
+[**list_operation_second_pass_results**](OperationsApi.md#list_operation_second_pass_results) | **GET** /operations/{operationId}/second-pass-results | List second-pass global prompt results for an operation
 [**list_operations**](OperationsApi.md#list_operations) | **GET** /operations | List prompt scan operations
 
 
@@ -244,10 +247,10 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **list_operation_results**
-> ListOperationResults200Response list_operation_results(operation_id, include=include)
+# **list_latest_first_pass_results**
+> ListLatestFirstPassResults200Response list_latest_first_pass_results(prompt_id, camera_group_id, include=include)
 
-List Gemini camera results for an operation
+List latest first-pass results for a prompt and camera group
 
 ### Example
 
@@ -255,7 +258,169 @@ List Gemini camera results for an operation
 
 ```python
 import cambot_dtos
-from cambot_dtos.models.list_operation_results200_response import ListOperationResults200Response
+from cambot_dtos.models.list_latest_first_pass_results200_response import ListLatestFirstPassResults200Response
+from cambot_dtos.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to /api
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cambot_dtos.Configuration(
+    host = "/api"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure HTTP basic authorization: basicAuth
+configuration = cambot_dtos.Configuration(
+    username = os.environ["USERNAME"],
+    password = os.environ["PASSWORD"]
+)
+
+# Enter a context with an instance of the API client
+with cambot_dtos.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cambot_dtos.OperationsApi(api_client)
+    prompt_id = 'prompt_id_example' # str | 
+    camera_group_id = 'camera_group_id_example' # str | 
+    include = True # bool |  (optional)
+
+    try:
+        # List latest first-pass results for a prompt and camera group
+        api_response = api_instance.list_latest_first_pass_results(prompt_id, camera_group_id, include=include)
+        print("The response of OperationsApi->list_latest_first_pass_results:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling OperationsApi->list_latest_first_pass_results: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prompt_id** | **str**|  | 
+ **camera_group_id** | **str**|  | 
+ **include** | **bool**|  | [optional] 
+
+### Return type
+
+[**ListLatestFirstPassResults200Response**](ListLatestFirstPassResults200Response.md)
+
+### Authorization
+
+[basicAuth](../README.md#basicAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Latest first-pass results returned |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **list_latest_second_pass_results**
+> ListLatestSecondPassResults200Response list_latest_second_pass_results(prompt_id, camera_group_id, include=include)
+
+List latest second-pass global results for a prompt and camera group
+
+### Example
+
+* Basic Authentication (basicAuth):
+
+```python
+import cambot_dtos
+from cambot_dtos.models.list_latest_second_pass_results200_response import ListLatestSecondPassResults200Response
+from cambot_dtos.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to /api
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cambot_dtos.Configuration(
+    host = "/api"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure HTTP basic authorization: basicAuth
+configuration = cambot_dtos.Configuration(
+    username = os.environ["USERNAME"],
+    password = os.environ["PASSWORD"]
+)
+
+# Enter a context with an instance of the API client
+with cambot_dtos.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cambot_dtos.OperationsApi(api_client)
+    prompt_id = 'prompt_id_example' # str | 
+    camera_group_id = 'camera_group_id_example' # str | 
+    include = True # bool |  (optional)
+
+    try:
+        # List latest second-pass global results for a prompt and camera group
+        api_response = api_instance.list_latest_second_pass_results(prompt_id, camera_group_id, include=include)
+        print("The response of OperationsApi->list_latest_second_pass_results:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling OperationsApi->list_latest_second_pass_results: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **prompt_id** | **str**|  | 
+ **camera_group_id** | **str**|  | 
+ **include** | **bool**|  | [optional] 
+
+### Return type
+
+[**ListLatestSecondPassResults200Response**](ListLatestSecondPassResults200Response.md)
+
+### Authorization
+
+[basicAuth](../README.md#basicAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Latest second-pass results returned |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **list_operation_first_pass_results**
+> ListOperationFirstPassResults200Response list_operation_first_pass_results(operation_id, include=include)
+
+List first-pass image results for an operation
+
+### Example
+
+* Basic Authentication (basicAuth):
+
+```python
+import cambot_dtos
+from cambot_dtos.models.list_operation_first_pass_results200_response import ListOperationFirstPassResults200Response
 from cambot_dtos.rest import ApiException
 from pprint import pprint
 
@@ -284,12 +449,12 @@ with cambot_dtos.ApiClient(configuration) as api_client:
     include = True # bool |  (optional)
 
     try:
-        # List Gemini camera results for an operation
-        api_response = api_instance.list_operation_results(operation_id, include=include)
-        print("The response of OperationsApi->list_operation_results:\n")
+        # List first-pass image results for an operation
+        api_response = api_instance.list_operation_first_pass_results(operation_id, include=include)
+        print("The response of OperationsApi->list_operation_first_pass_results:\n")
         pprint(api_response)
     except Exception as e:
-        print("Exception when calling OperationsApi->list_operation_results: %s\n" % e)
+        print("Exception when calling OperationsApi->list_operation_first_pass_results: %s\n" % e)
 ```
 
 
@@ -304,7 +469,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ListOperationResults200Response**](ListOperationResults200Response.md)
+[**ListOperationFirstPassResults200Response**](ListOperationFirstPassResults200Response.md)
 
 ### Authorization
 
@@ -319,7 +484,86 @@ Name | Type | Description  | Notes
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Operation results returned |  -  |
+**200** | First-pass results returned |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **list_operation_second_pass_results**
+> ListOperationSecondPassResults200Response list_operation_second_pass_results(operation_id, include=include)
+
+List second-pass global prompt results for an operation
+
+### Example
+
+* Basic Authentication (basicAuth):
+
+```python
+import cambot_dtos
+from cambot_dtos.models.list_operation_second_pass_results200_response import ListOperationSecondPassResults200Response
+from cambot_dtos.rest import ApiException
+from pprint import pprint
+
+# Defining the host is optional and defaults to /api
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cambot_dtos.Configuration(
+    host = "/api"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure HTTP basic authorization: basicAuth
+configuration = cambot_dtos.Configuration(
+    username = os.environ["USERNAME"],
+    password = os.environ["PASSWORD"]
+)
+
+# Enter a context with an instance of the API client
+with cambot_dtos.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cambot_dtos.OperationsApi(api_client)
+    operation_id = 'operation_id_example' # str | 
+    include = True # bool |  (optional)
+
+    try:
+        # List second-pass global prompt results for an operation
+        api_response = api_instance.list_operation_second_pass_results(operation_id, include=include)
+        print("The response of OperationsApi->list_operation_second_pass_results:\n")
+        pprint(api_response)
+    except Exception as e:
+        print("Exception when calling OperationsApi->list_operation_second_pass_results: %s\n" % e)
+```
+
+
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **operation_id** | **str**|  | 
+ **include** | **bool**|  | [optional] 
+
+### Return type
+
+[**ListOperationSecondPassResults200Response**](ListOperationSecondPassResults200Response.md)
+
+### Authorization
+
+[basicAuth](../README.md#basicAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Second-pass results returned |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

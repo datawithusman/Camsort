@@ -7,7 +7,10 @@ Method | HTTP request | Description
 [**createOperation**](OperationsApi.md#createOperation) | **POST** /operations | Create a prompt scan operation
 [**estimateOperation**](OperationsApi.md#estimateOperation) | **POST** /operations/estimate | Estimate prompt scan usage and cost
 [**getOperation**](OperationsApi.md#getOperation) | **GET** /operations/{operationId} | Get a prompt scan operation
-[**listOperationResults**](OperationsApi.md#listOperationResults) | **GET** /operations/{operationId}/results | List Gemini camera results for an operation
+[**listLatestFirstPassResults**](OperationsApi.md#listLatestFirstPassResults) | **GET** /prompt-results/latest/first-pass | List latest first-pass results for a prompt and camera group
+[**listLatestSecondPassResults**](OperationsApi.md#listLatestSecondPassResults) | **GET** /prompt-results/latest/second-pass | List latest second-pass global results for a prompt and camera group
+[**listOperationFirstPassResults**](OperationsApi.md#listOperationFirstPassResults) | **GET** /operations/{operationId}/first-pass-results | List first-pass image results for an operation
+[**listOperationSecondPassResults**](OperationsApi.md#listOperationSecondPassResults) | **GET** /operations/{operationId}/second-pass-results | List second-pass global prompt results for an operation
 [**listOperations**](OperationsApi.md#listOperations) | **GET** /operations | List prompt scan operations
 
 
@@ -153,11 +156,117 @@ Name | Type | Description  | Notes
 - **Accept**: application/json
 
 
-## listOperationResults
+## listLatestFirstPassResults
 
-> ListOperationResults200Response listOperationResults(operationId, opts)
+> ListLatestFirstPassResults200Response listLatestFirstPassResults(promptId, cameraGroupId, opts)
 
-List Gemini camera results for an operation
+List latest first-pass results for a prompt and camera group
+
+### Example
+
+```javascript
+import CambotApi from 'cambot-api';
+let defaultClient = CambotApi.ApiClient.instance;
+// Configure HTTP basic authorization: basicAuth
+let basicAuth = defaultClient.authentications['basicAuth'];
+basicAuth.username = 'YOUR USERNAME';
+basicAuth.password = 'YOUR PASSWORD';
+
+let apiInstance = new CambotApi.OperationsApi();
+let promptId = "promptId_example"; // String | 
+let cameraGroupId = "cameraGroupId_example"; // String | 
+let opts = {
+  'include': true // Boolean | 
+};
+apiInstance.listLatestFirstPassResults(promptId, cameraGroupId, opts).then((data) => {
+  console.log('API called successfully. Returned data: ' + data);
+}, (error) => {
+  console.error(error);
+});
+
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **promptId** | **String**|  | 
+ **cameraGroupId** | **String**|  | 
+ **include** | **Boolean**|  | [optional] 
+
+### Return type
+
+[**ListLatestFirstPassResults200Response**](ListLatestFirstPassResults200Response.md)
+
+### Authorization
+
+[basicAuth](../README.md#basicAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+
+## listLatestSecondPassResults
+
+> ListLatestSecondPassResults200Response listLatestSecondPassResults(promptId, cameraGroupId, opts)
+
+List latest second-pass global results for a prompt and camera group
+
+### Example
+
+```javascript
+import CambotApi from 'cambot-api';
+let defaultClient = CambotApi.ApiClient.instance;
+// Configure HTTP basic authorization: basicAuth
+let basicAuth = defaultClient.authentications['basicAuth'];
+basicAuth.username = 'YOUR USERNAME';
+basicAuth.password = 'YOUR PASSWORD';
+
+let apiInstance = new CambotApi.OperationsApi();
+let promptId = "promptId_example"; // String | 
+let cameraGroupId = "cameraGroupId_example"; // String | 
+let opts = {
+  'include': true // Boolean | 
+};
+apiInstance.listLatestSecondPassResults(promptId, cameraGroupId, opts).then((data) => {
+  console.log('API called successfully. Returned data: ' + data);
+}, (error) => {
+  console.error(error);
+});
+
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **promptId** | **String**|  | 
+ **cameraGroupId** | **String**|  | 
+ **include** | **Boolean**|  | [optional] 
+
+### Return type
+
+[**ListLatestSecondPassResults200Response**](ListLatestSecondPassResults200Response.md)
+
+### Authorization
+
+[basicAuth](../README.md#basicAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+
+## listOperationFirstPassResults
+
+> ListOperationFirstPassResults200Response listOperationFirstPassResults(operationId, opts)
+
+List first-pass image results for an operation
 
 ### Example
 
@@ -174,7 +283,7 @@ let operationId = "operationId_example"; // String |
 let opts = {
   'include': true // Boolean | 
 };
-apiInstance.listOperationResults(operationId, opts).then((data) => {
+apiInstance.listOperationFirstPassResults(operationId, opts).then((data) => {
   console.log('API called successfully. Returned data: ' + data);
 }, (error) => {
   console.error(error);
@@ -192,7 +301,58 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ListOperationResults200Response**](ListOperationResults200Response.md)
+[**ListOperationFirstPassResults200Response**](ListOperationFirstPassResults200Response.md)
+
+### Authorization
+
+[basicAuth](../README.md#basicAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+
+## listOperationSecondPassResults
+
+> ListOperationSecondPassResults200Response listOperationSecondPassResults(operationId, opts)
+
+List second-pass global prompt results for an operation
+
+### Example
+
+```javascript
+import CambotApi from 'cambot-api';
+let defaultClient = CambotApi.ApiClient.instance;
+// Configure HTTP basic authorization: basicAuth
+let basicAuth = defaultClient.authentications['basicAuth'];
+basicAuth.username = 'YOUR USERNAME';
+basicAuth.password = 'YOUR PASSWORD';
+
+let apiInstance = new CambotApi.OperationsApi();
+let operationId = "operationId_example"; // String | 
+let opts = {
+  'include': true // Boolean | 
+};
+apiInstance.listOperationSecondPassResults(operationId, opts).then((data) => {
+  console.log('API called successfully. Returned data: ' + data);
+}, (error) => {
+  console.error(error);
+});
+
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **operationId** | **String**|  | 
+ **include** | **Boolean**|  | [optional] 
+
+### Return type
+
+[**ListOperationSecondPassResults200Response**](ListOperationSecondPassResults200Response.md)
 
 ### Authorization
 

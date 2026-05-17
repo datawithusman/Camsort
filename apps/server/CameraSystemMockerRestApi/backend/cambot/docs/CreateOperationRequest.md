@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **prompt_id** | **str** |  | 
 **camera_group_id** | **str** |  | 
 **trigger** | **str** |  | [optional] 
-**prompt_binding_id** | **str** | Set for operations created from a scheduled prompt binding. | [optional] 
+**prompt_binding_id** | **str** | Set for operations created from the global continuous scan cycle. | [optional] 
 
 ## Example
 

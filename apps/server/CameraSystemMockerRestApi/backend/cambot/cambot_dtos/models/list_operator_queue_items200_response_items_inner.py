@@ -29,22 +29,22 @@ class ListOperatorQueueItems200ResponseItemsInner(BaseModel):
     ListOperatorQueueItems200ResponseItemsInner
     """ # noqa: E501
     id: StrictStr
-    operation_result_id: StrictStr = Field(alias="operationResultId")
+    second_pass_result_id: StrictStr = Field(alias="secondPassResultId")
     operation_id: StrictStr = Field(alias="operationId")
     camera_id: StrictStr = Field(alias="cameraId")
     camera_group_id: Optional[StrictStr] = Field(default=None, alias="cameraGroupId")
     prompt_id: Optional[StrictStr] = Field(default=None, alias="promptId")
     frame_ref_id: StrictStr = Field(alias="frameRefId")
     frame_url: StrictStr = Field(alias="frameUrl")
-    recommended_action: StrictStr = Field(alias="recommendedAction")
-    reason: StrictStr
-    prompt_match_score: Union[Annotated[float, Field(le=100, strict=True, ge=0)], Annotated[int, Field(le=100, strict=True, ge=0)]] = Field(alias="promptMatchScore")
+    prompt_score: Union[Annotated[float, Field(le=100, strict=True, ge=0)], Annotated[int, Field(le=100, strict=True, ge=0)]] = Field(description="Final global prompt score from the second pass.", alias="promptScore")
     operator_priority_score: Union[Annotated[float, Field(le=100, strict=True, ge=0)], Annotated[int, Field(le=100, strict=True, ge=0)]] = Field(alias="operatorPriorityScore")
+    operator_action: StrictStr = Field(alias="operatorAction")
+    reason: StrictStr
     status: StrictStr
     operator_note: Optional[StrictStr] = Field(default=None, alias="operatorNote")
     created_at: Optional[datetime] = Field(default=None, alias="createdAt")
     updated_at: Optional[datetime] = Field(default=None, alias="updatedAt")
-    __properties: ClassVar[List[str]] = ["id", "operationResultId", "operationId", "cameraId", "cameraGroupId", "promptId", "frameRefId", "frameUrl", "recommendedAction", "reason", "promptMatchScore", "operatorPriorityScore", "status", "operatorNote", "createdAt", "updatedAt"]
+    __properties: ClassVar[List[str]] = ["id", "secondPassResultId", "operationId", "cameraId", "cameraGroupId", "promptId", "frameRefId", "frameUrl", "promptScore", "operatorPriorityScore", "operatorAction", "reason", "status", "operatorNote", "createdAt", "updatedAt"]
 
     @field_validator('status')
     def status_validate_enum(cls, value):
@@ -105,17 +105,17 @@ class ListOperatorQueueItems200ResponseItemsInner(BaseModel):
 
         _obj = cls.model_validate({
             "id": obj.get("id"),
-            "operationResultId": obj.get("operationResultId"),
+            "secondPassResultId": obj.get("secondPassResultId"),
             "operationId": obj.get("operationId"),
             "cameraId": obj.get("cameraId"),
             "cameraGroupId": obj.get("cameraGroupId"),
             "promptId": obj.get("promptId"),
             "frameRefId": obj.get("frameRefId"),
             "frameUrl": obj.get("frameUrl"),
-            "recommendedAction": obj.get("recommendedAction"),
-            "reason": obj.get("reason"),
-            "promptMatchScore": obj.get("promptMatchScore"),
+            "promptScore": obj.get("promptScore"),
             "operatorPriorityScore": obj.get("operatorPriorityScore"),
+            "operatorAction": obj.get("operatorAction"),
+            "reason": obj.get("reason"),
             "status": obj.get("status"),
             "operatorNote": obj.get("operatorNote"),
             "createdAt": obj.get("createdAt"),

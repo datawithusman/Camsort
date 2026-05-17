@@ -4,7 +4,7 @@ All URIs are relative to */api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**create_operator_queue_item**](OperatorQueueApi.md#create_operator_queue_item) | **POST** /operator-queue | Create an operator queue item from an operation result
+[**create_operator_queue_item**](OperatorQueueApi.md#create_operator_queue_item) | **POST** /operator-queue | Create an operator queue item from a second-pass result
 [**list_operator_queue_items**](OperatorQueueApi.md#list_operator_queue_items) | **GET** /operator-queue | List operator queue items
 [**update_operator_queue_item**](OperatorQueueApi.md#update_operator_queue_item) | **PUT** /operator-queue/{queueItemId} | Update operator queue item status
 
@@ -12,7 +12,7 @@ Method | HTTP request | Description
 # **create_operator_queue_item**
 > ListOperatorQueueItems200ResponseItemsInner create_operator_queue_item(create_operator_queue_item_request)
 
-Create an operator queue item from an operation result
+Create an operator queue item from a second-pass result
 
 ### Example
 
@@ -49,7 +49,7 @@ with cambot_dtos.ApiClient(configuration) as api_client:
     create_operator_queue_item_request = cambot_dtos.CreateOperatorQueueItemRequest() # CreateOperatorQueueItemRequest | 
 
     try:
-        # Create an operator queue item from an operation result
+        # Create an operator queue item from a second-pass result
         api_response = api_instance.create_operator_queue_item(create_operator_queue_item_request)
         print("The response of OperatorQueueApi->create_operator_queue_item:\n")
         pprint(api_response)

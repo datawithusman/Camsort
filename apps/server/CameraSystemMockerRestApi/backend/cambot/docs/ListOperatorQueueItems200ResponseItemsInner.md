@@ -6,17 +6,17 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **str** |  | 
-**operation_result_id** | **str** |  | 
+**second_pass_result_id** | **str** |  | 
 **operation_id** | **str** |  | 
 **camera_id** | **str** |  | 
 **camera_group_id** | **str** |  | [optional] 
 **prompt_id** | **str** |  | [optional] 
 **frame_ref_id** | **str** |  | 
 **frame_url** | **str** |  | 
-**recommended_action** | **str** |  | 
-**reason** | **str** |  | 
-**prompt_match_score** | **float** |  | 
+**prompt_score** | **float** | Final global prompt score from the second pass. | 
 **operator_priority_score** | **float** |  | 
+**operator_action** | **str** |  | 
+**reason** | **str** |  | 
 **status** | **str** |  | 
 **operator_note** | **str** |  | [optional] 
 **created_at** | **datetime** |  | [optional] 

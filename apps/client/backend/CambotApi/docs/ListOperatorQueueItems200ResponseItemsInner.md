@@ -5,17 +5,17 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
-**operationResultId** | **String** |  | 
+**secondPassResultId** | **String** |  | 
 **operationId** | **String** |  | 
 **cameraId** | **String** |  | 
 **cameraGroupId** | **String** |  | [optional] 
 **promptId** | **String** |  | [optional] 
 **frameRefId** | **String** |  | 
 **frameUrl** | **String** |  | 
-**recommendedAction** | **String** |  | 
-**reason** | **String** |  | 
-**promptMatchScore** | **Number** |  | 
+**promptScore** | **Number** | Final global prompt score from the second pass. | 
 **operatorPriorityScore** | **Number** |  | 
+**operatorAction** | **String** |  | 
+**reason** | **String** |  | 
 **status** | **String** |  | 
 **operatorNote** | **String** |  | [optional] 
 **createdAt** | **Date** |  | [optional] 

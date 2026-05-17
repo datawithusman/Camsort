@@ -35,11 +35,11 @@ class TestCreateOperatorQueueItemRequest(unittest.TestCase):
         model = CreateOperatorQueueItemRequest()
         if include_optional:
             return CreateOperatorQueueItemRequest(
-                operation_result_id = ''
+                second_pass_result_id = ''
             )
         else:
             return CreateOperatorQueueItemRequest(
-                operation_result_id = '',
+                second_pass_result_id = '',
         )
         """
 

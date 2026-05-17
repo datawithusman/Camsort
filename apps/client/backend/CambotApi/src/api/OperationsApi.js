@@ -16,7 +16,10 @@ import ApiClient from "../ApiClient";
 import CreateOperationRequest from '../model/CreateOperationRequest';
 import EstimateOperation200Response from '../model/EstimateOperation200Response';
 import EstimateOperationRequest from '../model/EstimateOperationRequest';
-import ListOperationResults200Response from '../model/ListOperationResults200Response';
+import ListLatestFirstPassResults200Response from '../model/ListLatestFirstPassResults200Response';
+import ListLatestSecondPassResults200Response from '../model/ListLatestSecondPassResults200Response';
+import ListOperationFirstPassResults200Response from '../model/ListOperationFirstPassResults200Response';
+import ListOperationSecondPassResults200Response from '../model/ListOperationSecondPassResults200Response';
 import ListOperations200Response from '../model/ListOperations200Response';
 import ListOperations200ResponseOperationsInner from '../model/ListOperations200ResponseOperationsInner';
 
@@ -177,18 +180,136 @@ export default class OperationsApi {
 
 
     /**
-     * List Gemini camera results for an operation
+     * List latest first-pass results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [include] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListLatestFirstPassResults200Response} and HTTP response
+     */
+    listLatestFirstPassResultsWithHttpInfo(promptId, cameraGroupId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'promptId' is set
+      if (promptId === undefined || promptId === null) {
+        throw new Error("Missing the required parameter 'promptId' when calling listLatestFirstPassResults");
+      }
+      // verify the required parameter 'cameraGroupId' is set
+      if (cameraGroupId === undefined || cameraGroupId === null) {
+        throw new Error("Missing the required parameter 'cameraGroupId' when calling listLatestFirstPassResults");
+      }
+
+      let pathParams = {
+      };
+      let queryParams = {
+        'promptId': promptId,
+        'cameraGroupId': cameraGroupId,
+        'include': opts['include']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListLatestFirstPassResults200Response;
+      return this.apiClient.callApi(
+        '/prompt-results/latest/first-pass', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List latest first-pass results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.include 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListLatestFirstPassResults200Response}
+     */
+    listLatestFirstPassResults(promptId, cameraGroupId, opts) {
+      return this.listLatestFirstPassResultsWithHttpInfo(promptId, cameraGroupId, opts)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List latest second-pass global results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [include] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListLatestSecondPassResults200Response} and HTTP response
+     */
+    listLatestSecondPassResultsWithHttpInfo(promptId, cameraGroupId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'promptId' is set
+      if (promptId === undefined || promptId === null) {
+        throw new Error("Missing the required parameter 'promptId' when calling listLatestSecondPassResults");
+      }
+      // verify the required parameter 'cameraGroupId' is set
+      if (cameraGroupId === undefined || cameraGroupId === null) {
+        throw new Error("Missing the required parameter 'cameraGroupId' when calling listLatestSecondPassResults");
+      }
+
+      let pathParams = {
+      };
+      let queryParams = {
+        'promptId': promptId,
+        'cameraGroupId': cameraGroupId,
+        'include': opts['include']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListLatestSecondPassResults200Response;
+      return this.apiClient.callApi(
+        '/prompt-results/latest/second-pass', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List latest second-pass global results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.include 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListLatestSecondPassResults200Response}
+     */
+    listLatestSecondPassResults(promptId, cameraGroupId, opts) {
+      return this.listLatestSecondPassResultsWithHttpInfo(promptId, cameraGroupId, opts)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List first-pass image results for an operation
      * @param {String} operationId 
      * @param {Object} opts Optional parameters
      * @param {Boolean} [include] 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperationResults200Response} and HTTP response
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperationFirstPassResults200Response} and HTTP response
      */
-    listOperationResultsWithHttpInfo(operationId, opts) {
+    listOperationFirstPassResultsWithHttpInfo(operationId, opts) {
       opts = opts || {};
       let postBody = null;
       // verify the required parameter 'operationId' is set
       if (operationId === undefined || operationId === null) {
-        throw new Error("Missing the required parameter 'operationId' when calling listOperationResults");
+        throw new Error("Missing the required parameter 'operationId' when calling listOperationFirstPassResults");
       }
 
       let pathParams = {
@@ -205,23 +326,75 @@ export default class OperationsApi {
       let authNames = ['basicAuth'];
       let contentTypes = [];
       let accepts = ['application/json'];
-      let returnType = ListOperationResults200Response;
+      let returnType = ListOperationFirstPassResults200Response;
       return this.apiClient.callApi(
-        '/operations/{operationId}/results', 'GET',
+        '/operations/{operationId}/first-pass-results', 'GET',
         pathParams, queryParams, headerParams, formParams, postBody,
         authNames, contentTypes, accepts, returnType, null
       );
     }
 
     /**
-     * List Gemini camera results for an operation
+     * List first-pass image results for an operation
      * @param {String} operationId 
      * @param {Object} opts Optional parameters
      * @param {Boolean} opts.include 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperationResults200Response}
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperationFirstPassResults200Response}
      */
-    listOperationResults(operationId, opts) {
-      return this.listOperationResultsWithHttpInfo(operationId, opts)
+    listOperationFirstPassResults(operationId, opts) {
+      return this.listOperationFirstPassResultsWithHttpInfo(operationId, opts)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List second-pass global prompt results for an operation
+     * @param {String} operationId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [include] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperationSecondPassResults200Response} and HTTP response
+     */
+    listOperationSecondPassResultsWithHttpInfo(operationId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'operationId' is set
+      if (operationId === undefined || operationId === null) {
+        throw new Error("Missing the required parameter 'operationId' when calling listOperationSecondPassResults");
+      }
+
+      let pathParams = {
+        'operationId': operationId
+      };
+      let queryParams = {
+        'include': opts['include']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListOperationSecondPassResults200Response;
+      return this.apiClient.callApi(
+        '/operations/{operationId}/second-pass-results', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List second-pass global prompt results for an operation
+     * @param {String} operationId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.include 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperationSecondPassResults200Response}
+     */
+    listOperationSecondPassResults(operationId, opts) {
+      return this.listOperationSecondPassResultsWithHttpInfo(operationId, opts)
         .then(function(response_and_data) {
           return response_and_data.data;
         });

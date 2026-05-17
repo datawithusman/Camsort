@@ -11,10 +11,15 @@ Name | Type | Description | Notes
 **prompt_binding_id** | **str** |  | [optional] 
 **trigger** | **str** |  | 
 **status** | **str** |  | 
+**first_pass_status** | **str** |  | 
+**second_pass_status** | **str** |  | 
 **total_cameras** | **int** |  | 
 **processed_cameras** | **int** |  | 
+**first_pass_result_count** | **int** |  | 
+**second_pass_result_count** | **int** |  | 
 **matched_cameras** | **int** |  | 
 **estimated_gemini_calls** | **int** |  | [optional] 
+**estimated_token_count** | **int** |  | [optional] 
 **estimated_cost** | **float** |  | [optional] 
 **actual_gemini_calls** | **int** |  | [optional] 
 **actual_cost** | **float** |  | [optional] 

@@ -47,16 +47,13 @@ services:
     env_file:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
-      GEMINI_URL: "${CAM_BOT_DEFAULT_GEMINI_URL:-}"
-      GEMINI_API_KEY: "${CAM_BOT_DEFAULT_GEMINI_API_KEY:-}"
-      GEMINI_MODEL: "${CAM_BOT_DEFAULT_GEMINI_MODEL:-}"
-      GEMINI_BATCH_SIZE: "${CAM_BOT_DEFAULT_GEMINI_BATCH_SIZE:-5}"
-      GEMINI_JPEG_QUALITY: "${CAM_BOT_DEFAULT_GEMINI_JPEG_QUALITY:-70}"
-      SORT_INTERVAL_SECONDS: "${CAM_BOT_DEFAULT_BACKGROUND_WORKER_INTERVAL_S:-30}"
-      MAX_GEMINI_CALLS_PER_DAY: "${CAM_BOT_DEFAULT_MAX_GEMINI_CALLS_PER_DAY:-100}"
-      ESCALATION_THRESHOLD: "${CAM_BOT_DEFAULT_ESCALATION_THRESHOLD:-0.60}"
-      CAMERA_SYSTEM_BASE_URL: "http://camera-system-mocker-rest-api:8080"
-      REST_API_BASE_URL: "http://rest-api:8080"
+      CAM_BOT_DEFAULT_GEMINI_MODE=fake
+      CAM_BOT_DEFAULT_GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
+      CAM_BOT_DEFAULT_GEMINI_API_KEY=AIzaSyBiW1fMVsLunuXmThGkQz9lzzkbd5uarRU
+      CAM_BOT_DEFAULT_GEMINI_API_KEY_QUERY_PARAM=key
+      CAM_BOT_DEFAULT_GEMINI_API_TIMEOUT_SECONDS=60
+      CAM_BOT_DEFAULT_GEMINI_USE_RESPONSE_SCHEMA=true
+      CAM_BOT_DEFAULT_BACKGROUND_WORKER_INTERVAL_S=5
     depends_on:
       - rest-api
       - camera-system-mocker-rest-api

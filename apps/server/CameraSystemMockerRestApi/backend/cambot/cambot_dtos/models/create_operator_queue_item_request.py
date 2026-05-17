@@ -26,8 +26,8 @@ class CreateOperatorQueueItemRequest(BaseModel):
     """
     CreateOperatorQueueItemRequest
     """ # noqa: E501
-    operation_result_id: StrictStr = Field(description="Creates a queue item from a stored Gemini operation result.", alias="operationResultId")
-    __properties: ClassVar[List[str]] = ["operationResultId"]
+    second_pass_result_id: StrictStr = Field(description="Creates a queue item from a stored second-pass/global prompt result.", alias="secondPassResultId")
+    __properties: ClassVar[List[str]] = ["secondPassResultId"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -80,7 +80,7 @@ class CreateOperatorQueueItemRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "operationResultId": obj.get("operationResultId")
+            "secondPassResultId": obj.get("secondPassResultId")
         })
         return _obj
 

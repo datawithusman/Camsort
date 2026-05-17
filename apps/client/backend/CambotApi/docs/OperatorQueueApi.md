@@ -4,7 +4,7 @@ All URIs are relative to */api*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**createOperatorQueueItem**](OperatorQueueApi.md#createOperatorQueueItem) | **POST** /operator-queue | Create an operator queue item from an operation result
+[**createOperatorQueueItem**](OperatorQueueApi.md#createOperatorQueueItem) | **POST** /operator-queue | Create an operator queue item from a second-pass result
 [**listOperatorQueueItems**](OperatorQueueApi.md#listOperatorQueueItems) | **GET** /operator-queue | List operator queue items
 [**updateOperatorQueueItem**](OperatorQueueApi.md#updateOperatorQueueItem) | **PUT** /operator-queue/{queueItemId} | Update operator queue item status
 
@@ -14,7 +14,7 @@ Method | HTTP request | Description
 
 > ListOperatorQueueItems200ResponseItemsInner createOperatorQueueItem(createOperatorQueueItemRequest)
 
-Create an operator queue item from an operation result
+Create an operator queue item from a second-pass result
 
 ### Example
 

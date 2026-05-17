@@ -23,20 +23,20 @@ class ListOperatorQueueItems200ResponseItemsInner {
      * Constructs a new <code>ListOperatorQueueItems200ResponseItemsInner</code>.
      * @alias module:model/ListOperatorQueueItems200ResponseItemsInner
      * @param id {String} 
-     * @param operationResultId {String} 
+     * @param secondPassResultId {String} 
      * @param operationId {String} 
      * @param cameraId {String} 
      * @param frameRefId {String} 
      * @param frameUrl {String} 
-     * @param recommendedAction {String} 
-     * @param reason {String} 
-     * @param promptMatchScore {Number} 
+     * @param promptScore {Number} Final global prompt score from the second pass.
      * @param operatorPriorityScore {Number} 
+     * @param operatorAction {String} 
+     * @param reason {String} 
      * @param status {module:model/ListOperatorQueueItems200ResponseItemsInner.StatusEnum} 
      */
-    constructor(id, operationResultId, operationId, cameraId, frameRefId, frameUrl, recommendedAction, reason, promptMatchScore, operatorPriorityScore, status) { 
+    constructor(id, secondPassResultId, operationId, cameraId, frameRefId, frameUrl, promptScore, operatorPriorityScore, operatorAction, reason, status) { 
         
-        ListOperatorQueueItems200ResponseItemsInner.initialize(this, id, operationResultId, operationId, cameraId, frameRefId, frameUrl, recommendedAction, reason, promptMatchScore, operatorPriorityScore, status);
+        ListOperatorQueueItems200ResponseItemsInner.initialize(this, id, secondPassResultId, operationId, cameraId, frameRefId, frameUrl, promptScore, operatorPriorityScore, operatorAction, reason, status);
     }
 
     /**
@@ -44,17 +44,17 @@ class ListOperatorQueueItems200ResponseItemsInner {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, id, operationResultId, operationId, cameraId, frameRefId, frameUrl, recommendedAction, reason, promptMatchScore, operatorPriorityScore, status) { 
+    static initialize(obj, id, secondPassResultId, operationId, cameraId, frameRefId, frameUrl, promptScore, operatorPriorityScore, operatorAction, reason, status) { 
         obj['id'] = id;
-        obj['operationResultId'] = operationResultId;
+        obj['secondPassResultId'] = secondPassResultId;
         obj['operationId'] = operationId;
         obj['cameraId'] = cameraId;
         obj['frameRefId'] = frameRefId;
         obj['frameUrl'] = frameUrl;
-        obj['recommendedAction'] = recommendedAction;
-        obj['reason'] = reason;
-        obj['promptMatchScore'] = promptMatchScore;
+        obj['promptScore'] = promptScore;
         obj['operatorPriorityScore'] = operatorPriorityScore;
+        obj['operatorAction'] = operatorAction;
+        obj['reason'] = reason;
         obj['status'] = status;
     }
 
@@ -72,8 +72,8 @@ class ListOperatorQueueItems200ResponseItemsInner {
             if (data.hasOwnProperty('id')) {
                 obj['id'] = ApiClient.convertToType(data['id'], 'String');
             }
-            if (data.hasOwnProperty('operationResultId')) {
-                obj['operationResultId'] = ApiClient.convertToType(data['operationResultId'], 'String');
+            if (data.hasOwnProperty('secondPassResultId')) {
+                obj['secondPassResultId'] = ApiClient.convertToType(data['secondPassResultId'], 'String');
             }
             if (data.hasOwnProperty('operationId')) {
                 obj['operationId'] = ApiClient.convertToType(data['operationId'], 'String');
@@ -93,17 +93,17 @@ class ListOperatorQueueItems200ResponseItemsInner {
             if (data.hasOwnProperty('frameUrl')) {
                 obj['frameUrl'] = ApiClient.convertToType(data['frameUrl'], 'String');
             }
-            if (data.hasOwnProperty('recommendedAction')) {
-                obj['recommendedAction'] = ApiClient.convertToType(data['recommendedAction'], 'String');
-            }
-            if (data.hasOwnProperty('reason')) {
-                obj['reason'] = ApiClient.convertToType(data['reason'], 'String');
-            }
-            if (data.hasOwnProperty('promptMatchScore')) {
-                obj['promptMatchScore'] = ApiClient.convertToType(data['promptMatchScore'], 'Number');
+            if (data.hasOwnProperty('promptScore')) {
+                obj['promptScore'] = ApiClient.convertToType(data['promptScore'], 'Number');
             }
             if (data.hasOwnProperty('operatorPriorityScore')) {
                 obj['operatorPriorityScore'] = ApiClient.convertToType(data['operatorPriorityScore'], 'Number');
+            }
+            if (data.hasOwnProperty('operatorAction')) {
+                obj['operatorAction'] = ApiClient.convertToType(data['operatorAction'], 'String');
+            }
+            if (data.hasOwnProperty('reason')) {
+                obj['reason'] = ApiClient.convertToType(data['reason'], 'String');
             }
             if (data.hasOwnProperty('status')) {
                 obj['status'] = ApiClient.convertToType(data['status'], 'String');
@@ -138,8 +138,8 @@ class ListOperatorQueueItems200ResponseItemsInner {
             throw new Error("Expected the field `id` to be a primitive type in the JSON string but got " + data['id']);
         }
         // ensure the json data is a string
-        if (data['operationResultId'] && !(typeof data['operationResultId'] === 'string' || data['operationResultId'] instanceof String)) {
-            throw new Error("Expected the field `operationResultId` to be a primitive type in the JSON string but got " + data['operationResultId']);
+        if (data['secondPassResultId'] && !(typeof data['secondPassResultId'] === 'string' || data['secondPassResultId'] instanceof String)) {
+            throw new Error("Expected the field `secondPassResultId` to be a primitive type in the JSON string but got " + data['secondPassResultId']);
         }
         // ensure the json data is a string
         if (data['operationId'] && !(typeof data['operationId'] === 'string' || data['operationId'] instanceof String)) {
@@ -166,8 +166,8 @@ class ListOperatorQueueItems200ResponseItemsInner {
             throw new Error("Expected the field `frameUrl` to be a primitive type in the JSON string but got " + data['frameUrl']);
         }
         // ensure the json data is a string
-        if (data['recommendedAction'] && !(typeof data['recommendedAction'] === 'string' || data['recommendedAction'] instanceof String)) {
-            throw new Error("Expected the field `recommendedAction` to be a primitive type in the JSON string but got " + data['recommendedAction']);
+        if (data['operatorAction'] && !(typeof data['operatorAction'] === 'string' || data['operatorAction'] instanceof String)) {
+            throw new Error("Expected the field `operatorAction` to be a primitive type in the JSON string but got " + data['operatorAction']);
         }
         // ensure the json data is a string
         if (data['reason'] && !(typeof data['reason'] === 'string' || data['reason'] instanceof String)) {
@@ -188,7 +188,7 @@ class ListOperatorQueueItems200ResponseItemsInner {
 
 }
 
-ListOperatorQueueItems200ResponseItemsInner.RequiredProperties = ["id", "operationResultId", "operationId", "cameraId", "frameRefId", "frameUrl", "recommendedAction", "reason", "promptMatchScore", "operatorPriorityScore", "status"];
+ListOperatorQueueItems200ResponseItemsInner.RequiredProperties = ["id", "secondPassResultId", "operationId", "cameraId", "frameRefId", "frameUrl", "promptScore", "operatorPriorityScore", "operatorAction", "reason", "status"];
 
 /**
  * @member {String} id
@@ -196,9 +196,9 @@ ListOperatorQueueItems200ResponseItemsInner.RequiredProperties = ["id", "operati
 ListOperatorQueueItems200ResponseItemsInner.prototype['id'] = undefined;
 
 /**
- * @member {String} operationResultId
+ * @member {String} secondPassResultId
  */
-ListOperatorQueueItems200ResponseItemsInner.prototype['operationResultId'] = undefined;
+ListOperatorQueueItems200ResponseItemsInner.prototype['secondPassResultId'] = undefined;
 
 /**
  * @member {String} operationId
@@ -231,24 +231,25 @@ ListOperatorQueueItems200ResponseItemsInner.prototype['frameRefId'] = undefined;
 ListOperatorQueueItems200ResponseItemsInner.prototype['frameUrl'] = undefined;
 
 /**
- * @member {String} recommendedAction
+ * Final global prompt score from the second pass.
+ * @member {Number} promptScore
  */
-ListOperatorQueueItems200ResponseItemsInner.prototype['recommendedAction'] = undefined;
-
-/**
- * @member {String} reason
- */
-ListOperatorQueueItems200ResponseItemsInner.prototype['reason'] = undefined;
-
-/**
- * @member {Number} promptMatchScore
- */
-ListOperatorQueueItems200ResponseItemsInner.prototype['promptMatchScore'] = undefined;
+ListOperatorQueueItems200ResponseItemsInner.prototype['promptScore'] = undefined;
 
 /**
  * @member {Number} operatorPriorityScore
  */
 ListOperatorQueueItems200ResponseItemsInner.prototype['operatorPriorityScore'] = undefined;
+
+/**
+ * @member {String} operatorAction
+ */
+ListOperatorQueueItems200ResponseItemsInner.prototype['operatorAction'] = undefined;
+
+/**
+ * @member {String} reason
+ */
+ListOperatorQueueItems200ResponseItemsInner.prototype['reason'] = undefined;
 
 /**
  * @member {module:model/ListOperatorQueueItems200ResponseItemsInner.StatusEnum} status

@@ -47,10 +47,31 @@ class TestOperationsApi(unittest.TestCase):
         """
         pass
 
-    def test_list_operation_results(self) -> None:
-        """Test case for list_operation_results
+    def test_list_latest_first_pass_results(self) -> None:
+        """Test case for list_latest_first_pass_results
 
-        List Gemini camera results for an operation
+        List latest first-pass results for a prompt and camera group
+        """
+        pass
+
+    def test_list_latest_second_pass_results(self) -> None:
+        """Test case for list_latest_second_pass_results
+
+        List latest second-pass global results for a prompt and camera group
+        """
+        pass
+
+    def test_list_operation_first_pass_results(self) -> None:
+        """Test case for list_operation_first_pass_results
+
+        List first-pass image results for an operation
+        """
+        pass
+
+    def test_list_operation_second_pass_results(self) -> None:
+        """Test case for list_operation_second_pass_results
+
+        List second-pass global prompt results for an operation
         """
         pass
 

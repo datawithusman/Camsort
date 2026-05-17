@@ -4,6 +4,6 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**operationResultId** | **String** | Creates a queue item from a stored Gemini operation result. | 
+**secondPassResultId** | **String** | Creates a queue item from a stored second-pass/global prompt result. | 
 
 

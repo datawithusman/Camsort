@@ -12,57 +12,8 @@ import sqlalchemy.ext.asyncio
 from db import models
 
 
-CREATE_OPERATION = """-- name: create_operation \\:one
-INSERT INTO operations (
-  id,
-  prompt_id,
-  camera_group_id,
-  prompt_binding_id,
-  trigger,
-  status,
-  total_cameras,
-  processed_cameras,
-  matched_cameras,
-  estimated_gemini_calls,
-  estimated_token_count,
-  estimated_cost
-)
-VALUES (
-  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
-  :p2,
-  :p3,
-  :p4,
-  COALESCE(:p5, 'manual'),
-  COALESCE(:p6, 'queued'),
-  COALESCE(:p7, 0),
-  COALESCE(:p8, 0),
-  COALESCE(:p9, 0),
-  :p10,
-  :p11,
-  :p12
-)
-RETURNING id, prompt_id, camera_group_id, prompt_binding_id, trigger, status, total_cameras, processed_cameras, matched_cameras, estimated_gemini_calls, estimated_token_count, estimated_cost, actual_gemini_calls, actual_cost, error_message, created_at, started_at, completed_at
-"""
-
-
-@dataclasses.dataclass()
-class CreateOperationParams:
-    id: Optional[Any]
-    prompt_id: str
-    camera_group_id: str
-    prompt_binding_id: Optional[str]
-    trigger: Optional[Any]
-    status: Optional[Any]
-    total_cameras: Optional[Any]
-    processed_cameras: Optional[Any]
-    matched_cameras: Optional[Any]
-    estimated_gemini_calls: Optional[int]
-    estimated_token_count: Optional[int]
-    estimated_cost: Optional[decimal.Decimal]
-
-
-CREATE_OPERATION_RESULT = """-- name: create_operation_result \\:one
-INSERT INTO operation_results (
+CREATE_FIRST_PASS_RESULT = """-- name: create_first_pass_result \\:one
+INSERT INTO operation_first_pass_results (
   id,
   operation_id,
   camera_id,
@@ -71,9 +22,9 @@ INSERT INTO operation_results (
   frame_ref_id,
   frame_url,
   include,
-  prompt_match_score,
+  first_pass_prompt_score,
   operator_priority_score,
-  recommended_action,
+  operator_action,
   reason,
   raw_model_json
 )
@@ -95,17 +46,31 @@ VALUES (
 ON CONFLICT (operation_id, camera_id, frame_ref_id)
 DO UPDATE SET
   include = EXCLUDED.include,
-  prompt_match_score = EXCLUDED.prompt_match_score,
+  first_pass_prompt_score = EXCLUDED.first_pass_prompt_score,
   operator_priority_score = EXCLUDED.operator_priority_score,
-  recommended_action = EXCLUDED.recommended_action,
+  operator_action = EXCLUDED.operator_action,
   reason = EXCLUDED.reason,
   raw_model_json = EXCLUDED.raw_model_json
-RETURNING id, operation_id, camera_id, camera_group_id, prompt_id, frame_ref_id, frame_url, include, prompt_match_score, operator_priority_score, recommended_action, reason, raw_model_json, created_at
+RETURNING
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  first_pass_prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  raw_model_json,
+  created_at
 """
 
 
 @dataclasses.dataclass()
-class CreateOperationResultParams:
+class CreateFirstPassResultParams:
     id: Optional[Any]
     operation_id: str
     camera_id: str
@@ -114,35 +79,373 @@ class CreateOperationResultParams:
     frame_ref_id: str
     frame_url: str
     include: Optional[Any]
-    prompt_match_score: Optional[Any]
+    first_pass_prompt_score: Optional[Any]
     operator_priority_score: Optional[Any]
-    recommended_action: str
+    operator_action: str
     reason: str
     raw_model_json: Optional[Any]
 
 
+CREATE_OPERATION = """-- name: create_operation \\:one
+INSERT INTO operations (
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost
+)
+VALUES (
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
+  :p2,
+  :p3,
+  :p4,
+  COALESCE(:p5, 'manual'),
+  COALESCE(:p6, 'queued'),
+  COALESCE(:p7, 'pending'),
+  COALESCE(:p8, 'pending'),
+  COALESCE(:p9, 0),
+  COALESCE(:p10, 0),
+  COALESCE(:p11, 0),
+  COALESCE(:p12, 0),
+  COALESCE(:p13, 0),
+  :p14,
+  :p15,
+  :p16
+)
+RETURNING
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
+"""
+
+
+@dataclasses.dataclass()
+class CreateOperationParams:
+    id: Optional[Any]
+    prompt_id: str
+    camera_group_id: str
+    prompt_binding_id: Optional[str]
+    trigger: Optional[Any]
+    status: Optional[Any]
+    first_pass_status: Optional[Any]
+    second_pass_status: Optional[Any]
+    total_cameras: Optional[Any]
+    processed_cameras: Optional[Any]
+    first_pass_result_count: Optional[Any]
+    second_pass_result_count: Optional[Any]
+    matched_cameras: Optional[Any]
+    estimated_gemini_calls: Optional[int]
+    estimated_token_count: Optional[int]
+    estimated_cost: Optional[decimal.Decimal]
+
+
+CREATE_SECOND_PASS_RESULT = """-- name: create_second_pass_result \\:one
+INSERT INTO operation_second_pass_results (
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  global_rank,
+  prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  raw_model_json
+)
+VALUES (
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
+  :p2,
+  :p3,
+  :p4,
+  :p5,
+  :p6,
+  :p7,
+  :p8,
+  COALESCE(:p9, false),
+  :p10,
+  COALESCE(:p11, 0),
+  COALESCE(:p12, 0),
+  :p13,
+  :p14,
+  :p15
+)
+ON CONFLICT (operation_id, camera_id, first_pass_result_id)
+DO UPDATE SET
+  include = EXCLUDED.include,
+  global_rank = EXCLUDED.global_rank,
+  prompt_score = EXCLUDED.prompt_score,
+  operator_priority_score = EXCLUDED.operator_priority_score,
+  operator_action = EXCLUDED.operator_action,
+  reason = EXCLUDED.reason,
+  raw_model_json = EXCLUDED.raw_model_json
+RETURNING
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  global_rank,
+  prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  raw_model_json,
+  created_at
+"""
+
+
+@dataclasses.dataclass()
+class CreateSecondPassResultParams:
+    id: Optional[Any]
+    operation_id: str
+    camera_id: str
+    camera_group_id: Optional[str]
+    prompt_id: Optional[str]
+    first_pass_result_id: str
+    frame_ref_id: str
+    frame_url: str
+    include: Optional[Any]
+    global_rank: Optional[int]
+    prompt_score: Optional[Any]
+    operator_priority_score: Optional[Any]
+    operator_action: str
+    reason: str
+    raw_model_json: Optional[Any]
+
+
+GET_FIRST_PASS_RESULT = """-- name: get_first_pass_result \\:one
+SELECT
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  first_pass_prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  raw_model_json,
+  created_at
+FROM operation_first_pass_results
+WHERE id = :p1
+"""
+
+
 GET_OPERATION = """-- name: get_operation \\:one
-SELECT id, prompt_id, camera_group_id, prompt_binding_id, trigger, status, total_cameras, processed_cameras, matched_cameras, estimated_gemini_calls, estimated_token_count, estimated_cost, actual_gemini_calls, actual_cost, error_message, created_at, started_at, completed_at FROM operations
+SELECT
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
+FROM operations
 WHERE id = :p1
 """
 
 
-GET_OPERATION_RESULT = """-- name: get_operation_result \\:one
-SELECT id, operation_id, camera_id, camera_group_id, prompt_id, frame_ref_id, frame_url, include, prompt_match_score, operator_priority_score, recommended_action, reason, raw_model_json, created_at FROM operation_results
+GET_SECOND_PASS_RESULT = """-- name: get_second_pass_result \\:one
+SELECT
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  global_rank,
+  prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  raw_model_json,
+  created_at
+FROM operation_second_pass_results
 WHERE id = :p1
 """
 
 
-LIST_OPERATION_RESULTS = """-- name: list_operation_results \\:many
-SELECT id, operation_id, camera_id, camera_group_id, prompt_id, frame_ref_id, frame_url, include, prompt_match_score, operator_priority_score, recommended_action, reason, raw_model_json, created_at FROM operation_results
+LIST_LATEST_FIRST_PASS_RESULTS = """-- name: list_latest_first_pass_results \\:many
+SELECT
+  prompt_id,
+  camera_group_id,
+  camera_id,
+  operation_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  first_pass_prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  updated_at
+FROM latest_first_pass_results
+WHERE prompt_id = :p1
+  AND camera_group_id = :p2
+  AND (:p3\\:\\:boolean IS NULL OR include = :p3)
+ORDER BY first_pass_prompt_score DESC, operator_priority_score DESC, updated_at DESC
+"""
+
+
+LIST_LATEST_SECOND_PASS_RESULTS = """-- name: list_latest_second_pass_results \\:many
+SELECT
+  prompt_id,
+  camera_group_id,
+  camera_id,
+  operation_id,
+  second_pass_result_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  global_rank,
+  prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  updated_at
+FROM latest_second_pass_results
+WHERE prompt_id = :p1
+  AND camera_group_id = :p2
+  AND (:p3\\:\\:boolean IS NULL OR include = :p3)
+ORDER BY global_rank ASC NULLS LAST, prompt_score DESC, operator_priority_score DESC, updated_at DESC
+"""
+
+
+LIST_OPERATION_FIRST_PASS_RESULTS = """-- name: list_operation_first_pass_results \\:many
+SELECT
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  first_pass_prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  raw_model_json,
+  created_at
+FROM operation_first_pass_results
 WHERE operation_id = :p1
   AND (:p2\\:\\:boolean IS NULL OR include = :p2)
-ORDER BY operator_priority_score DESC, prompt_match_score DESC, created_at ASC
+ORDER BY first_pass_prompt_score DESC, operator_priority_score DESC, created_at ASC
+"""
+
+
+LIST_OPERATION_SECOND_PASS_RESULTS = """-- name: list_operation_second_pass_results \\:many
+SELECT
+  id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  global_rank,
+  prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  raw_model_json,
+  created_at
+FROM operation_second_pass_results
+WHERE operation_id = :p1
+  AND (:p2\\:\\:boolean IS NULL OR include = :p2)
+ORDER BY global_rank ASC NULLS LAST, prompt_score DESC, operator_priority_score DESC, created_at ASC
 """
 
 
 LIST_OPERATIONS = """-- name: list_operations \\:many
-SELECT id, prompt_id, camera_group_id, prompt_binding_id, trigger, status, total_cameras, processed_cameras, matched_cameras, estimated_gemini_calls, estimated_token_count, estimated_cost, actual_gemini_calls, actual_cost, error_message, created_at, started_at, completed_at FROM operations
+SELECT
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
+FROM operations
 WHERE (:p1\\:\\:text IS NULL OR prompt_id = :p1)
   AND (:p2\\:\\:text IS NULL OR camera_group_id = :p2)
   AND (:p3\\:\\:text IS NULL OR status = :p3)
@@ -151,18 +454,119 @@ LIMIT :p5 OFFSET :p4
 """
 
 
+LIST_QUEUED_MANUAL_OPERATIONS = """-- name: list_queued_manual_operations \\:many
+SELECT
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
+FROM operations
+WHERE status = 'queued' AND trigger = 'manual'
+ORDER BY created_at ASC
+LIMIT :p1
+"""
+
+
+LIST_QUEUED_SCHEDULED_OPERATIONS = """-- name: list_queued_scheduled_operations \\:many
+SELECT
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
+FROM operations
+WHERE status = 'queued' AND trigger = 'scheduled'
+ORDER BY created_at ASC
+LIMIT :p1
+"""
+
+
 MARK_OPERATION_COMPLETED = """-- name: mark_operation_completed \\:one
 UPDATE operations
 SET
   status = 'completed',
-  processed_cameras = COALESCE(:p1, processed_cameras),
-  matched_cameras = COALESCE(:p2, matched_cameras),
-  actual_gemini_calls = COALESCE(:p3, actual_gemini_calls),
-  actual_cost = COALESCE(:p4, actual_cost),
+  first_pass_status = COALESCE(:p1, first_pass_status),
+  second_pass_status = COALESCE(:p2, second_pass_status),
+  processed_cameras = COALESCE(:p3, processed_cameras),
+  first_pass_result_count = COALESCE(:p4, first_pass_result_count),
+  second_pass_result_count = COALESCE(:p5, second_pass_result_count),
+  matched_cameras = COALESCE(:p6, matched_cameras),
+  actual_gemini_calls = COALESCE(:p7, actual_gemini_calls),
+  actual_cost = COALESCE(:p8, actual_cost),
   completed_at = now()
-WHERE id = :p5
-RETURNING id, prompt_id, camera_group_id, prompt_binding_id, trigger, status, total_cameras, processed_cameras, matched_cameras, estimated_gemini_calls, estimated_token_count, estimated_cost, actual_gemini_calls, actual_cost, error_message, created_at, started_at, completed_at
+WHERE id = :p9
+RETURNING
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
 """
+
+
+@dataclasses.dataclass()
+class MarkOperationCompletedParams:
+    first_pass_status: Optional[str]
+    second_pass_status: Optional[str]
+    processed_cameras: int
+    first_pass_result_count: int
+    second_pass_result_count: int
+    matched_cameras: int
+    actual_gemini_calls: Optional[int]
+    actual_cost: Optional[decimal.Decimal]
+    id: str
 
 
 MARK_OPERATION_FAILED = """-- name: mark_operation_failed \\:one
@@ -172,7 +576,29 @@ SET
   error_message = :p1,
   completed_at = now()
 WHERE id = :p2
-RETURNING id, prompt_id, camera_group_id, prompt_binding_id, trigger, status, total_cameras, processed_cameras, matched_cameras, estimated_gemini_calls, estimated_token_count, estimated_cost, actual_gemini_calls, actual_cost, error_message, created_at, started_at, completed_at
+RETURNING
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
 """
 
 
@@ -180,7 +606,61 @@ MARK_OPERATION_RUNNING = """-- name: mark_operation_running \\:one
 UPDATE operations
 SET status = 'running', started_at = COALESCE(started_at, now())
 WHERE id = :p1
-RETURNING id, prompt_id, camera_group_id, prompt_binding_id, trigger, status, total_cameras, processed_cameras, matched_cameras, estimated_gemini_calls, estimated_token_count, estimated_cost, actual_gemini_calls, actual_cost, error_message, created_at, started_at, completed_at
+RETURNING
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
+"""
+
+
+UPDATE_OPERATION_PASS_STATUSES = """-- name: update_operation_pass_statuses \\:one
+UPDATE operations
+SET
+  first_pass_status = COALESCE(:p1, first_pass_status),
+  second_pass_status = COALESCE(:p2, second_pass_status)
+WHERE id = :p3
+RETURNING
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
 """
 
 
@@ -188,17 +668,245 @@ UPDATE_OPERATION_PROGRESS = """-- name: update_operation_progress \\:one
 UPDATE operations
 SET
   processed_cameras = COALESCE(:p1, processed_cameras),
-  matched_cameras = COALESCE(:p2, matched_cameras),
-  actual_gemini_calls = COALESCE(:p3, actual_gemini_calls),
-  actual_cost = COALESCE(:p4, actual_cost)
-WHERE id = :p5
-RETURNING id, prompt_id, camera_group_id, prompt_binding_id, trigger, status, total_cameras, processed_cameras, matched_cameras, estimated_gemini_calls, estimated_token_count, estimated_cost, actual_gemini_calls, actual_cost, error_message, created_at, started_at, completed_at
+  first_pass_result_count = COALESCE(:p2, first_pass_result_count),
+  second_pass_result_count = COALESCE(:p3, second_pass_result_count),
+  matched_cameras = COALESCE(:p4, matched_cameras),
+  actual_gemini_calls = COALESCE(:p5, actual_gemini_calls),
+  actual_cost = COALESCE(:p6, actual_cost)
+WHERE id = :p7
+RETURNING
+  id,
+  prompt_id,
+  camera_group_id,
+  prompt_binding_id,
+  trigger,
+  status,
+  first_pass_status,
+  second_pass_status,
+  total_cameras,
+  processed_cameras,
+  first_pass_result_count,
+  second_pass_result_count,
+  matched_cameras,
+  estimated_gemini_calls,
+  estimated_token_count,
+  estimated_cost,
+  actual_gemini_calls,
+  actual_cost,
+  error_message,
+  created_at,
+  started_at,
+  completed_at
 """
+
+
+@dataclasses.dataclass()
+class UpdateOperationProgressParams:
+    processed_cameras: int
+    first_pass_result_count: int
+    second_pass_result_count: int
+    matched_cameras: int
+    actual_gemini_calls: Optional[int]
+    actual_cost: Optional[decimal.Decimal]
+    id: str
+
+
+UPSERT_LATEST_FIRST_PASS_RESULT = """-- name: upsert_latest_first_pass_result \\:one
+INSERT INTO latest_first_pass_results (
+  prompt_id,
+  camera_group_id,
+  camera_id,
+  operation_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  first_pass_prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason
+)
+VALUES (
+  :p1,
+  :p2,
+  :p3,
+  :p4,
+  :p5,
+  :p6,
+  :p7,
+  COALESCE(:p8, false),
+  COALESCE(:p9, 0),
+  COALESCE(:p10, 0),
+  :p11,
+  :p12
+)
+ON CONFLICT (prompt_id, camera_group_id, camera_id)
+DO UPDATE SET
+  operation_id = EXCLUDED.operation_id,
+  first_pass_result_id = EXCLUDED.first_pass_result_id,
+  frame_ref_id = EXCLUDED.frame_ref_id,
+  frame_url = EXCLUDED.frame_url,
+  include = EXCLUDED.include,
+  first_pass_prompt_score = EXCLUDED.first_pass_prompt_score,
+  operator_priority_score = EXCLUDED.operator_priority_score,
+  operator_action = EXCLUDED.operator_action,
+  reason = EXCLUDED.reason,
+  updated_at = now()
+RETURNING
+  prompt_id,
+  camera_group_id,
+  camera_id,
+  operation_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  first_pass_prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  updated_at
+"""
+
+
+@dataclasses.dataclass()
+class UpsertLatestFirstPassResultParams:
+    prompt_id: str
+    camera_group_id: str
+    camera_id: str
+    operation_id: str
+    first_pass_result_id: str
+    frame_ref_id: str
+    frame_url: str
+    include: Optional[Any]
+    first_pass_prompt_score: Optional[Any]
+    operator_priority_score: Optional[Any]
+    operator_action: str
+    reason: str
+
+
+UPSERT_LATEST_SECOND_PASS_RESULT = """-- name: upsert_latest_second_pass_result \\:one
+INSERT INTO latest_second_pass_results (
+  prompt_id,
+  camera_group_id,
+  camera_id,
+  operation_id,
+  second_pass_result_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  global_rank,
+  prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason
+)
+VALUES (
+  :p1,
+  :p2,
+  :p3,
+  :p4,
+  :p5,
+  :p6,
+  :p7,
+  :p8,
+  COALESCE(:p9, false),
+  :p10,
+  COALESCE(:p11, 0),
+  COALESCE(:p12, 0),
+  :p13,
+  :p14
+)
+ON CONFLICT (prompt_id, camera_group_id, camera_id)
+DO UPDATE SET
+  operation_id = EXCLUDED.operation_id,
+  second_pass_result_id = EXCLUDED.second_pass_result_id,
+  first_pass_result_id = EXCLUDED.first_pass_result_id,
+  frame_ref_id = EXCLUDED.frame_ref_id,
+  frame_url = EXCLUDED.frame_url,
+  include = EXCLUDED.include,
+  global_rank = EXCLUDED.global_rank,
+  prompt_score = EXCLUDED.prompt_score,
+  operator_priority_score = EXCLUDED.operator_priority_score,
+  operator_action = EXCLUDED.operator_action,
+  reason = EXCLUDED.reason,
+  updated_at = now()
+RETURNING
+  prompt_id,
+  camera_group_id,
+  camera_id,
+  operation_id,
+  second_pass_result_id,
+  first_pass_result_id,
+  frame_ref_id,
+  frame_url,
+  include,
+  global_rank,
+  prompt_score,
+  operator_priority_score,
+  operator_action,
+  reason,
+  updated_at
+"""
+
+
+@dataclasses.dataclass()
+class UpsertLatestSecondPassResultParams:
+    prompt_id: str
+    camera_group_id: str
+    camera_id: str
+    operation_id: str
+    second_pass_result_id: str
+    first_pass_result_id: str
+    frame_ref_id: str
+    frame_url: str
+    include: Optional[Any]
+    global_rank: Optional[int]
+    prompt_score: Optional[Any]
+    operator_priority_score: Optional[Any]
+    operator_action: str
+    reason: str
 
 
 class Querier:
     def __init__(self, conn: sqlalchemy.engine.Connection):
         self._conn = conn
+
+    def create_first_pass_result(self, arg: CreateFirstPassResultParams) -> Optional[models.OperationFirstPassResult]:
+        row = self._conn.execute(sqlalchemy.text(CREATE_FIRST_PASS_RESULT), {
+            "p1": arg.id,
+            "p2": arg.operation_id,
+            "p3": arg.camera_id,
+            "p4": arg.camera_group_id,
+            "p5": arg.prompt_id,
+            "p6": arg.frame_ref_id,
+            "p7": arg.frame_url,
+            "p8": arg.include,
+            "p9": arg.first_pass_prompt_score,
+            "p10": arg.operator_priority_score,
+            "p11": arg.operator_action,
+            "p12": arg.reason,
+            "p13": arg.raw_model_json,
+        }).first()
+        if row is None:
+            return None
+        return models.OperationFirstPassResult(
+            id=row[0],
+            operation_id=row[1],
+            camera_id=row[2],
+            camera_group_id=row[3],
+            prompt_id=row[4],
+            frame_ref_id=row[5],
+            frame_url=row[6],
+            include=row[7],
+            first_pass_prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
+            raw_model_json=row[12],
+            created_at=row[13],
+        )
 
     def create_operation(self, arg: CreateOperationParams) -> Optional[models.Operation]:
         row = self._conn.execute(sqlalchemy.text(CREATE_OPERATION), {
@@ -208,12 +916,16 @@ class Querier:
             "p4": arg.prompt_binding_id,
             "p5": arg.trigger,
             "p6": arg.status,
-            "p7": arg.total_cameras,
-            "p8": arg.processed_cameras,
-            "p9": arg.matched_cameras,
-            "p10": arg.estimated_gemini_calls,
-            "p11": arg.estimated_token_count,
-            "p12": arg.estimated_cost,
+            "p7": arg.first_pass_status,
+            "p8": arg.second_pass_status,
+            "p9": arg.total_cameras,
+            "p10": arg.processed_cameras,
+            "p11": arg.first_pass_result_count,
+            "p12": arg.second_pass_result_count,
+            "p13": arg.matched_cameras,
+            "p14": arg.estimated_gemini_calls,
+            "p15": arg.estimated_token_count,
+            "p16": arg.estimated_cost,
         }).first()
         if row is None:
             return None
@@ -224,39 +936,68 @@ class Querier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
-    def create_operation_result(self, arg: CreateOperationResultParams) -> Optional[models.OperationResult]:
-        row = self._conn.execute(sqlalchemy.text(CREATE_OPERATION_RESULT), {
+    def create_second_pass_result(self, arg: CreateSecondPassResultParams) -> Optional[models.OperationSecondPassResult]:
+        row = self._conn.execute(sqlalchemy.text(CREATE_SECOND_PASS_RESULT), {
             "p1": arg.id,
             "p2": arg.operation_id,
             "p3": arg.camera_id,
             "p4": arg.camera_group_id,
             "p5": arg.prompt_id,
-            "p6": arg.frame_ref_id,
-            "p7": arg.frame_url,
-            "p8": arg.include,
-            "p9": arg.prompt_match_score,
-            "p10": arg.operator_priority_score,
-            "p11": arg.recommended_action,
-            "p12": arg.reason,
-            "p13": arg.raw_model_json,
+            "p6": arg.first_pass_result_id,
+            "p7": arg.frame_ref_id,
+            "p8": arg.frame_url,
+            "p9": arg.include,
+            "p10": arg.global_rank,
+            "p11": arg.prompt_score,
+            "p12": arg.operator_priority_score,
+            "p13": arg.operator_action,
+            "p14": arg.reason,
+            "p15": arg.raw_model_json,
         }).first()
         if row is None:
             return None
-        return models.OperationResult(
+        return models.OperationSecondPassResult(
+            id=row[0],
+            operation_id=row[1],
+            camera_id=row[2],
+            camera_group_id=row[3],
+            prompt_id=row[4],
+            first_pass_result_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            include=row[8],
+            global_rank=row[9],
+            prompt_score=row[10],
+            operator_priority_score=row[11],
+            operator_action=row[12],
+            reason=row[13],
+            raw_model_json=row[14],
+            created_at=row[15],
+        )
+
+    def get_first_pass_result(self, *, id: str) -> Optional[models.OperationFirstPassResult]:
+        row = self._conn.execute(sqlalchemy.text(GET_FIRST_PASS_RESULT), {"p1": id}).first()
+        if row is None:
+            return None
+        return models.OperationFirstPassResult(
             id=row[0],
             operation_id=row[1],
             camera_id=row[2],
@@ -265,9 +1006,9 @@ class Querier:
             frame_ref_id=row[5],
             frame_url=row[6],
             include=row[7],
-            prompt_match_score=row[8],
+            first_pass_prompt_score=row[8],
             operator_priority_score=row[9],
-            recommended_action=row[10],
+            operator_action=row[10],
             reason=row[11],
             raw_model_json=row[12],
             created_at=row[13],
@@ -284,45 +1025,91 @@ class Querier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
-    def get_operation_result(self, *, id: str) -> Optional[models.OperationResult]:
-        row = self._conn.execute(sqlalchemy.text(GET_OPERATION_RESULT), {"p1": id}).first()
+    def get_second_pass_result(self, *, id: str) -> Optional[models.OperationSecondPassResult]:
+        row = self._conn.execute(sqlalchemy.text(GET_SECOND_PASS_RESULT), {"p1": id}).first()
         if row is None:
             return None
-        return models.OperationResult(
+        return models.OperationSecondPassResult(
             id=row[0],
             operation_id=row[1],
             camera_id=row[2],
             camera_group_id=row[3],
             prompt_id=row[4],
-            frame_ref_id=row[5],
-            frame_url=row[6],
-            include=row[7],
-            prompt_match_score=row[8],
-            operator_priority_score=row[9],
-            recommended_action=row[10],
-            reason=row[11],
-            raw_model_json=row[12],
-            created_at=row[13],
+            first_pass_result_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            include=row[8],
+            global_rank=row[9],
+            prompt_score=row[10],
+            operator_priority_score=row[11],
+            operator_action=row[12],
+            reason=row[13],
+            raw_model_json=row[14],
+            created_at=row[15],
         )
 
-    def list_operation_results(self, *, operation_id: str, filter_include: Optional[bool]) -> Iterator[models.OperationResult]:
-        result = self._conn.execute(sqlalchemy.text(LIST_OPERATION_RESULTS), {"p1": operation_id, "p2": filter_include})
+    def list_latest_first_pass_results(self, *, prompt_id: str, camera_group_id: str, filter_include: Optional[bool]) -> Iterator[models.LatestFirstPassResult]:
+        result = self._conn.execute(sqlalchemy.text(LIST_LATEST_FIRST_PASS_RESULTS), {"p1": prompt_id, "p2": camera_group_id, "p3": filter_include})
         for row in result:
-            yield models.OperationResult(
+            yield models.LatestFirstPassResult(
+                prompt_id=row[0],
+                camera_group_id=row[1],
+                camera_id=row[2],
+                operation_id=row[3],
+                first_pass_result_id=row[4],
+                frame_ref_id=row[5],
+                frame_url=row[6],
+                include=row[7],
+                first_pass_prompt_score=row[8],
+                operator_priority_score=row[9],
+                operator_action=row[10],
+                reason=row[11],
+                updated_at=row[12],
+            )
+
+    def list_latest_second_pass_results(self, *, prompt_id: str, camera_group_id: str, filter_include: Optional[bool]) -> Iterator[models.LatestSecondPassResult]:
+        result = self._conn.execute(sqlalchemy.text(LIST_LATEST_SECOND_PASS_RESULTS), {"p1": prompt_id, "p2": camera_group_id, "p3": filter_include})
+        for row in result:
+            yield models.LatestSecondPassResult(
+                prompt_id=row[0],
+                camera_group_id=row[1],
+                camera_id=row[2],
+                operation_id=row[3],
+                second_pass_result_id=row[4],
+                first_pass_result_id=row[5],
+                frame_ref_id=row[6],
+                frame_url=row[7],
+                include=row[8],
+                global_rank=row[9],
+                prompt_score=row[10],
+                operator_priority_score=row[11],
+                operator_action=row[12],
+                reason=row[13],
+                updated_at=row[14],
+            )
+
+    def list_operation_first_pass_results(self, *, operation_id: str, filter_include: Optional[bool]) -> Iterator[models.OperationFirstPassResult]:
+        result = self._conn.execute(sqlalchemy.text(LIST_OPERATION_FIRST_PASS_RESULTS), {"p1": operation_id, "p2": filter_include})
+        for row in result:
+            yield models.OperationFirstPassResult(
                 id=row[0],
                 operation_id=row[1],
                 camera_id=row[2],
@@ -331,12 +1118,34 @@ class Querier:
                 frame_ref_id=row[5],
                 frame_url=row[6],
                 include=row[7],
-                prompt_match_score=row[8],
+                first_pass_prompt_score=row[8],
                 operator_priority_score=row[9],
-                recommended_action=row[10],
+                operator_action=row[10],
                 reason=row[11],
                 raw_model_json=row[12],
                 created_at=row[13],
+            )
+
+    def list_operation_second_pass_results(self, *, operation_id: str, filter_include: Optional[bool]) -> Iterator[models.OperationSecondPassResult]:
+        result = self._conn.execute(sqlalchemy.text(LIST_OPERATION_SECOND_PASS_RESULTS), {"p1": operation_id, "p2": filter_include})
+        for row in result:
+            yield models.OperationSecondPassResult(
+                id=row[0],
+                operation_id=row[1],
+                camera_id=row[2],
+                camera_group_id=row[3],
+                prompt_id=row[4],
+                first_pass_result_id=row[5],
+                frame_ref_id=row[6],
+                frame_url=row[7],
+                include=row[8],
+                global_rank=row[9],
+                prompt_score=row[10],
+                operator_priority_score=row[11],
+                operator_action=row[12],
+                reason=row[13],
+                raw_model_json=row[14],
+                created_at=row[15],
             )
 
     def list_operations(self, *, filter_prompt_id: Optional[str], filter_camera_group_id: Optional[str], filter_status: Optional[str], offset_count: int, limit_count: int) -> Iterator[models.Operation]:
@@ -355,27 +1164,91 @@ class Querier:
                 prompt_binding_id=row[3],
                 trigger=row[4],
                 status=row[5],
-                total_cameras=row[6],
-                processed_cameras=row[7],
-                matched_cameras=row[8],
-                estimated_gemini_calls=row[9],
-                estimated_token_count=row[10],
-                estimated_cost=row[11],
-                actual_gemini_calls=row[12],
-                actual_cost=row[13],
-                error_message=row[14],
-                created_at=row[15],
-                started_at=row[16],
-                completed_at=row[17],
+                first_pass_status=row[6],
+                second_pass_status=row[7],
+                total_cameras=row[8],
+                processed_cameras=row[9],
+                first_pass_result_count=row[10],
+                second_pass_result_count=row[11],
+                matched_cameras=row[12],
+                estimated_gemini_calls=row[13],
+                estimated_token_count=row[14],
+                estimated_cost=row[15],
+                actual_gemini_calls=row[16],
+                actual_cost=row[17],
+                error_message=row[18],
+                created_at=row[19],
+                started_at=row[20],
+                completed_at=row[21],
             )
 
-    def mark_operation_completed(self, *, processed_cameras: int, matched_cameras: int, actual_gemini_calls: Optional[int], actual_cost: Optional[decimal.Decimal], id: str) -> Optional[models.Operation]:
+    def list_queued_manual_operations(self, *, limit_count: int) -> Iterator[models.Operation]:
+        result = self._conn.execute(sqlalchemy.text(LIST_QUEUED_MANUAL_OPERATIONS), {"p1": limit_count})
+        for row in result:
+            yield models.Operation(
+                id=row[0],
+                prompt_id=row[1],
+                camera_group_id=row[2],
+                prompt_binding_id=row[3],
+                trigger=row[4],
+                status=row[5],
+                first_pass_status=row[6],
+                second_pass_status=row[7],
+                total_cameras=row[8],
+                processed_cameras=row[9],
+                first_pass_result_count=row[10],
+                second_pass_result_count=row[11],
+                matched_cameras=row[12],
+                estimated_gemini_calls=row[13],
+                estimated_token_count=row[14],
+                estimated_cost=row[15],
+                actual_gemini_calls=row[16],
+                actual_cost=row[17],
+                error_message=row[18],
+                created_at=row[19],
+                started_at=row[20],
+                completed_at=row[21],
+            )
+
+    def list_queued_scheduled_operations(self, *, limit_count: int) -> Iterator[models.Operation]:
+        result = self._conn.execute(sqlalchemy.text(LIST_QUEUED_SCHEDULED_OPERATIONS), {"p1": limit_count})
+        for row in result:
+            yield models.Operation(
+                id=row[0],
+                prompt_id=row[1],
+                camera_group_id=row[2],
+                prompt_binding_id=row[3],
+                trigger=row[4],
+                status=row[5],
+                first_pass_status=row[6],
+                second_pass_status=row[7],
+                total_cameras=row[8],
+                processed_cameras=row[9],
+                first_pass_result_count=row[10],
+                second_pass_result_count=row[11],
+                matched_cameras=row[12],
+                estimated_gemini_calls=row[13],
+                estimated_token_count=row[14],
+                estimated_cost=row[15],
+                actual_gemini_calls=row[16],
+                actual_cost=row[17],
+                error_message=row[18],
+                created_at=row[19],
+                started_at=row[20],
+                completed_at=row[21],
+            )
+
+    def mark_operation_completed(self, arg: MarkOperationCompletedParams) -> Optional[models.Operation]:
         row = self._conn.execute(sqlalchemy.text(MARK_OPERATION_COMPLETED), {
-            "p1": processed_cameras,
-            "p2": matched_cameras,
-            "p3": actual_gemini_calls,
-            "p4": actual_cost,
-            "p5": id,
+            "p1": arg.first_pass_status,
+            "p2": arg.second_pass_status,
+            "p3": arg.processed_cameras,
+            "p4": arg.first_pass_result_count,
+            "p5": arg.second_pass_result_count,
+            "p6": arg.matched_cameras,
+            "p7": arg.actual_gemini_calls,
+            "p8": arg.actual_cost,
+            "p9": arg.id,
         }).first()
         if row is None:
             return None
@@ -386,18 +1259,22 @@ class Querier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
     def mark_operation_failed(self, *, error_message: Optional[str], id: str) -> Optional[models.Operation]:
@@ -411,18 +1288,22 @@ class Querier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
     def mark_operation_running(self, *, id: str) -> Optional[models.Operation]:
@@ -436,27 +1317,62 @@ class Querier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
-    def update_operation_progress(self, *, processed_cameras: int, matched_cameras: int, actual_gemini_calls: Optional[int], actual_cost: Optional[decimal.Decimal], id: str) -> Optional[models.Operation]:
+    def update_operation_pass_statuses(self, *, first_pass_status: Optional[str], second_pass_status: Optional[str], id: str) -> Optional[models.Operation]:
+        row = self._conn.execute(sqlalchemy.text(UPDATE_OPERATION_PASS_STATUSES), {"p1": first_pass_status, "p2": second_pass_status, "p3": id}).first()
+        if row is None:
+            return None
+        return models.Operation(
+            id=row[0],
+            prompt_id=row[1],
+            camera_group_id=row[2],
+            prompt_binding_id=row[3],
+            trigger=row[4],
+            status=row[5],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
+        )
+
+    def update_operation_progress(self, arg: UpdateOperationProgressParams) -> Optional[models.Operation]:
         row = self._conn.execute(sqlalchemy.text(UPDATE_OPERATION_PROGRESS), {
-            "p1": processed_cameras,
-            "p2": matched_cameras,
-            "p3": actual_gemini_calls,
-            "p4": actual_cost,
-            "p5": id,
+            "p1": arg.processed_cameras,
+            "p2": arg.first_pass_result_count,
+            "p3": arg.second_pass_result_count,
+            "p4": arg.matched_cameras,
+            "p5": arg.actual_gemini_calls,
+            "p6": arg.actual_cost,
+            "p7": arg.id,
         }).first()
         if row is None:
             return None
@@ -467,24 +1383,133 @@ class Querier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
+        )
+
+    def upsert_latest_first_pass_result(self, arg: UpsertLatestFirstPassResultParams) -> Optional[models.LatestFirstPassResult]:
+        row = self._conn.execute(sqlalchemy.text(UPSERT_LATEST_FIRST_PASS_RESULT), {
+            "p1": arg.prompt_id,
+            "p2": arg.camera_group_id,
+            "p3": arg.camera_id,
+            "p4": arg.operation_id,
+            "p5": arg.first_pass_result_id,
+            "p6": arg.frame_ref_id,
+            "p7": arg.frame_url,
+            "p8": arg.include,
+            "p9": arg.first_pass_prompt_score,
+            "p10": arg.operator_priority_score,
+            "p11": arg.operator_action,
+            "p12": arg.reason,
+        }).first()
+        if row is None:
+            return None
+        return models.LatestFirstPassResult(
+            prompt_id=row[0],
+            camera_group_id=row[1],
+            camera_id=row[2],
+            operation_id=row[3],
+            first_pass_result_id=row[4],
+            frame_ref_id=row[5],
+            frame_url=row[6],
+            include=row[7],
+            first_pass_prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
+            updated_at=row[12],
+        )
+
+    def upsert_latest_second_pass_result(self, arg: UpsertLatestSecondPassResultParams) -> Optional[models.LatestSecondPassResult]:
+        row = self._conn.execute(sqlalchemy.text(UPSERT_LATEST_SECOND_PASS_RESULT), {
+            "p1": arg.prompt_id,
+            "p2": arg.camera_group_id,
+            "p3": arg.camera_id,
+            "p4": arg.operation_id,
+            "p5": arg.second_pass_result_id,
+            "p6": arg.first_pass_result_id,
+            "p7": arg.frame_ref_id,
+            "p8": arg.frame_url,
+            "p9": arg.include,
+            "p10": arg.global_rank,
+            "p11": arg.prompt_score,
+            "p12": arg.operator_priority_score,
+            "p13": arg.operator_action,
+            "p14": arg.reason,
+        }).first()
+        if row is None:
+            return None
+        return models.LatestSecondPassResult(
+            prompt_id=row[0],
+            camera_group_id=row[1],
+            camera_id=row[2],
+            operation_id=row[3],
+            second_pass_result_id=row[4],
+            first_pass_result_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            include=row[8],
+            global_rank=row[9],
+            prompt_score=row[10],
+            operator_priority_score=row[11],
+            operator_action=row[12],
+            reason=row[13],
+            updated_at=row[14],
         )
 
 
 class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
+
+    async def create_first_pass_result(self, arg: CreateFirstPassResultParams) -> Optional[models.OperationFirstPassResult]:
+        row = (await self._conn.execute(sqlalchemy.text(CREATE_FIRST_PASS_RESULT), {
+            "p1": arg.id,
+            "p2": arg.operation_id,
+            "p3": arg.camera_id,
+            "p4": arg.camera_group_id,
+            "p5": arg.prompt_id,
+            "p6": arg.frame_ref_id,
+            "p7": arg.frame_url,
+            "p8": arg.include,
+            "p9": arg.first_pass_prompt_score,
+            "p10": arg.operator_priority_score,
+            "p11": arg.operator_action,
+            "p12": arg.reason,
+            "p13": arg.raw_model_json,
+        })).first()
+        if row is None:
+            return None
+        return models.OperationFirstPassResult(
+            id=row[0],
+            operation_id=row[1],
+            camera_id=row[2],
+            camera_group_id=row[3],
+            prompt_id=row[4],
+            frame_ref_id=row[5],
+            frame_url=row[6],
+            include=row[7],
+            first_pass_prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
+            raw_model_json=row[12],
+            created_at=row[13],
+        )
 
     async def create_operation(self, arg: CreateOperationParams) -> Optional[models.Operation]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATION), {
@@ -494,12 +1519,16 @@ class AsyncQuerier:
             "p4": arg.prompt_binding_id,
             "p5": arg.trigger,
             "p6": arg.status,
-            "p7": arg.total_cameras,
-            "p8": arg.processed_cameras,
-            "p9": arg.matched_cameras,
-            "p10": arg.estimated_gemini_calls,
-            "p11": arg.estimated_token_count,
-            "p12": arg.estimated_cost,
+            "p7": arg.first_pass_status,
+            "p8": arg.second_pass_status,
+            "p9": arg.total_cameras,
+            "p10": arg.processed_cameras,
+            "p11": arg.first_pass_result_count,
+            "p12": arg.second_pass_result_count,
+            "p13": arg.matched_cameras,
+            "p14": arg.estimated_gemini_calls,
+            "p15": arg.estimated_token_count,
+            "p16": arg.estimated_cost,
         })).first()
         if row is None:
             return None
@@ -510,39 +1539,68 @@ class AsyncQuerier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
-    async def create_operation_result(self, arg: CreateOperationResultParams) -> Optional[models.OperationResult]:
-        row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATION_RESULT), {
+    async def create_second_pass_result(self, arg: CreateSecondPassResultParams) -> Optional[models.OperationSecondPassResult]:
+        row = (await self._conn.execute(sqlalchemy.text(CREATE_SECOND_PASS_RESULT), {
             "p1": arg.id,
             "p2": arg.operation_id,
             "p3": arg.camera_id,
             "p4": arg.camera_group_id,
             "p5": arg.prompt_id,
-            "p6": arg.frame_ref_id,
-            "p7": arg.frame_url,
-            "p8": arg.include,
-            "p9": arg.prompt_match_score,
-            "p10": arg.operator_priority_score,
-            "p11": arg.recommended_action,
-            "p12": arg.reason,
-            "p13": arg.raw_model_json,
+            "p6": arg.first_pass_result_id,
+            "p7": arg.frame_ref_id,
+            "p8": arg.frame_url,
+            "p9": arg.include,
+            "p10": arg.global_rank,
+            "p11": arg.prompt_score,
+            "p12": arg.operator_priority_score,
+            "p13": arg.operator_action,
+            "p14": arg.reason,
+            "p15": arg.raw_model_json,
         })).first()
         if row is None:
             return None
-        return models.OperationResult(
+        return models.OperationSecondPassResult(
+            id=row[0],
+            operation_id=row[1],
+            camera_id=row[2],
+            camera_group_id=row[3],
+            prompt_id=row[4],
+            first_pass_result_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            include=row[8],
+            global_rank=row[9],
+            prompt_score=row[10],
+            operator_priority_score=row[11],
+            operator_action=row[12],
+            reason=row[13],
+            raw_model_json=row[14],
+            created_at=row[15],
+        )
+
+    async def get_first_pass_result(self, *, id: str) -> Optional[models.OperationFirstPassResult]:
+        row = (await self._conn.execute(sqlalchemy.text(GET_FIRST_PASS_RESULT), {"p1": id})).first()
+        if row is None:
+            return None
+        return models.OperationFirstPassResult(
             id=row[0],
             operation_id=row[1],
             camera_id=row[2],
@@ -551,9 +1609,9 @@ class AsyncQuerier:
             frame_ref_id=row[5],
             frame_url=row[6],
             include=row[7],
-            prompt_match_score=row[8],
+            first_pass_prompt_score=row[8],
             operator_priority_score=row[9],
-            recommended_action=row[10],
+            operator_action=row[10],
             reason=row[11],
             raw_model_json=row[12],
             created_at=row[13],
@@ -570,45 +1628,91 @@ class AsyncQuerier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
-    async def get_operation_result(self, *, id: str) -> Optional[models.OperationResult]:
-        row = (await self._conn.execute(sqlalchemy.text(GET_OPERATION_RESULT), {"p1": id})).first()
+    async def get_second_pass_result(self, *, id: str) -> Optional[models.OperationSecondPassResult]:
+        row = (await self._conn.execute(sqlalchemy.text(GET_SECOND_PASS_RESULT), {"p1": id})).first()
         if row is None:
             return None
-        return models.OperationResult(
+        return models.OperationSecondPassResult(
             id=row[0],
             operation_id=row[1],
             camera_id=row[2],
             camera_group_id=row[3],
             prompt_id=row[4],
-            frame_ref_id=row[5],
-            frame_url=row[6],
-            include=row[7],
-            prompt_match_score=row[8],
-            operator_priority_score=row[9],
-            recommended_action=row[10],
-            reason=row[11],
-            raw_model_json=row[12],
-            created_at=row[13],
+            first_pass_result_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            include=row[8],
+            global_rank=row[9],
+            prompt_score=row[10],
+            operator_priority_score=row[11],
+            operator_action=row[12],
+            reason=row[13],
+            raw_model_json=row[14],
+            created_at=row[15],
         )
 
-    async def list_operation_results(self, *, operation_id: str, filter_include: Optional[bool]) -> AsyncIterator[models.OperationResult]:
-        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATION_RESULTS), {"p1": operation_id, "p2": filter_include})
+    async def list_latest_first_pass_results(self, *, prompt_id: str, camera_group_id: str, filter_include: Optional[bool]) -> AsyncIterator[models.LatestFirstPassResult]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_LATEST_FIRST_PASS_RESULTS), {"p1": prompt_id, "p2": camera_group_id, "p3": filter_include})
         async for row in result:
-            yield models.OperationResult(
+            yield models.LatestFirstPassResult(
+                prompt_id=row[0],
+                camera_group_id=row[1],
+                camera_id=row[2],
+                operation_id=row[3],
+                first_pass_result_id=row[4],
+                frame_ref_id=row[5],
+                frame_url=row[6],
+                include=row[7],
+                first_pass_prompt_score=row[8],
+                operator_priority_score=row[9],
+                operator_action=row[10],
+                reason=row[11],
+                updated_at=row[12],
+            )
+
+    async def list_latest_second_pass_results(self, *, prompt_id: str, camera_group_id: str, filter_include: Optional[bool]) -> AsyncIterator[models.LatestSecondPassResult]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_LATEST_SECOND_PASS_RESULTS), {"p1": prompt_id, "p2": camera_group_id, "p3": filter_include})
+        async for row in result:
+            yield models.LatestSecondPassResult(
+                prompt_id=row[0],
+                camera_group_id=row[1],
+                camera_id=row[2],
+                operation_id=row[3],
+                second_pass_result_id=row[4],
+                first_pass_result_id=row[5],
+                frame_ref_id=row[6],
+                frame_url=row[7],
+                include=row[8],
+                global_rank=row[9],
+                prompt_score=row[10],
+                operator_priority_score=row[11],
+                operator_action=row[12],
+                reason=row[13],
+                updated_at=row[14],
+            )
+
+    async def list_operation_first_pass_results(self, *, operation_id: str, filter_include: Optional[bool]) -> AsyncIterator[models.OperationFirstPassResult]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATION_FIRST_PASS_RESULTS), {"p1": operation_id, "p2": filter_include})
+        async for row in result:
+            yield models.OperationFirstPassResult(
                 id=row[0],
                 operation_id=row[1],
                 camera_id=row[2],
@@ -617,12 +1721,34 @@ class AsyncQuerier:
                 frame_ref_id=row[5],
                 frame_url=row[6],
                 include=row[7],
-                prompt_match_score=row[8],
+                first_pass_prompt_score=row[8],
                 operator_priority_score=row[9],
-                recommended_action=row[10],
+                operator_action=row[10],
                 reason=row[11],
                 raw_model_json=row[12],
                 created_at=row[13],
+            )
+
+    async def list_operation_second_pass_results(self, *, operation_id: str, filter_include: Optional[bool]) -> AsyncIterator[models.OperationSecondPassResult]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATION_SECOND_PASS_RESULTS), {"p1": operation_id, "p2": filter_include})
+        async for row in result:
+            yield models.OperationSecondPassResult(
+                id=row[0],
+                operation_id=row[1],
+                camera_id=row[2],
+                camera_group_id=row[3],
+                prompt_id=row[4],
+                first_pass_result_id=row[5],
+                frame_ref_id=row[6],
+                frame_url=row[7],
+                include=row[8],
+                global_rank=row[9],
+                prompt_score=row[10],
+                operator_priority_score=row[11],
+                operator_action=row[12],
+                reason=row[13],
+                raw_model_json=row[14],
+                created_at=row[15],
             )
 
     async def list_operations(self, *, filter_prompt_id: Optional[str], filter_camera_group_id: Optional[str], filter_status: Optional[str], offset_count: int, limit_count: int) -> AsyncIterator[models.Operation]:
@@ -641,27 +1767,91 @@ class AsyncQuerier:
                 prompt_binding_id=row[3],
                 trigger=row[4],
                 status=row[5],
-                total_cameras=row[6],
-                processed_cameras=row[7],
-                matched_cameras=row[8],
-                estimated_gemini_calls=row[9],
-                estimated_token_count=row[10],
-                estimated_cost=row[11],
-                actual_gemini_calls=row[12],
-                actual_cost=row[13],
-                error_message=row[14],
-                created_at=row[15],
-                started_at=row[16],
-                completed_at=row[17],
+                first_pass_status=row[6],
+                second_pass_status=row[7],
+                total_cameras=row[8],
+                processed_cameras=row[9],
+                first_pass_result_count=row[10],
+                second_pass_result_count=row[11],
+                matched_cameras=row[12],
+                estimated_gemini_calls=row[13],
+                estimated_token_count=row[14],
+                estimated_cost=row[15],
+                actual_gemini_calls=row[16],
+                actual_cost=row[17],
+                error_message=row[18],
+                created_at=row[19],
+                started_at=row[20],
+                completed_at=row[21],
             )
 
-    async def mark_operation_completed(self, *, processed_cameras: int, matched_cameras: int, actual_gemini_calls: Optional[int], actual_cost: Optional[decimal.Decimal], id: str) -> Optional[models.Operation]:
+    async def list_queued_manual_operations(self, *, limit_count: int) -> AsyncIterator[models.Operation]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_QUEUED_MANUAL_OPERATIONS), {"p1": limit_count})
+        async for row in result:
+            yield models.Operation(
+                id=row[0],
+                prompt_id=row[1],
+                camera_group_id=row[2],
+                prompt_binding_id=row[3],
+                trigger=row[4],
+                status=row[5],
+                first_pass_status=row[6],
+                second_pass_status=row[7],
+                total_cameras=row[8],
+                processed_cameras=row[9],
+                first_pass_result_count=row[10],
+                second_pass_result_count=row[11],
+                matched_cameras=row[12],
+                estimated_gemini_calls=row[13],
+                estimated_token_count=row[14],
+                estimated_cost=row[15],
+                actual_gemini_calls=row[16],
+                actual_cost=row[17],
+                error_message=row[18],
+                created_at=row[19],
+                started_at=row[20],
+                completed_at=row[21],
+            )
+
+    async def list_queued_scheduled_operations(self, *, limit_count: int) -> AsyncIterator[models.Operation]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_QUEUED_SCHEDULED_OPERATIONS), {"p1": limit_count})
+        async for row in result:
+            yield models.Operation(
+                id=row[0],
+                prompt_id=row[1],
+                camera_group_id=row[2],
+                prompt_binding_id=row[3],
+                trigger=row[4],
+                status=row[5],
+                first_pass_status=row[6],
+                second_pass_status=row[7],
+                total_cameras=row[8],
+                processed_cameras=row[9],
+                first_pass_result_count=row[10],
+                second_pass_result_count=row[11],
+                matched_cameras=row[12],
+                estimated_gemini_calls=row[13],
+                estimated_token_count=row[14],
+                estimated_cost=row[15],
+                actual_gemini_calls=row[16],
+                actual_cost=row[17],
+                error_message=row[18],
+                created_at=row[19],
+                started_at=row[20],
+                completed_at=row[21],
+            )
+
+    async def mark_operation_completed(self, arg: MarkOperationCompletedParams) -> Optional[models.Operation]:
         row = (await self._conn.execute(sqlalchemy.text(MARK_OPERATION_COMPLETED), {
-            "p1": processed_cameras,
-            "p2": matched_cameras,
-            "p3": actual_gemini_calls,
-            "p4": actual_cost,
-            "p5": id,
+            "p1": arg.first_pass_status,
+            "p2": arg.second_pass_status,
+            "p3": arg.processed_cameras,
+            "p4": arg.first_pass_result_count,
+            "p5": arg.second_pass_result_count,
+            "p6": arg.matched_cameras,
+            "p7": arg.actual_gemini_calls,
+            "p8": arg.actual_cost,
+            "p9": arg.id,
         })).first()
         if row is None:
             return None
@@ -672,18 +1862,22 @@ class AsyncQuerier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
     async def mark_operation_failed(self, *, error_message: Optional[str], id: str) -> Optional[models.Operation]:
@@ -697,18 +1891,22 @@ class AsyncQuerier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
     async def mark_operation_running(self, *, id: str) -> Optional[models.Operation]:
@@ -722,27 +1920,62 @@ class AsyncQuerier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
         )
 
-    async def update_operation_progress(self, *, processed_cameras: int, matched_cameras: int, actual_gemini_calls: Optional[int], actual_cost: Optional[decimal.Decimal], id: str) -> Optional[models.Operation]:
+    async def update_operation_pass_statuses(self, *, first_pass_status: Optional[str], second_pass_status: Optional[str], id: str) -> Optional[models.Operation]:
+        row = (await self._conn.execute(sqlalchemy.text(UPDATE_OPERATION_PASS_STATUSES), {"p1": first_pass_status, "p2": second_pass_status, "p3": id})).first()
+        if row is None:
+            return None
+        return models.Operation(
+            id=row[0],
+            prompt_id=row[1],
+            camera_group_id=row[2],
+            prompt_binding_id=row[3],
+            trigger=row[4],
+            status=row[5],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
+        )
+
+    async def update_operation_progress(self, arg: UpdateOperationProgressParams) -> Optional[models.Operation]:
         row = (await self._conn.execute(sqlalchemy.text(UPDATE_OPERATION_PROGRESS), {
-            "p1": processed_cameras,
-            "p2": matched_cameras,
-            "p3": actual_gemini_calls,
-            "p4": actual_cost,
-            "p5": id,
+            "p1": arg.processed_cameras,
+            "p2": arg.first_pass_result_count,
+            "p3": arg.second_pass_result_count,
+            "p4": arg.matched_cameras,
+            "p5": arg.actual_gemini_calls,
+            "p6": arg.actual_cost,
+            "p7": arg.id,
         })).first()
         if row is None:
             return None
@@ -753,16 +1986,90 @@ class AsyncQuerier:
             prompt_binding_id=row[3],
             trigger=row[4],
             status=row[5],
-            total_cameras=row[6],
-            processed_cameras=row[7],
-            matched_cameras=row[8],
-            estimated_gemini_calls=row[9],
-            estimated_token_count=row[10],
-            estimated_cost=row[11],
-            actual_gemini_calls=row[12],
-            actual_cost=row[13],
-            error_message=row[14],
-            created_at=row[15],
-            started_at=row[16],
-            completed_at=row[17],
+            first_pass_status=row[6],
+            second_pass_status=row[7],
+            total_cameras=row[8],
+            processed_cameras=row[9],
+            first_pass_result_count=row[10],
+            second_pass_result_count=row[11],
+            matched_cameras=row[12],
+            estimated_gemini_calls=row[13],
+            estimated_token_count=row[14],
+            estimated_cost=row[15],
+            actual_gemini_calls=row[16],
+            actual_cost=row[17],
+            error_message=row[18],
+            created_at=row[19],
+            started_at=row[20],
+            completed_at=row[21],
+        )
+
+    async def upsert_latest_first_pass_result(self, arg: UpsertLatestFirstPassResultParams) -> Optional[models.LatestFirstPassResult]:
+        row = (await self._conn.execute(sqlalchemy.text(UPSERT_LATEST_FIRST_PASS_RESULT), {
+            "p1": arg.prompt_id,
+            "p2": arg.camera_group_id,
+            "p3": arg.camera_id,
+            "p4": arg.operation_id,
+            "p5": arg.first_pass_result_id,
+            "p6": arg.frame_ref_id,
+            "p7": arg.frame_url,
+            "p8": arg.include,
+            "p9": arg.first_pass_prompt_score,
+            "p10": arg.operator_priority_score,
+            "p11": arg.operator_action,
+            "p12": arg.reason,
+        })).first()
+        if row is None:
+            return None
+        return models.LatestFirstPassResult(
+            prompt_id=row[0],
+            camera_group_id=row[1],
+            camera_id=row[2],
+            operation_id=row[3],
+            first_pass_result_id=row[4],
+            frame_ref_id=row[5],
+            frame_url=row[6],
+            include=row[7],
+            first_pass_prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
+            updated_at=row[12],
+        )
+
+    async def upsert_latest_second_pass_result(self, arg: UpsertLatestSecondPassResultParams) -> Optional[models.LatestSecondPassResult]:
+        row = (await self._conn.execute(sqlalchemy.text(UPSERT_LATEST_SECOND_PASS_RESULT), {
+            "p1": arg.prompt_id,
+            "p2": arg.camera_group_id,
+            "p3": arg.camera_id,
+            "p4": arg.operation_id,
+            "p5": arg.second_pass_result_id,
+            "p6": arg.first_pass_result_id,
+            "p7": arg.frame_ref_id,
+            "p8": arg.frame_url,
+            "p9": arg.include,
+            "p10": arg.global_rank,
+            "p11": arg.prompt_score,
+            "p12": arg.operator_priority_score,
+            "p13": arg.operator_action,
+            "p14": arg.reason,
+        })).first()
+        if row is None:
+            return None
+        return models.LatestSecondPassResult(
+            prompt_id=row[0],
+            camera_group_id=row[1],
+            camera_id=row[2],
+            operation_id=row[3],
+            second_pass_result_id=row[4],
+            first_pass_result_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            include=row[8],
+            global_rank=row[9],
+            prompt_score=row[10],
+            operator_priority_score=row[11],
+            operator_action=row[12],
+            reason=row[13],
+            updated_at=row[14],
         )

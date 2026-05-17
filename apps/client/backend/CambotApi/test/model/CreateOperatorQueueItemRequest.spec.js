@@ -54,8 +54,8 @@
       //expect(instance).to.be.a(CambotApi.CreateOperatorQueueItemRequest);
     });
 
-    it('should have the property operationResultId (base name: "operationResultId")', function() {
-      // uncomment below and update the code to test the property operationResultId
+    it('should have the property secondPassResultId (base name: "secondPassResultId")', function() {
+      // uncomment below and update the code to test the property secondPassResultId
       //var instance = new CambotApi.CreateOperatorQueueItemRequest();
       //expect(instance).to.be();
     });

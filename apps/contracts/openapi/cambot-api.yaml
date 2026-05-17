@@ -363,11 +363,11 @@ paths:
               schema:
                 $ref: "./schemas/cambot/operation.yaml#/components/schemas/Operation"
 
-  /operations/{operationId}/results:
+  /operations/{operationId}/first-pass-results:
     get:
       tags: [Operations]
-      summary: List Gemini camera results for an operation
-      operationId: listOperationResults
+      summary: List first-pass image results for an operation
+      operationId: listOperationFirstPassResults
       parameters:
         - name: operationId
           in: path
@@ -381,11 +381,93 @@ paths:
             type: boolean
       responses:
         "200":
-          description: Operation results returned
+          description: First-pass results returned
           content:
             application/json:
               schema:
-                $ref: "./schemas/cambot/operation.yaml#/components/schemas/OperationResultListResponse"
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/FirstPassResultListResponse"
+
+  /operations/{operationId}/second-pass-results:
+    get:
+      tags: [Operations]
+      summary: List second-pass global prompt results for an operation
+      operationId: listOperationSecondPassResults
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Second-pass results returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/SecondPassResultListResponse"
+
+  /prompt-results/latest/first-pass:
+    get:
+      tags: [Operations]
+      summary: List latest first-pass results for a prompt and camera group
+      operationId: listLatestFirstPassResults
+      parameters:
+        - name: promptId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cameraGroupId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Latest first-pass results returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/LatestFirstPassResultListResponse"
+
+  /prompt-results/latest/second-pass:
+    get:
+      tags: [Operations]
+      summary: List latest second-pass global results for a prompt and camera group
+      operationId: listLatestSecondPassResults
+      parameters:
+        - name: promptId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cameraGroupId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Latest second-pass results returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/LatestSecondPassResultListResponse"
 
   /operator-queue:
     get:
@@ -408,7 +490,7 @@ paths:
 
     post:
       tags: [Operator Queue]
-      summary: Create an operator queue item from an operation result
+      summary: Create an operator queue item from a second-pass result
       operationId: createOperatorQueueItem
       requestBody:
         required: true

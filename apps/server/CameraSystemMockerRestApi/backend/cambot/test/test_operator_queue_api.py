@@ -29,7 +29,7 @@ class TestOperatorQueueApi(unittest.TestCase):
     def test_create_operator_queue_item(self) -> None:
         """Test case for create_operator_queue_item
 
-        Create an operator queue item from an operation result
+        Create an operator queue item from a second-pass result
         """
         pass
 

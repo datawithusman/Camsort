@@ -134,9 +134,12 @@ Class | Method | HTTP request | Description
 *CambotApi.OperationsApi* | [**createOperation**](docs/OperationsApi.md#createOperation) | **POST** /operations | Create a prompt scan operation
 *CambotApi.OperationsApi* | [**estimateOperation**](docs/OperationsApi.md#estimateOperation) | **POST** /operations/estimate | Estimate prompt scan usage and cost
 *CambotApi.OperationsApi* | [**getOperation**](docs/OperationsApi.md#getOperation) | **GET** /operations/{operationId} | Get a prompt scan operation
-*CambotApi.OperationsApi* | [**listOperationResults**](docs/OperationsApi.md#listOperationResults) | **GET** /operations/{operationId}/results | List Gemini camera results for an operation
+*CambotApi.OperationsApi* | [**listLatestFirstPassResults**](docs/OperationsApi.md#listLatestFirstPassResults) | **GET** /prompt-results/latest/first-pass | List latest first-pass results for a prompt and camera group
+*CambotApi.OperationsApi* | [**listLatestSecondPassResults**](docs/OperationsApi.md#listLatestSecondPassResults) | **GET** /prompt-results/latest/second-pass | List latest second-pass global results for a prompt and camera group
+*CambotApi.OperationsApi* | [**listOperationFirstPassResults**](docs/OperationsApi.md#listOperationFirstPassResults) | **GET** /operations/{operationId}/first-pass-results | List first-pass image results for an operation
+*CambotApi.OperationsApi* | [**listOperationSecondPassResults**](docs/OperationsApi.md#listOperationSecondPassResults) | **GET** /operations/{operationId}/second-pass-results | List second-pass global prompt results for an operation
 *CambotApi.OperationsApi* | [**listOperations**](docs/OperationsApi.md#listOperations) | **GET** /operations | List prompt scan operations
-*CambotApi.OperatorQueueApi* | [**createOperatorQueueItem**](docs/OperatorQueueApi.md#createOperatorQueueItem) | **POST** /operator-queue | Create an operator queue item from an operation result
+*CambotApi.OperatorQueueApi* | [**createOperatorQueueItem**](docs/OperatorQueueApi.md#createOperatorQueueItem) | **POST** /operator-queue | Create an operator queue item from a second-pass result
 *CambotApi.OperatorQueueApi* | [**listOperatorQueueItems**](docs/OperatorQueueApi.md#listOperatorQueueItems) | **GET** /operator-queue | List operator queue items
 *CambotApi.OperatorQueueApi* | [**updateOperatorQueueItem**](docs/OperatorQueueApi.md#updateOperatorQueueItem) | **PUT** /operator-queue/{queueItemId} | Update operator queue item status
 *CambotApi.PromptBindingsApi* | [**createCameraGroupPromptBinding**](docs/PromptBindingsApi.md#createCameraGroupPromptBinding) | **POST** /camera-groups/{groupId}/prompt-bindings | Apply a saved prompt to a camera group
@@ -172,8 +175,14 @@ Class | Method | HTTP request | Description
  - [CambotApi.ListCameraGroups200Response](docs/ListCameraGroups200Response.md)
  - [CambotApi.ListCameraGroups200ResponseGroupsInner](docs/ListCameraGroups200ResponseGroupsInner.md)
  - [CambotApi.ListCameraGroups200ResponseGroupsInnerStats](docs/ListCameraGroups200ResponseGroupsInnerStats.md)
- - [CambotApi.ListOperationResults200Response](docs/ListOperationResults200Response.md)
- - [CambotApi.ListOperationResults200ResponseResultsInner](docs/ListOperationResults200ResponseResultsInner.md)
+ - [CambotApi.ListLatestFirstPassResults200Response](docs/ListLatestFirstPassResults200Response.md)
+ - [CambotApi.ListLatestFirstPassResults200ResponseResultsInner](docs/ListLatestFirstPassResults200ResponseResultsInner.md)
+ - [CambotApi.ListLatestSecondPassResults200Response](docs/ListLatestSecondPassResults200Response.md)
+ - [CambotApi.ListLatestSecondPassResults200ResponseResultsInner](docs/ListLatestSecondPassResults200ResponseResultsInner.md)
+ - [CambotApi.ListOperationFirstPassResults200Response](docs/ListOperationFirstPassResults200Response.md)
+ - [CambotApi.ListOperationFirstPassResults200ResponseResultsInner](docs/ListOperationFirstPassResults200ResponseResultsInner.md)
+ - [CambotApi.ListOperationSecondPassResults200Response](docs/ListOperationSecondPassResults200Response.md)
+ - [CambotApi.ListOperationSecondPassResults200ResponseResultsInner](docs/ListOperationSecondPassResults200ResponseResultsInner.md)
  - [CambotApi.ListOperations200Response](docs/ListOperations200Response.md)
  - [CambotApi.ListOperations200ResponseOperationsInner](docs/ListOperations200ResponseOperationsInner.md)
  - [CambotApi.ListOperatorQueueItems200Response](docs/ListOperatorQueueItems200Response.md)

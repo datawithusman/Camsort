@@ -22,11 +22,11 @@ class CreateOperatorQueueItemRequest {
     /**
      * Constructs a new <code>CreateOperatorQueueItemRequest</code>.
      * @alias module:model/CreateOperatorQueueItemRequest
-     * @param operationResultId {String} Creates a queue item from a stored Gemini operation result.
+     * @param secondPassResultId {String} Creates a queue item from a stored second-pass/global prompt result.
      */
-    constructor(operationResultId) { 
+    constructor(secondPassResultId) { 
         
-        CreateOperatorQueueItemRequest.initialize(this, operationResultId);
+        CreateOperatorQueueItemRequest.initialize(this, secondPassResultId);
     }
 
     /**
@@ -34,8 +34,8 @@ class CreateOperatorQueueItemRequest {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, operationResultId) { 
-        obj['operationResultId'] = operationResultId;
+    static initialize(obj, secondPassResultId) { 
+        obj['secondPassResultId'] = secondPassResultId;
     }
 
     /**
@@ -49,8 +49,8 @@ class CreateOperatorQueueItemRequest {
         if (data) {
             obj = obj || new CreateOperatorQueueItemRequest();
 
-            if (data.hasOwnProperty('operationResultId')) {
-                obj['operationResultId'] = ApiClient.convertToType(data['operationResultId'], 'String');
+            if (data.hasOwnProperty('secondPassResultId')) {
+                obj['secondPassResultId'] = ApiClient.convertToType(data['secondPassResultId'], 'String');
             }
         }
         return obj;
@@ -69,8 +69,8 @@ class CreateOperatorQueueItemRequest {
             }
         }
         // ensure the json data is a string
-        if (data['operationResultId'] && !(typeof data['operationResultId'] === 'string' || data['operationResultId'] instanceof String)) {
-            throw new Error("Expected the field `operationResultId` to be a primitive type in the JSON string but got " + data['operationResultId']);
+        if (data['secondPassResultId'] && !(typeof data['secondPassResultId'] === 'string' || data['secondPassResultId'] instanceof String)) {
+            throw new Error("Expected the field `secondPassResultId` to be a primitive type in the JSON string but got " + data['secondPassResultId']);
         }
 
         return true;
@@ -79,13 +79,13 @@ class CreateOperatorQueueItemRequest {
 
 }
 
-CreateOperatorQueueItemRequest.RequiredProperties = ["operationResultId"];
+CreateOperatorQueueItemRequest.RequiredProperties = ["secondPassResultId"];
 
 /**
- * Creates a queue item from a stored Gemini operation result.
- * @member {String} operationResultId
+ * Creates a queue item from a stored second-pass/global prompt result.
+ * @member {String} secondPassResultId
  */
-CreateOperatorQueueItemRequest.prototype['operationResultId'] = undefined;
+CreateOperatorQueueItemRequest.prototype['secondPassResultId'] = undefined;
 
 
 

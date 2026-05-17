@@ -58,7 +58,7 @@ class OperatorQueueApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ListOperatorQueueItems200ResponseItemsInner:
-        """Create an operator queue item from an operation result
+        """Create an operator queue item from a second-pass result
 
 
         :param create_operator_queue_item_request: (required)
@@ -124,7 +124,7 @@ class OperatorQueueApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ApiResponse[ListOperatorQueueItems200ResponseItemsInner]:
-        """Create an operator queue item from an operation result
+        """Create an operator queue item from a second-pass result
 
 
         :param create_operator_queue_item_request: (required)
@@ -190,7 +190,7 @@ class OperatorQueueApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """Create an operator queue item from an operation result
+        """Create an operator queue item from a second-pass result
 
 
         :param create_operator_queue_item_request: (required)

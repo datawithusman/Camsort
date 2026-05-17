@@ -1,570 +1,208 @@
 from __future__ import annotations
-
+import os, uuid
 from datetime import datetime, timezone
 from typing import Any
-
+import requests
 from fastapi import FastAPI, HTTPException, Query, Response
-
-from app.clients.camera_system_client import CameraSystemClient, CameraSystemClientError
-from app.db.connection import check_database_connection
-from repositories.camera_frame_refs_repository import CameraFrameRefsRepository
-from repositories.camera_groups_repository import CameraGroupsRepository
-from repositories.saved_prompts_repository import SavedPromptsRepository
-from repositories.prompt_bindings_repository import PromptBindingsRepository
-from repositories.operations_repository import OperationsRepository
-from repositories.operator_queue_repository import OperatorQueueRepository
-from repositories.settings_repository import SettingsRepository
-from repositories.usage_repository import UsageRepository
-
+from sqlalchemy import text
+from app.db.connection import connect, row_to_dict, rows_to_dicts, check_database_connection
 
 app = FastAPI(title="CamBot REST API")
-
 JsonObject = dict[str, Any]
 
+def nid(prefix): return f"{prefix}-{uuid.uuid4()}"
+def now(): return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+def nf(entity, ident): raise HTTPException(404, {"error": f"{entity} not found", "details": ident})
+def cam_base(): return os.getenv("CAMERA_SYSTEM_BASE_URL", "http://camera-system-mocker-rest-api:8080").rstrip("/")
 
-def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+def one(sql, params=None, commit=False):
+    with connect() as c:
+        row = c.execute(text(sql), params or {}).first()
+        if commit: c.commit()
+        return row_to_dict(row)
 
+def many(sql, params=None):
+    with connect() as c:
+        return rows_to_dicts(c.execute(text(sql), params or {}).fetchall())
 
-def camera_system_client() -> CameraSystemClient:
-    return CameraSystemClient.from_env()
-
-
-def check_camera_system() -> JsonObject:
-    return camera_system_client().health()
-
-
-def not_found(entity: str, entity_id: str) -> None:
-    raise HTTPException(
-        status_code=404,
-        detail={
-            "error": f"{entity} not found.",
-            "details": entity_id,
-        },
-    )
-
-
-def raise_camera_system_error(exc: CameraSystemClientError) -> None:
-    status_code = exc.status_code or 502
-    if status_code < 400:
-        status_code = 502
-
-    raise HTTPException(
-        status_code=status_code,
-        detail={
-            "error": "Camera system request failed.",
-            "message": str(exc),
-            "details": exc.body,
-            "url": exc.url,
-        },
-    ) from exc
-
+def cam(path, **params):
+    url = cam_base() + path
+    try:
+        r = requests.get(url, params={k:v for k,v in params.items() if v is not None}, timeout=float(os.getenv("CAMERA_SYSTEM_TIMEOUT_SECONDS", "30")))
+        r.raise_for_status(); return r.json() if r.content else {}
+    except requests.HTTPError as e:
+        raise HTTPException(e.response.status_code, {"error":"Camera system request failed", "url": url, "body": e.response.text})
+    except Exception as e:
+        raise HTTPException(502, {"error":"Camera system request failed", "url": url, "message": str(e)})
 
 @app.get("/health")
-def health() -> JsonObject:
-    database = check_database_connection()
-    camera_system = check_camera_system()
-
-    status = "ok"
-
-    if database["status"] != "ok":
-        status = "degraded"
-
-    if camera_system["status"] != "ok":
-        status = "degraded"
-
-    return {
-        "status": status,
-        "service": "rest-api",
-        "checkedAt": utc_now_iso(),
-        "database": database,
-        "cameraSystem": camera_system,
-    }
-
+def health():
+    db = check_database_connection(); cs = camera_health()
+    return {"status":"ok" if db.get("status") == "ok" and cs.get("status") == "ok" else "degraded", "service":"rest-api", "checkedAt": now(), "database": db, "cameraSystem": cs}
 
 @app.get("/camera-system/health")
-def camera_system_health() -> JsonObject:
-    return check_camera_system()
-
+def camera_health():
+    try: return {"status":"ok", **cam("/health")}
+    except Exception as e: return {"status":"error", "error": str(e)}
 
 @app.get("/camera-system/status")
-def camera_system_status() -> JsonObject:
-    try:
-        return camera_system_client().system_status()
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
-
+def camera_status(): return cam("/system/status")
 @app.get("/camera-system/cameras")
-def list_camera_system_cameras(
-    group_id: str | None = Query(default=None, alias="groupId"),
-    search: str | None = None,
-) -> JsonObject:
-    try:
-        return camera_system_client().list_cameras(
-            group_id=group_id,
-            search=search,
-        )
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
-
+def cameras(group_id: str|None=Query(default=None, alias="groupId"), search: str|None=None): return cam("/cameras", groupId=group_id, search=search)
 @app.get("/camera-system/cameras/{camera_id}")
-def get_camera_system_camera(camera_id: str) -> JsonObject:
-    try:
-        return camera_system_client().get_camera(camera_id)
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
+def camera(camera_id: str): return cam(f"/cameras/{camera_id}")
 
 @app.get("/camera-system/cameras/{camera_id}/snapshot")
-def get_camera_system_snapshot(camera_id: str) -> JsonObject:
-    """
-    Requests a camera snapshot from the integrator/mocker.
-
-    The integrator returns metadata containing a frame URL. RestApi stores that
-    URL as a camera_frame_refs row for audit/history, but never stores raw image
-    bytes in Postgres.
-    """
-    try:
-        snapshot = camera_system_client().get_snapshot(camera_id)
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
-    frame_ref = CameraFrameRefsRepository().create_from_snapshot(snapshot)
-
-    response = dict(snapshot)
-    response["frameRef"] = frame_ref
-    return response
-
+def snapshot(camera_id: str):
+    s = cam(f"/cameras/{camera_id}/snapshot"); f = s.get("frame") or {}
+    fr = one("""
+INSERT INTO camera_frame_refs (id,camera_id,frame_id,snapshot_id,frame_url,sequence_number,captured_at,mime_type,width,height,expires_at)
+VALUES (:id,:camera_id,:frame_id,:snapshot_id,:frame_url,:sequence_number,COALESCE(CAST(:captured_at AS timestamptz),now()),COALESCE(:mime_type,'image/jpeg'),:width,:height,:expires_at)
+ON CONFLICT (camera_id,frame_id) DO UPDATE SET snapshot_id=EXCLUDED.snapshot_id, frame_url=EXCLUDED.frame_url, sequence_number=EXCLUDED.sequence_number, captured_at=EXCLUDED.captured_at, mime_type=EXCLUDED.mime_type, width=EXCLUDED.width, height=EXCLUDED.height, expires_at=EXCLUDED.expires_at, updated_at=now()
+RETURNING *
+""", {"id": nid("frame-ref"), "camera_id": s.get("cameraId"), "frame_id": f.get("frameId"), "snapshot_id": s.get("snapshotId"), "frame_url": f.get("url"), "sequence_number": f.get("sequenceNumber"), "captured_at": f.get("capturedAt"), "mime_type": f.get("mimeType"), "width": f.get("width"), "height": f.get("height"), "expires_at": f.get("expiresAt")}, True)
+    return {**s, "frameRef": fr}
 
 @app.get("/camera-system/cameras/{camera_id}/frames/{frame_id}/url")
-def get_camera_system_frame_url(camera_id: str, frame_id: str) -> JsonObject:
-    try:
-        frame_url = camera_system_client().get_frame_url(camera_id, frame_id)
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
-    frame_ref = CameraFrameRefsRepository().get_camera_frame_ref(
-        camera_id=camera_id,
-        frame_id=frame_id,
-    )
-
-    if frame_ref is not None:
-        frame_url["frameRef"] = frame_ref
-
-    return frame_url
-
-
+def frame_url(camera_id: str, frame_id: str): return cam(f"/cameras/{camera_id}/frames/{frame_id}/url")
 @app.get("/camera-system/cameras/{camera_id}/stream")
-def get_camera_system_stream(camera_id: str) -> JsonObject:
-    try:
-        return camera_system_client().get_stream(camera_id)
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
-
+def stream(camera_id: str): return cam(f"/cameras/{camera_id}/stream")
 @app.get("/camera-system/source-camera-groups")
-def list_camera_system_source_groups() -> JsonObject:
-    try:
-        return camera_system_client().list_camera_groups()
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
-
+def source_groups(): return cam("/camera-groups")
 @app.get("/camera-system/source-camera-groups/{group_id}")
-def get_camera_system_source_group(group_id: str) -> JsonObject:
-    try:
-        return camera_system_client().get_camera_group(group_id)
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
-
+def source_group(group_id: str): return cam(f"/camera-groups/{group_id}")
 @app.get("/camera-system/source-camera-groups/{group_id}/cameras")
-def list_camera_system_cameras_for_source_group(group_id: str) -> JsonObject:
-    try:
-        return camera_system_client().list_cameras_for_group(group_id)
-    except CameraSystemClientError as exc:
-        raise_camera_system_error(exc)
-
+def source_group_cameras(group_id: str): return cam(f"/camera-groups/{group_id}/cameras")
 
 @app.get("/camera-system/cameras/{camera_id}/frame-refs")
-def list_camera_frame_refs(
-    camera_id: str,
-    limit: int = Query(default=50, ge=1, le=500),
-    offset: int = Query(default=0, ge=0),
-) -> JsonObject:
-    return {
-        "frameRefs": CameraFrameRefsRepository().list_for_camera(
-            camera_id=camera_id,
-            limit_count=limit,
-            offset_count=offset,
-        )
-    }
-
-
+def frame_refs(camera_id: str, limit:int=50, offset:int=0): return {"frameRefs": many("SELECT * FROM camera_frame_refs WHERE camera_id=:id ORDER BY captured_at DESC LIMIT :limit OFFSET :offset", {"id":camera_id,"limit":limit,"offset":offset})}
 @app.get("/camera-system/cameras/{camera_id}/frame-refs/latest")
-def get_latest_camera_frame_ref(camera_id: str) -> JsonObject:
-    frame_ref = CameraFrameRefsRepository().get_latest_for_camera(camera_id)
-
-    if frame_ref is None:
-        not_found("Camera frame ref", camera_id)
-
-    return frame_ref
-
-
-@app.get("/operations/{operation_id}/frame-refs")
-def list_operation_frame_refs(operation_id: str) -> JsonObject:
-    return {
-        "frameRefs": CameraFrameRefsRepository().list_for_operation(operation_id)
-    }
-
-
-@app.post("/operations/{operation_id}/frame-refs/{frame_ref_id}", status_code=204)
-def attach_frame_ref_to_operation(
-    operation_id: str,
-    frame_ref_id: str,
-    payload: JsonObject | None = None,
-) -> Response:
-    CameraFrameRefsRepository().attach_to_operation(
-        operation_id=operation_id,
-        frame_ref_id=frame_ref_id,
-        purpose=(payload or {}).get("purpose", "input"),
-    )
-    return Response(status_code=204)
-
+def latest_frame(camera_id: str):
+    r=one("SELECT * FROM camera_frame_refs WHERE camera_id=:id ORDER BY captured_at DESC LIMIT 1", {"id":camera_id})
+    if not r: nf("Camera frame ref", camera_id)
+    return r
 
 @app.get("/camera-groups")
-def list_camera_groups() -> JsonObject:
-    repo = CameraGroupsRepository()
-
-    return {
-        "groups": repo.list_camera_groups(),
-    }
-
-
+def list_groups(): return {"groups": many("SELECT * FROM camera_groups ORDER BY created_at DESC")}
 @app.post("/camera-groups", status_code=201)
-def create_camera_group(payload: JsonObject) -> JsonObject:
-    repo = CameraGroupsRepository()
-
-    return repo.create_camera_group(
-        group_id=payload.get("id"),
-        name=payload["name"],
-        description=payload.get("description"),
-        camera_ids=payload.get("cameraIds") or [],
-    )
-
-
+def create_group(p: JsonObject): return one("INSERT INTO camera_groups (id,name,description,camera_ids) VALUES (COALESCE(NULLIF(:id,''),:new),:name,:description,:camera_ids) RETURNING *", {"id":p.get("id"),"new":nid("group"),"name":p["name"],"description":p.get("description"),"camera_ids":p.get("cameraIds") or []}, True)
 @app.get("/camera-groups/{group_id}")
-def get_camera_group(group_id: str) -> JsonObject:
-    repo = CameraGroupsRepository()
-    group = repo.get_camera_group(group_id)
-
-    if group is None:
-        not_found("Camera group", group_id)
-
-    return group
-
-
+def get_group(group_id: str):
+    r=one("SELECT * FROM camera_groups WHERE id=:id", {"id":group_id})
+    if not r: nf("Camera group", group_id)
+    return r
 @app.get("/camera-groups/{group_id}/stats")
-def get_camera_group_stats(group_id: str) -> JsonObject:
-    repo = CameraGroupsRepository()
-    group = repo.get_camera_group(group_id)
-
-    if group is None:
-        not_found("Camera group", group_id)
-
-    return group.get("stats") or {}
-
-
+def group_stats(group_id: str):
+    g=get_group(group_id); return {"cameraCount": len(g.get("cameraIds") or [])}
 @app.put("/camera-groups/{group_id}")
-def update_camera_group(group_id: str, payload: JsonObject) -> JsonObject:
-    repo = CameraGroupsRepository()
-
-    group = repo.update_camera_group(
-        group_id=group_id,
-        name=payload.get("name"),
-        description=payload.get("description"),
-    )
-
-    if group is None:
-        not_found("Camera group", group_id)
-
-    return group
-
-
+def update_group(group_id: str, p: JsonObject):
+    r=one("UPDATE camera_groups SET name=COALESCE(:name,name), description=COALESCE(:description,description), updated_at=now() WHERE id=:id RETURNING *", {"id":group_id,"name":p.get("name"),"description":p.get("description")}, True)
+    if not r: nf("Camera group", group_id)
+    return r
 @app.put("/camera-groups/{group_id}/cameras")
-def replace_camera_group_cameras(group_id: str, payload: JsonObject) -> JsonObject:
-    repo = CameraGroupsRepository()
-
-    group = repo.replace_camera_group_cameras(
-        group_id=group_id,
-        camera_ids=payload.get("cameraIds") or [],
-    )
-
-    if group is None:
-        not_found("Camera group", group_id)
-
-    return group
-
-
+def set_group_cameras(group_id: str, p: JsonObject):
+    r=one("UPDATE camera_groups SET camera_ids=:camera_ids, updated_at=now() WHERE id=:id RETURNING *", {"id":group_id,"camera_ids":p.get("cameraIds") or []}, True)
+    if not r: nf("Camera group", group_id)
+    return r
 @app.delete("/camera-groups/{group_id}", status_code=204)
-def delete_camera_group(group_id: str) -> Response:
-    repo = CameraGroupsRepository()
-
-    deleted = repo.delete_camera_group(group_id)
-
-    if not deleted:
-        not_found("Camera group", group_id)
-
+def delete_group(group_id: str):
+    with connect() as c:
+        res=c.execute(text("DELETE FROM camera_groups WHERE id=:id"), {"id":group_id}); c.commit()
+        if res.rowcount==0: nf("Camera group", group_id)
     return Response(status_code=204)
-
-
-# ---------------------------------------------------------------------------
-# Prompt library
-# ---------------------------------------------------------------------------
 
 @app.get("/saved-prompts")
-def list_saved_prompts() -> JsonObject:
-    return {"prompts": SavedPromptsRepository().list_saved_prompts()}
-
-
+def prompts(): return {"prompts": many("SELECT * FROM saved_prompts ORDER BY created_at DESC")}
 @app.post("/saved-prompts", status_code=201)
-def create_saved_prompt(payload: JsonObject) -> JsonObject:
-    return SavedPromptsRepository().create_saved_prompt(payload)
-
-
+def create_prompt(p: JsonObject): return one("INSERT INTO saved_prompts (id,name,description,prompt_text,enabled) VALUES (COALESCE(NULLIF(:id,''),:new),:name,:description,:prompt_text,COALESCE(:enabled,true)) RETURNING *", {"id":p.get("id"),"new":nid("prompt"),"name":p["name"],"description":p.get("description"),"prompt_text":p.get("promptText") or "","enabled":p.get("enabled", True)}, True)
 @app.get("/saved-prompts/{prompt_id}")
-def get_saved_prompt(prompt_id: str) -> JsonObject:
-    prompt = SavedPromptsRepository().get_saved_prompt(prompt_id)
-    if prompt is None:
-        not_found("Saved prompt", prompt_id)
-    return prompt
-
-
+def get_prompt(prompt_id: str):
+    r=one("SELECT * FROM saved_prompts WHERE id=:id", {"id":prompt_id})
+    if not r: nf("Saved prompt", prompt_id)
+    return r
 @app.put("/saved-prompts/{prompt_id}")
-def update_saved_prompt(prompt_id: str, payload: JsonObject) -> JsonObject:
-    prompt = SavedPromptsRepository().update_saved_prompt(prompt_id, payload)
-    if prompt is None:
-        not_found("Saved prompt", prompt_id)
-    return prompt
-
-
+def update_prompt(prompt_id: str, p: JsonObject):
+    r=one("UPDATE saved_prompts SET name=COALESCE(:name,name), description=COALESCE(:description,description), prompt_text=COALESCE(:prompt_text,prompt_text), enabled=COALESCE(:enabled,enabled), updated_at=now() WHERE id=:id RETURNING *", {"id":prompt_id,"name":p.get("name"),"description":p.get("description"),"prompt_text":p.get("promptText"),"enabled":p.get("enabled")}, True)
+    if not r: nf("Saved prompt", prompt_id)
+    return r
 @app.delete("/saved-prompts/{prompt_id}", status_code=204)
-def delete_saved_prompt(prompt_id: str) -> Response:
-    deleted = SavedPromptsRepository().delete_saved_prompt(prompt_id)
-    if not deleted:
-        not_found("Saved prompt", prompt_id)
+def delete_prompt(prompt_id: str):
+    with connect() as c:
+        res=c.execute(text("DELETE FROM saved_prompts WHERE id=:id"), {"id":prompt_id}); c.commit()
+        if res.rowcount==0: nf("Saved prompt", prompt_id)
     return Response(status_code=204)
-
-
-# ---------------------------------------------------------------------------
-# Prompt bindings: prompt + camera group. Global Gemini settings control continuous scan interval.
-# ---------------------------------------------------------------------------
 
 @app.get("/camera-groups/{group_id}/prompt-bindings")
-def list_camera_group_prompt_bindings(group_id: str) -> JsonObject:
-    return {"bindings": PromptBindingsRepository().list_for_camera_group(group_id)}
-
-
+def bindings(group_id: str): return {"bindings": many("SELECT * FROM prompt_bindings WHERE camera_group_id=:id ORDER BY created_at DESC", {"id":group_id})}
 @app.post("/camera-groups/{group_id}/prompt-bindings", status_code=201)
-def create_camera_group_prompt_binding(group_id: str, payload: JsonObject) -> JsonObject:
-    # Validate camera group exists so typo'd bindings fail clearly.
-    if CameraGroupsRepository().get_camera_group(group_id) is None:
-        not_found("Camera group", group_id)
-    if SavedPromptsRepository().get_saved_prompt(payload["promptId"]) is None:
-        not_found("Saved prompt", payload["promptId"])
-    return PromptBindingsRepository().create_binding(group_id, payload)
-
-
+def create_binding(group_id: str, p: JsonObject):
+    get_group(group_id); get_prompt(p["promptId"])
+    return one("INSERT INTO prompt_bindings (id,camera_group_id,prompt_id,enabled) VALUES (COALESCE(NULLIF(:id,''),:new),:gid,:pid,COALESCE(:enabled,true)) ON CONFLICT (camera_group_id,prompt_id) DO UPDATE SET enabled=EXCLUDED.enabled, updated_at=now() RETURNING *", {"id":p.get("id"),"new":nid("binding"),"gid":group_id,"pid":p["promptId"],"enabled":p.get("enabled", True)}, True)
 @app.put("/camera-groups/{group_id}/prompt-bindings/{binding_id}")
-def update_camera_group_prompt_binding(group_id: str, binding_id: str, payload: JsonObject) -> JsonObject:
-    binding = PromptBindingsRepository().update_binding(group_id, binding_id, payload)
-    if binding is None:
-        not_found("Prompt binding", binding_id)
-    return binding
-
-
+def update_binding(group_id: str, binding_id: str, p: JsonObject):
+    r=one("UPDATE prompt_bindings SET enabled=COALESCE(:enabled,enabled), updated_at=now() WHERE id=:id AND camera_group_id=:gid RETURNING *", {"id":binding_id,"gid":group_id,"enabled":p.get("enabled")}, True)
+    if not r: nf("Prompt binding", binding_id)
+    return r
 @app.delete("/camera-groups/{group_id}/prompt-bindings/{binding_id}", status_code=204)
-def delete_camera_group_prompt_binding(group_id: str, binding_id: str) -> Response:
-    deleted = PromptBindingsRepository().delete_binding(group_id, binding_id)
-    if not deleted:
-        not_found("Prompt binding", binding_id)
+def delete_binding(group_id: str, binding_id: str):
+    with connect() as c:
+        res=c.execute(text("DELETE FROM prompt_bindings WHERE id=:id AND camera_group_id=:gid"), {"id":binding_id,"gid":group_id}); c.commit()
+        if res.rowcount==0: nf("Prompt binding", binding_id)
     return Response(status_code=204)
 
-
-# ---------------------------------------------------------------------------
-# Operations and operation results
-# ---------------------------------------------------------------------------
-
-
-def _operation_estimate(prompt_id: str, camera_group_id: str) -> JsonObject:
-    prompt = SavedPromptsRepository().get_saved_prompt(prompt_id)
-    group = CameraGroupsRepository().get_camera_group(camera_group_id)
-
-    if prompt is None:
-        not_found("Saved prompt", prompt_id)
-    if group is None:
-        not_found("Camera group", camera_group_id)
-
-    camera_count = len(group.get("cameraIds") or [])
-    estimated_calls = camera_count
-    # Placeholder until pricing/token estimates are implemented in GeminiCaller.
-    estimated_token_count = camera_count * 1024
-    estimated_cost = 0.0
-
-    return {
-        "allowed": True,
-        "restrictionReason": None,
-        "estimatedCameraCount": camera_count,
-        "estimatedGeminiCalls": estimated_calls,
-        "estimatedTokenCount": estimated_token_count,
-        "estimatedCost": estimated_cost,
-    }
-
-
+def estimate(prompt_id, camera_group_id):
+    get_prompt(prompt_id); g=get_group(camera_group_id); n=len(g.get("cameraIds") or [])
+    return {"allowed":True,"restrictionReason":None,"estimatedCameraCount":n,"estimatedGeminiCalls":n+1,"estimatedTokenCount":n*1024,"estimatedCost":0.0}
 @app.post("/operations/estimate")
-def estimate_operation(payload: JsonObject) -> JsonObject:
-    return _operation_estimate(payload["promptId"], payload["cameraGroupId"])
-
-
+def estimate_operation(p: JsonObject): return estimate(p["promptId"], p["cameraGroupId"])
 @app.get("/operations")
-def list_operations(
-    prompt_id: str | None = Query(default=None, alias="promptId"),
-    camera_group_id: str | None = Query(default=None, alias="cameraGroupId"),
-    status: str | None = None,
-    limit: int = Query(default=50, ge=1, le=500),
-    offset: int = Query(default=0, ge=0),
-) -> JsonObject:
-    return {
-        "operations": OperationsRepository().list_operations(
-            prompt_id=prompt_id,
-            camera_group_id=camera_group_id,
-            status=status,
-            limit_count=limit,
-            offset_count=offset,
-        )
-    }
-
-
+def list_operations(prompt_id: str|None=Query(default=None, alias="promptId"), camera_group_id: str|None=Query(default=None, alias="cameraGroupId"), status: str|None=None, limit:int=50, offset:int=0):
+    return {"operations": many("SELECT * FROM operations WHERE (:pid IS NULL OR prompt_id=:pid) AND (:gid IS NULL OR camera_group_id=:gid) AND (:status IS NULL OR status=:status) ORDER BY created_at DESC LIMIT :limit OFFSET :offset", {"pid":prompt_id,"gid":camera_group_id,"status":status,"limit":limit,"offset":offset})}
 @app.post("/operations", status_code=201)
-def create_operation(payload: JsonObject) -> JsonObject:
-    estimate = _operation_estimate(payload["promptId"], payload["cameraGroupId"])
-    return OperationsRepository().create_operation(
-        payload,
-        total_cameras=estimate["estimatedCameraCount"],
-        estimated_calls=estimate["estimatedGeminiCalls"],
-        estimated_cost=estimate["estimatedCost"],
-    )
-
-
+def create_operation(p: JsonObject):
+    e=estimate(p["promptId"], p["cameraGroupId"])
+    return one("INSERT INTO operations (id,prompt_id,camera_group_id,prompt_binding_id,trigger,status,total_cameras,estimated_gemini_calls,estimated_token_count,estimated_cost) VALUES (COALESCE(NULLIF(:id,''),:new),:pid,:gid,:bid,COALESCE(:trigger,'manual'),COALESCE(:status,'queued'),:total,:calls,:tokens,:cost) RETURNING *", {"id":p.get("id"),"new":nid("operation"),"pid":p["promptId"],"gid":p["cameraGroupId"],"bid":p.get("promptBindingId"),"trigger":p.get("trigger","manual"),"status":p.get("status","queued"),"total":e["estimatedCameraCount"],"calls":e["estimatedGeminiCalls"],"tokens":e["estimatedTokenCount"],"cost":e["estimatedCost"]}, True)
 @app.get("/operations/{operation_id}")
-def get_operation(operation_id: str) -> JsonObject:
-    operation = OperationsRepository().get_operation(operation_id)
-    if operation is None:
-        not_found("Operation", operation_id)
-    return operation
-
-
-@app.get("/operations/{operation_id}/results")
-def list_operation_results(
-    operation_id: str,
-    include: bool | None = Query(default=None),
-) -> JsonObject:
-    if OperationsRepository().get_operation(operation_id) is None:
-        not_found("Operation", operation_id)
-    return {
-        "results": OperationsRepository().list_results(operation_id, include=include)
-    }
-
-
-# ---------------------------------------------------------------------------
-# Operator action queue
-# ---------------------------------------------------------------------------
+def get_operation(operation_id: str):
+    r=one("SELECT * FROM operations WHERE id=:id", {"id":operation_id})
+    if not r: nf("Operation", operation_id)
+    return r
+@app.get("/operations/{operation_id}/first-pass-results")
+def first_results(operation_id: str, include: bool|None=Query(default=None)):
+    get_operation(operation_id); return {"results": many("SELECT * FROM operation_first_pass_results WHERE operation_id=:id AND (:include IS NULL OR include=:include) ORDER BY first_pass_prompt_score DESC, operator_priority_score DESC", {"id":operation_id,"include":include})}
+@app.get("/operations/{operation_id}/second-pass-results")
+def second_results(operation_id: str, include: bool|None=Query(default=None)):
+    get_operation(operation_id); return {"results": many("SELECT * FROM operation_second_pass_results WHERE operation_id=:id AND (:include IS NULL OR include=:include) ORDER BY global_rank ASC NULLS LAST, prompt_score DESC", {"id":operation_id,"include":include})}
+@app.get("/prompt-results/latest/first-pass")
+def latest_first(prompt_id: str=Query(alias="promptId"), camera_group_id: str=Query(alias="cameraGroupId")): return {"results": many("SELECT * FROM latest_first_pass_results WHERE prompt_id=:pid AND camera_group_id=:gid ORDER BY first_pass_prompt_score DESC", {"pid":prompt_id,"gid":camera_group_id})}
+@app.get("/prompt-results/latest/second-pass")
+def latest_second(prompt_id: str=Query(alias="promptId"), camera_group_id: str=Query(alias="cameraGroupId")): return {"results": many("SELECT * FROM latest_second_pass_results WHERE prompt_id=:pid AND camera_group_id=:gid ORDER BY global_rank ASC NULLS LAST, prompt_score DESC", {"pid":prompt_id,"gid":camera_group_id})}
 
 @app.get("/operator-queue")
-def list_operator_queue_items(
-    status: str | None = None,
-    limit: int = Query(default=50, ge=1, le=500),
-    offset: int = Query(default=0, ge=0),
-) -> JsonObject:
-    return {
-        "items": OperatorQueueRepository().list_items(
-            status=status,
-            limit_count=limit,
-            offset_count=offset,
-        )
-    }
-
-
+def queue(status: str|None=None, limit:int=50, offset:int=0): return {"items": many("SELECT * FROM operator_queue_items WHERE (:status IS NULL OR status=:status) ORDER BY CASE status WHEN 'queued' THEN 0 WHEN 'acknowledged' THEN 1 WHEN 'completed' THEN 2 WHEN 'dismissed' THEN 3 ELSE 4 END, operator_priority_score DESC, prompt_score DESC, created_at ASC LIMIT :limit OFFSET :offset", {"status":status,"limit":limit,"offset":offset})}
 @app.post("/operator-queue", status_code=201)
-def create_operator_queue_item(payload: JsonObject) -> JsonObject:
-    if OperationsRepository().get_result(payload["operationResultId"]) is None:
-        not_found("Operation result", payload["operationResultId"])
-    return OperatorQueueRepository().create_from_result(payload)
-
-
+def create_queue_item(p: JsonObject):
+    rid=p.get("secondPassResultId")
+    if not rid: raise HTTPException(400, "secondPassResultId is required")
+    r=one("INSERT INTO operator_queue_items (id,second_pass_result_id,operation_id,camera_id,camera_group_id,prompt_id,frame_ref_id,frame_url,prompt_score,operator_priority_score,operator_action,reason,status) SELECT COALESCE(NULLIF(:id,''),:new), id, operation_id, camera_id, camera_group_id, prompt_id, frame_ref_id, frame_url, prompt_score, operator_priority_score, operator_action, reason, COALESCE(:status,'queued') FROM operation_second_pass_results WHERE id=:rid ON CONFLICT (second_pass_result_id) DO UPDATE SET prompt_score=EXCLUDED.prompt_score, operator_priority_score=EXCLUDED.operator_priority_score, operator_action=EXCLUDED.operator_action, reason=EXCLUDED.reason, updated_at=now() RETURNING *", {"id":p.get("id"),"new":nid("queue"),"rid":rid,"status":p.get("status","queued")}, True)
+    if not r: nf("Second pass result", rid)
+    return r
 @app.put("/operator-queue/{queue_item_id}")
-def update_operator_queue_item(queue_item_id: str, payload: JsonObject) -> JsonObject:
-    item = OperatorQueueRepository().update_status(queue_item_id, payload)
-    if item is None:
-        not_found("Operator queue item", queue_item_id)
-    return item
-
-
-# ---------------------------------------------------------------------------
-# Settings and usage summary
-# ---------------------------------------------------------------------------
+def update_queue(queue_item_id: str, p: JsonObject):
+    r=one("UPDATE operator_queue_items SET status=COALESCE(:status,status), operator_note=COALESCE(:note,operator_note), updated_at=now() WHERE id=:id RETURNING *", {"id":queue_item_id,"status":p.get("status"),"note":p.get("operatorNote")}, True)
+    if not r: nf("Operator queue item", queue_item_id)
+    return r
 
 @app.get("/settings/gemini")
-def get_gemini_caller_settings() -> JsonObject:
-    settings = SettingsRepository().get_gemini()
-    if settings is None:
-        not_found("Gemini caller settings", "singleton")
-    return settings
-
-
+def gemini_settings(): return one("SELECT * FROM gemini_caller_settings WHERE id=true") or {}
 @app.put("/settings/gemini")
-def update_gemini_caller_settings(payload: JsonObject) -> JsonObject:
-    settings = SettingsRepository().update_gemini(payload)
-    if settings is None:
-        not_found("Gemini caller settings", "singleton")
-    return settings
-
-
+def update_gemini_settings(p: JsonObject):
+    return one("UPDATE gemini_caller_settings SET enabled=COALESCE(:enabled,enabled), continuous_scan_enabled=COALESCE(:cse,continuous_scan_enabled), continuous_scan_interval_seconds=COALESCE(:csis,continuous_scan_interval_seconds), gemini_call_delay_ms=COALESCE(:delay,gemini_call_delay_ms), max_cost_per_day=COALESCE(:day,max_cost_per_day), max_cost_per_month=COALESCE(:mon,max_cost_per_month), updated_at=now() WHERE id=true RETURNING *", {"enabled":p.get("enabled"),"cse":p.get("continuousScanEnabled"),"csis":p.get("continuousScanIntervalSeconds"),"delay":p.get("geminiCallDelayMs"),"day":p.get("maxCostPerDay"),"mon":p.get("maxCostPerMonth")}, True)
 @app.get("/settings/usage-limits")
-def get_usage_limit_settings() -> JsonObject:
-    settings = SettingsRepository().get_usage_limits()
-    if settings is None:
-        not_found("Usage limit settings", "singleton")
-    return settings
-
-
+def usage_limits(): return one("SELECT * FROM usage_limit_settings WHERE id=true") or {}
 @app.put("/settings/usage-limits")
-def update_usage_limit_settings(payload: JsonObject) -> JsonObject:
-    settings = SettingsRepository().update_usage_limits(payload)
-    if settings is None:
-        not_found("Usage limit settings", "singleton")
-    return settings
-
-
+def update_usage_limits(p: JsonObject): return one("UPDATE usage_limit_settings SET max_scans_per_day=COALESCE(:d,max_scans_per_day), max_scans_per_month=COALESCE(:m,max_scans_per_month), max_estimated_cost_per_day=COALESCE(:cd,max_estimated_cost_per_day), max_estimated_cost_per_month=COALESCE(:cm,max_estimated_cost_per_month), updated_at=now() WHERE id=true RETURNING *", {"d":p.get("maxScansPerDay"),"m":p.get("maxScansPerMonth"),"cd":p.get("maxEstimatedCostPerDay"),"cm":p.get("maxEstimatedCostPerMonth")}, True)
 @app.get("/usage/summary")
-def get_usage_summary(
-    camera_id: str | None = Query(default=None, alias="cameraId"),
-    camera_group_id: str | None = Query(default=None, alias="cameraGroupId"),
-) -> JsonObject:
-    return UsageRepository().summary(camera_id=camera_id, camera_group_id=camera_group_id)
-
-
+def usage_summary(): return {"previousDay": one("SELECT COALESCE(sum(estimated_cost),0) AS cost, count(*) AS events FROM usage_events WHERE created_at >= now() - interval '1 day'") or {}, "monthToDate": one("SELECT COALESCE(sum(estimated_cost),0) AS cost, count(*) AS events FROM usage_events WHERE created_at >= now() - interval '30 days'") or {}}
 @app.get("/debug/routes")
-def debug_routes() -> JsonObject:
-    return {
-        "routes": [
-            {
-                "path": route.path,
-                "name": route.name,
-                "methods": sorted(route.methods or []),
-            }
-            for route in app.routes
-        ]
-    }
+def routes(): return {"routes":[{"path":r.path,"name":r.name,"methods":sorted(r.methods or [])} for r in app.routes]}

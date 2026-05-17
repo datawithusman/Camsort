@@ -120,7 +120,7 @@ CreateOperationRequest.prototype['cameraGroupId'] = undefined;
 CreateOperationRequest.prototype['trigger'] = undefined;
 
 /**
- * Set for operations created from a scheduled prompt binding.
+ * Set for operations created from the global continuous scan cycle.
  * @member {String} promptBindingId
  */
 CreateOperationRequest.prototype['promptBindingId'] = undefined;

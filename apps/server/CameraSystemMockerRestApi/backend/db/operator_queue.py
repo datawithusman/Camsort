@@ -10,58 +10,58 @@ import sqlalchemy.ext.asyncio
 from db import models
 
 
-CREATE_OPERATOR_QUEUE_ITEM_FROM_RESULT = """-- name: create_operator_queue_item_from_result \\:one
+CREATE_OPERATOR_QUEUE_ITEM_FROM_SECOND_PASS_RESULT = """-- name: create_operator_queue_item_from_second_pass_result \\:one
 INSERT INTO operator_queue_items (
   id,
-  operation_result_id,
+  second_pass_result_id,
   operation_id,
   camera_id,
   camera_group_id,
   prompt_id,
   frame_ref_id,
   frame_url,
-  recommended_action,
-  reason,
-  prompt_match_score,
+  prompt_score,
   operator_priority_score,
+  operator_action,
+  reason,
   status
 )
 SELECT
   COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text) AS id,
-  r.id AS operation_result_id,
+  r.id AS second_pass_result_id,
   r.operation_id AS operation_id,
   r.camera_id AS camera_id,
   r.camera_group_id AS camera_group_id,
   r.prompt_id AS prompt_id,
   r.frame_ref_id AS frame_ref_id,
   r.frame_url AS frame_url,
-  r.recommended_action AS recommended_action,
-  r.reason AS reason,
-  r.prompt_match_score AS prompt_match_score,
+  r.prompt_score AS prompt_score,
   r.operator_priority_score AS operator_priority_score,
+  r.operator_action AS operator_action,
+  r.reason AS reason,
   COALESCE(:p2, 'queued') AS status
-FROM operation_results r
+FROM operation_second_pass_results r
 WHERE r.id = :p3
-ON CONFLICT (operation_result_id)
+ON CONFLICT (second_pass_result_id)
 DO UPDATE SET
-  recommended_action = EXCLUDED.recommended_action,
-  reason = EXCLUDED.reason,
-  prompt_match_score = EXCLUDED.prompt_match_score,
+  prompt_score = EXCLUDED.prompt_score,
   operator_priority_score = EXCLUDED.operator_priority_score,
+  operator_action = EXCLUDED.operator_action,
+  reason = EXCLUDED.reason,
   updated_at = now()
 RETURNING
   id,
-  operation_result_id,
+  second_pass_result_id,
   operation_id,
   camera_id,
   camera_group_id,
   prompt_id,
   frame_ref_id,
   frame_url,
-  recommended_action,
-  reason,
-  prompt_match_score,
+  prompt_score,
   operator_priority_score,
+  operator_action,
+  reason,
   status,
   operator_note,
   created_at,
@@ -72,17 +72,17 @@ RETURNING
 LIST_OPERATOR_QUEUE_ITEMS = """-- name: list_operator_queue_items \\:many
 SELECT
   id,
-  operation_result_id,
+  second_pass_result_id,
   operation_id,
   camera_id,
   camera_group_id,
   prompt_id,
   frame_ref_id,
   frame_url,
-  recommended_action,
-  reason,
-  prompt_match_score,
+  prompt_score,
   operator_priority_score,
+  operator_action,
+  reason,
   status,
   operator_note,
   created_at,
@@ -98,6 +98,7 @@ ORDER BY
     ELSE 4
   END,
   operator_priority_score DESC,
+  prompt_score DESC,
   created_at ASC
 LIMIT :p3 OFFSET :p2
 """
@@ -112,17 +113,17 @@ SET
 WHERE id = :p3
 RETURNING
   id,
-  operation_result_id,
+  second_pass_result_id,
   operation_id,
   camera_id,
   camera_group_id,
   prompt_id,
   frame_ref_id,
   frame_url,
-  recommended_action,
-  reason,
-  prompt_match_score,
+  prompt_score,
   operator_priority_score,
+  operator_action,
+  reason,
   status,
   operator_note,
   created_at,
@@ -134,23 +135,23 @@ class Querier:
     def __init__(self, conn: sqlalchemy.engine.Connection):
         self._conn = conn
 
-    def create_operator_queue_item_from_result(self, *, id: Optional[Any], status: str, operation_result_id: str) -> Optional[models.OperatorQueueItem]:
-        row = self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM_FROM_RESULT), {"p1": id, "p2": status, "p3": operation_result_id}).first()
+    def create_operator_queue_item_from_second_pass_result(self, *, id: Optional[Any], status: str, second_pass_result_id: str) -> Optional[models.OperatorQueueItem]:
+        row = self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM_FROM_SECOND_PASS_RESULT), {"p1": id, "p2": status, "p3": second_pass_result_id}).first()
         if row is None:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_result_id=row[1],
+            second_pass_result_id=row[1],
             operation_id=row[2],
             camera_id=row[3],
             camera_group_id=row[4],
             prompt_id=row[5],
             frame_ref_id=row[6],
             frame_url=row[7],
-            recommended_action=row[8],
-            reason=row[9],
-            prompt_match_score=row[10],
-            operator_priority_score=row[11],
+            prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],
@@ -162,17 +163,17 @@ class Querier:
         for row in result:
             yield models.OperatorQueueItem(
                 id=row[0],
-                operation_result_id=row[1],
+                second_pass_result_id=row[1],
                 operation_id=row[2],
                 camera_id=row[3],
                 camera_group_id=row[4],
                 prompt_id=row[5],
                 frame_ref_id=row[6],
                 frame_url=row[7],
-                recommended_action=row[8],
-                reason=row[9],
-                prompt_match_score=row[10],
-                operator_priority_score=row[11],
+                prompt_score=row[8],
+                operator_priority_score=row[9],
+                operator_action=row[10],
+                reason=row[11],
                 status=row[12],
                 operator_note=row[13],
                 created_at=row[14],
@@ -185,17 +186,17 @@ class Querier:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_result_id=row[1],
+            second_pass_result_id=row[1],
             operation_id=row[2],
             camera_id=row[3],
             camera_group_id=row[4],
             prompt_id=row[5],
             frame_ref_id=row[6],
             frame_url=row[7],
-            recommended_action=row[8],
-            reason=row[9],
-            prompt_match_score=row[10],
-            operator_priority_score=row[11],
+            prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],
@@ -207,23 +208,23 @@ class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
 
-    async def create_operator_queue_item_from_result(self, *, id: Optional[Any], status: str, operation_result_id: str) -> Optional[models.OperatorQueueItem]:
-        row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM_FROM_RESULT), {"p1": id, "p2": status, "p3": operation_result_id})).first()
+    async def create_operator_queue_item_from_second_pass_result(self, *, id: Optional[Any], status: str, second_pass_result_id: str) -> Optional[models.OperatorQueueItem]:
+        row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM_FROM_SECOND_PASS_RESULT), {"p1": id, "p2": status, "p3": second_pass_result_id})).first()
         if row is None:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_result_id=row[1],
+            second_pass_result_id=row[1],
             operation_id=row[2],
             camera_id=row[3],
             camera_group_id=row[4],
             prompt_id=row[5],
             frame_ref_id=row[6],
             frame_url=row[7],
-            recommended_action=row[8],
-            reason=row[9],
-            prompt_match_score=row[10],
-            operator_priority_score=row[11],
+            prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],
@@ -235,17 +236,17 @@ class AsyncQuerier:
         async for row in result:
             yield models.OperatorQueueItem(
                 id=row[0],
-                operation_result_id=row[1],
+                second_pass_result_id=row[1],
                 operation_id=row[2],
                 camera_id=row[3],
                 camera_group_id=row[4],
                 prompt_id=row[5],
                 frame_ref_id=row[6],
                 frame_url=row[7],
-                recommended_action=row[8],
-                reason=row[9],
-                prompt_match_score=row[10],
-                operator_priority_score=row[11],
+                prompt_score=row[8],
+                operator_priority_score=row[9],
+                operator_action=row[10],
+                reason=row[11],
                 status=row[12],
                 operator_note=row[13],
                 created_at=row[14],
@@ -258,17 +259,17 @@ class AsyncQuerier:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_result_id=row[1],
+            second_pass_result_id=row[1],
             operation_id=row[2],
             camera_id=row[3],
             camera_group_id=row[4],
             prompt_id=row[5],
             frame_ref_id=row[6],
             frame_url=row[7],
-            recommended_action=row[8],
-            reason=row[9],
-            prompt_match_score=row[10],
-            operator_priority_score=row[11],
+            prompt_score=row[8],
+            operator_priority_score=row[9],
+            operator_action=row[10],
+            reason=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],

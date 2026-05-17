@@ -39,7 +39,7 @@ export default class OperatorQueueApi {
 
 
     /**
-     * Create an operator queue item from an operation result
+     * Create an operator queue item from a second-pass result
      * @param {module:model/CreateOperatorQueueItemRequest} createOperatorQueueItemRequest 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperatorQueueItems200ResponseItemsInner} and HTTP response
      */
@@ -71,7 +71,7 @@ export default class OperatorQueueApi {
     }
 
     /**
-     * Create an operator queue item from an operation result
+     * Create an operator queue item from a second-pass result
      * @param {module:model/CreateOperatorQueueItemRequest} createOperatorQueueItemRequest 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperatorQueueItems200ResponseItemsInner}
      */

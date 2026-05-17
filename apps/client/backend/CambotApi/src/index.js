@@ -28,8 +28,14 @@ import ListCameraGroupPromptBindings200ResponseBindingsInner from './model/ListC
 import ListCameraGroups200Response from './model/ListCameraGroups200Response';
 import ListCameraGroups200ResponseGroupsInner from './model/ListCameraGroups200ResponseGroupsInner';
 import ListCameraGroups200ResponseGroupsInnerStats from './model/ListCameraGroups200ResponseGroupsInnerStats';
-import ListOperationResults200Response from './model/ListOperationResults200Response';
-import ListOperationResults200ResponseResultsInner from './model/ListOperationResults200ResponseResultsInner';
+import ListLatestFirstPassResults200Response from './model/ListLatestFirstPassResults200Response';
+import ListLatestFirstPassResults200ResponseResultsInner from './model/ListLatestFirstPassResults200ResponseResultsInner';
+import ListLatestSecondPassResults200Response from './model/ListLatestSecondPassResults200Response';
+import ListLatestSecondPassResults200ResponseResultsInner from './model/ListLatestSecondPassResults200ResponseResultsInner';
+import ListOperationFirstPassResults200Response from './model/ListOperationFirstPassResults200Response';
+import ListOperationFirstPassResults200ResponseResultsInner from './model/ListOperationFirstPassResults200ResponseResultsInner';
+import ListOperationSecondPassResults200Response from './model/ListOperationSecondPassResults200Response';
+import ListOperationSecondPassResults200ResponseResultsInner from './model/ListOperationSecondPassResults200ResponseResultsInner';
 import ListOperations200Response from './model/ListOperations200Response';
 import ListOperations200ResponseOperationsInner from './model/ListOperations200ResponseOperationsInner';
 import ListOperatorQueueItems200Response from './model/ListOperatorQueueItems200Response';
@@ -181,16 +187,52 @@ export {
     ListCameraGroups200ResponseGroupsInnerStats,
 
     /**
-     * The ListOperationResults200Response model constructor.
-     * @property {module:model/ListOperationResults200Response}
+     * The ListLatestFirstPassResults200Response model constructor.
+     * @property {module:model/ListLatestFirstPassResults200Response}
      */
-    ListOperationResults200Response,
+    ListLatestFirstPassResults200Response,
 
     /**
-     * The ListOperationResults200ResponseResultsInner model constructor.
-     * @property {module:model/ListOperationResults200ResponseResultsInner}
+     * The ListLatestFirstPassResults200ResponseResultsInner model constructor.
+     * @property {module:model/ListLatestFirstPassResults200ResponseResultsInner}
      */
-    ListOperationResults200ResponseResultsInner,
+    ListLatestFirstPassResults200ResponseResultsInner,
+
+    /**
+     * The ListLatestSecondPassResults200Response model constructor.
+     * @property {module:model/ListLatestSecondPassResults200Response}
+     */
+    ListLatestSecondPassResults200Response,
+
+    /**
+     * The ListLatestSecondPassResults200ResponseResultsInner model constructor.
+     * @property {module:model/ListLatestSecondPassResults200ResponseResultsInner}
+     */
+    ListLatestSecondPassResults200ResponseResultsInner,
+
+    /**
+     * The ListOperationFirstPassResults200Response model constructor.
+     * @property {module:model/ListOperationFirstPassResults200Response}
+     */
+    ListOperationFirstPassResults200Response,
+
+    /**
+     * The ListOperationFirstPassResults200ResponseResultsInner model constructor.
+     * @property {module:model/ListOperationFirstPassResults200ResponseResultsInner}
+     */
+    ListOperationFirstPassResults200ResponseResultsInner,
+
+    /**
+     * The ListOperationSecondPassResults200Response model constructor.
+     * @property {module:model/ListOperationSecondPassResults200Response}
+     */
+    ListOperationSecondPassResults200Response,
+
+    /**
+     * The ListOperationSecondPassResults200ResponseResultsInner model constructor.
+     * @property {module:model/ListOperationSecondPassResults200ResponseResultsInner}
+     */
+    ListOperationSecondPassResults200ResponseResultsInner,
 
     /**
      * The ListOperations200Response model constructor.

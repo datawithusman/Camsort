@@ -90,6 +90,18 @@
       //expect(instance).to.be();
     });
 
+    it('should have the property firstPassStatus (base name: "firstPassStatus")', function() {
+      // uncomment below and update the code to test the property firstPassStatus
+      //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property secondPassStatus (base name: "secondPassStatus")', function() {
+      // uncomment below and update the code to test the property secondPassStatus
+      //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
+      //expect(instance).to.be();
+    });
+
     it('should have the property totalCameras (base name: "totalCameras")', function() {
       // uncomment below and update the code to test the property totalCameras
       //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
@@ -102,6 +114,18 @@
       //expect(instance).to.be();
     });
 
+    it('should have the property firstPassResultCount (base name: "firstPassResultCount")', function() {
+      // uncomment below and update the code to test the property firstPassResultCount
+      //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property secondPassResultCount (base name: "secondPassResultCount")', function() {
+      // uncomment below and update the code to test the property secondPassResultCount
+      //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
+      //expect(instance).to.be();
+    });
+
     it('should have the property matchedCameras (base name: "matchedCameras")', function() {
       // uncomment below and update the code to test the property matchedCameras
       //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
@@ -110,6 +134,12 @@
 
     it('should have the property estimatedGeminiCalls (base name: "estimatedGeminiCalls")', function() {
       // uncomment below and update the code to test the property estimatedGeminiCalls
+      //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property estimatedTokenCount (base name: "estimatedTokenCount")', function() {
+      // uncomment below and update the code to test the property estimatedTokenCount
       //var instance = new CambotApi.ListOperations200ResponseOperationsInner();
       //expect(instance).to.be();
     });

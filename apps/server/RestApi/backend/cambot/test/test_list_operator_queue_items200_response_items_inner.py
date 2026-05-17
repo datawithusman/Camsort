@@ -36,17 +36,17 @@ class TestListOperatorQueueItems200ResponseItemsInner(unittest.TestCase):
         if include_optional:
             return ListOperatorQueueItems200ResponseItemsInner(
                 id = '',
-                operation_result_id = '',
+                second_pass_result_id = '',
                 operation_id = '',
                 camera_id = '',
                 camera_group_id = '',
                 prompt_id = '',
                 frame_ref_id = '',
                 frame_url = '',
-                recommended_action = '',
-                reason = '',
-                prompt_match_score = 0,
+                prompt_score = 0,
                 operator_priority_score = 0,
+                operator_action = '',
+                reason = '',
                 status = 'queued',
                 operator_note = '',
                 created_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
@@ -55,15 +55,15 @@ class TestListOperatorQueueItems200ResponseItemsInner(unittest.TestCase):
         else:
             return ListOperatorQueueItems200ResponseItemsInner(
                 id = '',
-                operation_result_id = '',
+                second_pass_result_id = '',
                 operation_id = '',
                 camera_id = '',
                 frame_ref_id = '',
                 frame_url = '',
-                recommended_action = '',
-                reason = '',
-                prompt_match_score = 0,
+                prompt_score = 0,
                 operator_priority_score = 0,
+                operator_action = '',
+                reason = '',
                 status = 'queued',
         )
         """

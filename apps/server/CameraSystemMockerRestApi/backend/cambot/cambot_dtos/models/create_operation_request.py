@@ -29,7 +29,7 @@ class CreateOperationRequest(BaseModel):
     prompt_id: StrictStr = Field(alias="promptId")
     camera_group_id: StrictStr = Field(alias="cameraGroupId")
     trigger: Optional[StrictStr] = None
-    prompt_binding_id: Optional[StrictStr] = Field(default=None, description="Set for operations created from a scheduled prompt binding.", alias="promptBindingId")
+    prompt_binding_id: Optional[StrictStr] = Field(default=None, description="Set for operations created from the global continuous scan cycle.", alias="promptBindingId")
     __properties: ClassVar[List[str]] = ["promptId", "cameraGroupId", "trigger", "promptBindingId"]
 
     @field_validator('trigger')

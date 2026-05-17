@@ -53,6 +53,42 @@ class GeminiCallerSetting:
 
 
 @dataclasses.dataclass()
+class LatestFirstPassResult:
+    prompt_id: str
+    camera_group_id: str
+    camera_id: str
+    operation_id: str
+    first_pass_result_id: str
+    frame_ref_id: str
+    frame_url: str
+    include: bool
+    first_pass_prompt_score: decimal.Decimal
+    operator_priority_score: decimal.Decimal
+    operator_action: str
+    reason: str
+    updated_at: datetime.datetime
+
+
+@dataclasses.dataclass()
+class LatestSecondPassResult:
+    prompt_id: str
+    camera_group_id: str
+    camera_id: str
+    operation_id: str
+    second_pass_result_id: str
+    first_pass_result_id: str
+    frame_ref_id: str
+    frame_url: str
+    include: bool
+    global_rank: Optional[int]
+    prompt_score: decimal.Decimal
+    operator_priority_score: decimal.Decimal
+    operator_action: str
+    reason: str
+    updated_at: datetime.datetime
+
+
+@dataclasses.dataclass()
 class Operation:
     id: str
     prompt_id: str
@@ -60,8 +96,12 @@ class Operation:
     prompt_binding_id: Optional[str]
     trigger: str
     status: str
+    first_pass_status: str
+    second_pass_status: str
     total_cameras: int
     processed_cameras: int
+    first_pass_result_count: int
+    second_pass_result_count: int
     matched_cameras: int
     estimated_gemini_calls: Optional[int]
     estimated_token_count: Optional[int]
@@ -75,15 +115,7 @@ class Operation:
 
 
 @dataclasses.dataclass()
-class OperationFrameRef:
-    operation_id: str
-    frame_ref_id: str
-    purpose: str
-    created_at: datetime.datetime
-
-
-@dataclasses.dataclass()
-class OperationResult:
+class OperationFirstPassResult:
     id: str
     operation_id: str
     camera_id: str
@@ -92,9 +124,37 @@ class OperationResult:
     frame_ref_id: str
     frame_url: str
     include: bool
-    prompt_match_score: decimal.Decimal
+    first_pass_prompt_score: decimal.Decimal
     operator_priority_score: decimal.Decimal
-    recommended_action: str
+    operator_action: str
+    reason: str
+    raw_model_json: Optional[Any]
+    created_at: datetime.datetime
+
+
+@dataclasses.dataclass()
+class OperationFrameRef:
+    operation_id: str
+    frame_ref_id: str
+    purpose: str
+    created_at: datetime.datetime
+
+
+@dataclasses.dataclass()
+class OperationSecondPassResult:
+    id: str
+    operation_id: str
+    camera_id: str
+    camera_group_id: Optional[str]
+    prompt_id: Optional[str]
+    first_pass_result_id: str
+    frame_ref_id: str
+    frame_url: str
+    include: bool
+    global_rank: Optional[int]
+    prompt_score: decimal.Decimal
+    operator_priority_score: decimal.Decimal
+    operator_action: str
     reason: str
     raw_model_json: Optional[Any]
     created_at: datetime.datetime
@@ -103,17 +163,17 @@ class OperationResult:
 @dataclasses.dataclass()
 class OperatorQueueItem:
     id: str
-    operation_result_id: str
+    second_pass_result_id: str
     operation_id: str
     camera_id: str
     camera_group_id: Optional[str]
     prompt_id: Optional[str]
     frame_ref_id: str
     frame_url: str
-    recommended_action: str
-    reason: str
-    prompt_match_score: decimal.Decimal
+    prompt_score: decimal.Decimal
     operator_priority_score: decimal.Decimal
+    operator_action: str
+    reason: str
     status: str
     operator_note: Optional[str]
     created_at: datetime.datetime

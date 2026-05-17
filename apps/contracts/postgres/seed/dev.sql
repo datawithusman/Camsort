@@ -20,14 +20,14 @@ VALUES
     'prompt-after-hours-activity',
     'Find after-hours activity',
     'Find people or activity near restricted areas after hours.',
-    'Inspect this camera snapshot for people, vehicles, or suspicious movement near restricted entrances after hours. Return JSON with include, promptMatchScore from 0 to 100, operatorPriorityScore from 0 to 100, recommendedAction, and reason.',
+    'Inspect this camera snapshot for people, vehicles, or suspicious movement near restricted entrances after hours. Return first-pass JSON with include, firstPassPromptScore from 0 to 100, operatorPriorityScore from 0 to 100, operatorAction, and reason.',
     true
   ),
   (
     'prompt-ice-near-entrances',
     'Ice near entrances',
     'Find icy, slick, snowy, or blocked entrance conditions that may require staff action.',
-    'Inspect this camera snapshot for ice, snow, slick surfaces, blocked entrance paths, or other entrance safety issues. Return JSON with include, promptMatchScore from 0 to 100, operatorPriorityScore from 0 to 100, recommendedAction, and reason.',
+    'Inspect this camera snapshot for ice, snow, slick surfaces, blocked entrance paths, or other entrance safety issues. Return first-pass JSON with include, firstPassPromptScore from 0 to 100, operatorPriorityScore from 0 to 100, operatorAction, and reason.',
     true
   )
 ON CONFLICT (id) DO NOTHING;

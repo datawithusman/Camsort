@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **promptId** | **String** |  | 
 **cameraGroupId** | **String** |  | 
 **trigger** | **String** |  | [optional] 
-**promptBindingId** | **String** | Set for operations created from a scheduled prompt binding. | [optional] 
+**promptBindingId** | **String** | Set for operations created from the global continuous scan cycle. | [optional] 
 
 
 

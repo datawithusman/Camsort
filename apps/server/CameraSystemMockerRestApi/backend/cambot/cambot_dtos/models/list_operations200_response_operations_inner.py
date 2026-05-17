@@ -33,10 +33,15 @@ class ListOperations200ResponseOperationsInner(BaseModel):
     prompt_binding_id: Optional[StrictStr] = Field(default=None, alias="promptBindingId")
     trigger: StrictStr
     status: StrictStr
+    first_pass_status: StrictStr = Field(alias="firstPassStatus")
+    second_pass_status: StrictStr = Field(alias="secondPassStatus")
     total_cameras: StrictInt = Field(alias="totalCameras")
     processed_cameras: StrictInt = Field(alias="processedCameras")
+    first_pass_result_count: StrictInt = Field(alias="firstPassResultCount")
+    second_pass_result_count: StrictInt = Field(alias="secondPassResultCount")
     matched_cameras: StrictInt = Field(alias="matchedCameras")
     estimated_gemini_calls: Optional[StrictInt] = Field(default=None, alias="estimatedGeminiCalls")
+    estimated_token_count: Optional[StrictInt] = Field(default=None, alias="estimatedTokenCount")
     estimated_cost: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="estimatedCost")
     actual_gemini_calls: Optional[StrictInt] = Field(default=None, alias="actualGeminiCalls")
     actual_cost: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="actualCost")
@@ -44,7 +49,7 @@ class ListOperations200ResponseOperationsInner(BaseModel):
     created_at: Optional[datetime] = Field(default=None, alias="createdAt")
     started_at: Optional[datetime] = Field(default=None, alias="startedAt")
     completed_at: Optional[datetime] = Field(default=None, alias="completedAt")
-    __properties: ClassVar[List[str]] = ["id", "promptId", "cameraGroupId", "promptBindingId", "trigger", "status", "totalCameras", "processedCameras", "matchedCameras", "estimatedGeminiCalls", "estimatedCost", "actualGeminiCalls", "actualCost", "errorMessage", "createdAt", "startedAt", "completedAt"]
+    __properties: ClassVar[List[str]] = ["id", "promptId", "cameraGroupId", "promptBindingId", "trigger", "status", "firstPassStatus", "secondPassStatus", "totalCameras", "processedCameras", "firstPassResultCount", "secondPassResultCount", "matchedCameras", "estimatedGeminiCalls", "estimatedTokenCount", "estimatedCost", "actualGeminiCalls", "actualCost", "errorMessage", "createdAt", "startedAt", "completedAt"]
 
     @field_validator('trigger')
     def trigger_validate_enum(cls, value):
@@ -58,6 +63,20 @@ class ListOperations200ResponseOperationsInner(BaseModel):
         """Validates the enum"""
         if value not in set(['queued', 'running', 'completed', 'failed', 'cancelled']):
             raise ValueError("must be one of enum values ('queued', 'running', 'completed', 'failed', 'cancelled')")
+        return value
+
+    @field_validator('first_pass_status')
+    def first_pass_status_validate_enum(cls, value):
+        """Validates the enum"""
+        if value not in set(['pending', 'running', 'completed', 'failed', 'skipped']):
+            raise ValueError("must be one of enum values ('pending', 'running', 'completed', 'failed', 'skipped')")
+        return value
+
+    @field_validator('second_pass_status')
+    def second_pass_status_validate_enum(cls, value):
+        """Validates the enum"""
+        if value not in set(['pending', 'running', 'completed', 'failed', 'skipped']):
+            raise ValueError("must be one of enum values ('pending', 'running', 'completed', 'failed', 'skipped')")
         return value
 
     model_config = ConfigDict(
@@ -117,10 +136,15 @@ class ListOperations200ResponseOperationsInner(BaseModel):
             "promptBindingId": obj.get("promptBindingId"),
             "trigger": obj.get("trigger"),
             "status": obj.get("status"),
+            "firstPassStatus": obj.get("firstPassStatus"),
+            "secondPassStatus": obj.get("secondPassStatus"),
             "totalCameras": obj.get("totalCameras"),
             "processedCameras": obj.get("processedCameras"),
+            "firstPassResultCount": obj.get("firstPassResultCount"),
+            "secondPassResultCount": obj.get("secondPassResultCount"),
             "matchedCameras": obj.get("matchedCameras"),
             "estimatedGeminiCalls": obj.get("estimatedGeminiCalls"),
+            "estimatedTokenCount": obj.get("estimatedTokenCount"),
             "estimatedCost": obj.get("estimatedCost"),
             "actualGeminiCalls": obj.get("actualGeminiCalls"),
             "actualCost": obj.get("actualCost"),

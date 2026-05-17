@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**operation_result_id** | **str** | Creates a queue item from a stored Gemini operation result. | 
+**second_pass_result_id** | **str** | Creates a queue item from a stored second-pass/global prompt result. | 
 
 ## Example
 
