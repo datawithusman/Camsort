@@ -4,19 +4,26 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**promptId** | **String** |  | 
-**cameraGroupId** | **String** |  | 
-**trigger** | **String** |  | [optional] 
-**promptBindingId** | **String** | Set for operations created from the global continuous scan cycle. | [optional] 
+**operationType** | **String** |  | 
+**target** | [**EstimateOperationRequestTarget**](EstimateOperationRequestTarget.md) |  | 
+**savedPromptId** | **String** |  | [optional] 
+**temporaryPromptText** | **String** |  | [optional] 
+**maxEstimatedCost** | **Number** |  | [optional] 
 
 
 
-## Enum: TriggerEnum
+## Enum: OperationTypeEnum
 
 
-* `manual` (value: `"manual"`)
+* `find` (value: `"find"`)
 
-* `scheduled` (value: `"scheduled"`)
+* `sort` (value: `"sort"`)
+
+* `scan` (value: `"scan"`)
+
+* `summarize` (value: `"summarize"`)
+
+* `monitor` (value: `"monitor"`)
 
 
 

@@ -54,14 +54,26 @@
       //expect(instance).to.be.a(CambotApi.EstimateOperationRequest);
     });
 
-    it('should have the property promptId (base name: "promptId")', function() {
-      // uncomment below and update the code to test the property promptId
+    it('should have the property operationType (base name: "operationType")', function() {
+      // uncomment below and update the code to test the property operationType
       //var instance = new CambotApi.EstimateOperationRequest();
       //expect(instance).to.be();
     });
 
-    it('should have the property cameraGroupId (base name: "cameraGroupId")', function() {
-      // uncomment below and update the code to test the property cameraGroupId
+    it('should have the property target (base name: "target")', function() {
+      // uncomment below and update the code to test the property target
+      //var instance = new CambotApi.EstimateOperationRequest();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property savedPromptId (base name: "savedPromptId")', function() {
+      // uncomment below and update the code to test the property savedPromptId
+      //var instance = new CambotApi.EstimateOperationRequest();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property temporaryPromptText (base name: "temporaryPromptText")', function() {
+      // uncomment below and update the code to test the property temporaryPromptText
       //var instance = new CambotApi.EstimateOperationRequest();
       //expect(instance).to.be();
     });

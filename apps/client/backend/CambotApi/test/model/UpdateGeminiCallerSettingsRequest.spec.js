@@ -66,44 +66,20 @@
       //expect(instance).to.be();
     });
 
-    it('should have the property continuousScanEnabled (base name: "continuousScanEnabled")', function() {
-      // uncomment below and update the code to test the property continuousScanEnabled
-      //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property continuousScanIntervalSeconds (base name: "continuousScanIntervalSeconds")', function() {
-      // uncomment below and update the code to test the property continuousScanIntervalSeconds
-      //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property lastContinuousScanAt (base name: "lastContinuousScanAt")', function() {
-      // uncomment below and update the code to test the property lastContinuousScanAt
-      //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property nextContinuousScanAt (base name: "nextContinuousScanAt")', function() {
-      // uncomment below and update the code to test the property nextContinuousScanAt
-      //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property geminiCallDelayMs (base name: "geminiCallDelayMs")', function() {
-      // uncomment below and update the code to test the property geminiCallDelayMs
-      //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property maxConcurrentGeminiCalls (base name: "maxConcurrentGeminiCalls")', function() {
-      // uncomment below and update the code to test the property maxConcurrentGeminiCalls
+    it('should have the property maxRequestsPerMinute (base name: "maxRequestsPerMinute")', function() {
+      // uncomment below and update the code to test the property maxRequestsPerMinute
       //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
       //expect(instance).to.be();
     });
 
     it('should have the property maxTokensPerRequest (base name: "maxTokensPerRequest")', function() {
       // uncomment below and update the code to test the property maxTokensPerRequest
+      //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property maxCostPerOperation (base name: "maxCostPerOperation")', function() {
+      // uncomment below and update the code to test the property maxCostPerOperation
       //var instance = new CambotApi.UpdateGeminiCallerSettingsRequest();
       //expect(instance).to.be();
     });

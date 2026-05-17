@@ -1,1 +1,139 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CamBot</title><link rel="stylesheet" href="styles.css"></head><body><main id="app"><section id="login" class="panel login"><h1>CamBot</h1><p>Enter dev Basic Auth credentials.</p><input id="username" placeholder="username"><input id="password" type="password" placeholder="password"><button id="loginBtn">Login</button><p id="loginMsg" class="muted"></p></section><section id="dashboard" hidden><header><h1>CamBot Dashboard</h1><button id="logoutBtn">Logout</button></header><section class="panel"><div class="row-title"><h2>Prompt Library</h2><button id="newPromptBtn">+ Prompt</button></div><div class="grid two"><div><label>Name</label><input id="promptName"><label>Prompt Text</label><textarea id="promptText"></textarea><button id="savePromptBtn">Save Prompt</button></div><div><label>Prompt</label><select id="promptSelect"></select><label>Camera Group</label><select id="groupSelect"></select><div class="actions"><button id="runBtn">Run Single Scan</button><button id="bindBtn">Enable Continuous Scan Binding</button></div><p class="muted">Continuous scan interval is global in settings.</p></div></div><div id="promptList" class="list"></div></section><section class="panel"><div class="row-title"><h2>Prompt Result Viewer</h2><button id="refreshResultsBtn">Refresh Results</button></div><div id="resultList" class="cards"></div></section><section class="panel"><div class="row-title"><h2>Operator Action Queue</h2><button id="refreshQueueBtn">Refresh Queue</button></div><div id="queueList" class="list"></div></section><section class="panel"><h2>Global Settings</h2><div class="grid four"><label>Continuous Scan Enabled <input id="continuousEnabled" type="checkbox"></label><label>Continuous Interval Seconds <input id="continuousInterval" type="number"></label><label>Gemini Call Delay Ms <input id="geminiDelay" type="number"></label><label>Max Cost/Day <input id="maxCostDay" type="number" step="0.01"></label></div><button id="saveSettingsBtn">Save Settings</button><pre id="usageSummary"></pre></section></section></main><script src="main.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CamBot</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <section id="login" class="panel login-panel">
+      <h1>CamBot</h1>
+      <p class="muted">Enter dev Basic Auth credentials.</p>
+      <label>Username</label>
+      <input id="username" autocomplete="username" placeholder="username">
+      <label>Password</label>
+      <input id="password" autocomplete="current-password" type="password" placeholder="password">
+      <button id="loginBtn">Login</button>
+      <p id="loginMsg" class="error-text"></p>
+    </section>
+
+    <section id="dashboard" hidden>
+      <header class="topbar">
+        <div>
+          <h1>CamBot Dashboard</h1>
+          <p class="muted">Prompt scans, global results, operator actions, and system settings.</p>
+        </div>
+        <button id="logoutBtn" class="secondary">Logout</button>
+      </header>
+
+      <section class="widget" id="promptLibraryWidget">
+        <div class="widget-header">
+          <div>
+            <h2>Prompt Library</h2>
+            <p class="muted">Create prompts, edit prompts, run a single scan, or enable continuous scanning for a camera group.</p>
+          </div>
+          <button id="newPromptBtn">+ New Prompt</button>
+        </div>
+
+        <div class="prompt-layout">
+          <aside class="prompt-list-shell">
+            <div class="mini-header">
+              <span>Prompts</span>
+              <button id="refreshPromptsBtn" class="ghost">Refresh</button>
+            </div>
+            <div id="promptList" class="stack"></div>
+          </aside>
+
+          <div class="editor-card">
+            <div class="mini-header">
+              <span id="editorTitle">New Prompt</span>
+              <span id="selectedPromptPill" class="pill soft">none selected</span>
+            </div>
+            <input id="promptId" type="hidden">
+            <label>Prompt name</label>
+            <input id="promptName" placeholder="Example: Find obstructed cameras">
+            <label>Description</label>
+            <input id="promptDescription" placeholder="Optional short note">
+            <label>Operator prompt</label>
+            <textarea id="promptText" placeholder="Example: Find cameras where the view is obstructed or hazardous."></textarea>
+            <label class="check-row"><input id="promptEnabled" type="checkbox" checked> Prompt enabled</label>
+            <div class="button-row">
+              <button id="savePromptBtn">Save Prompt</button>
+              <button id="deletePromptBtn" class="danger secondary">Delete</button>
+            </div>
+          </div>
+
+          <div class="run-card">
+            <div class="mini-header"><span>Run / Schedule</span><span id="selectedGroupPill" class="pill soft">no group</span></div>
+            <label>Camera group for this prompt</label>
+            <select id="groupSelect"></select>
+            <p id="groupHelp" class="muted small"></p>
+            <div class="button-row vertical-buttons">
+              <button id="runBtn">Run Single Scan Now</button>
+              <button id="enableContinuousBtn" class="secondary">Enable Continuous Scan</button>
+              <button id="disableContinuousBtn" class="secondary">Disable Continuous Scan</button>
+            </div>
+            <p class="muted small">Continuous scans use the global interval in settings. Manual scans are queued ahead of scheduled scans after the current operation finishes.</p>
+            <div id="bindingStatus" class="status-box muted">No binding loaded.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="widget" id="resultViewerWidget">
+        <div class="widget-header">
+          <div>
+            <h2>Prompt Result Viewer</h2>
+            <p class="muted">Shows latest second-pass/global results for the selected prompt and camera group.</p>
+          </div>
+          <div class="button-row">
+            <button id="refreshResultsBtn" class="secondary">Refresh Results</button>
+            <button id="showFirstPassBtn" class="ghost">Show First Pass</button>
+          </div>
+        </div>
+        <div id="resultContext" class="context-line muted">Select a prompt and camera group.</div>
+        <div id="resultList" class="result-grid"></div>
+      </section>
+
+      <section class="widget" id="operatorQueueWidget">
+        <div class="widget-header">
+          <div>
+            <h2>Operator Action Queue</h2>
+            <p class="muted">Actions generated from second-pass results, ordered by operator priority.</p>
+          </div>
+          <button id="refreshQueueBtn" class="secondary">Refresh Queue</button>
+        </div>
+        <div id="queueList" class="stack"></div>
+      </section>
+
+      <section class="widget" id="globalSettingsWidget">
+        <div class="widget-header">
+          <div>
+            <h2>Global Settings</h2>
+            <p class="muted">Global scan cycle, Gemini request pacing, and usage/cost summary.</p>
+          </div>
+          <button id="saveSettingsBtn">Save Settings</button>
+        </div>
+        <div class="settings-grid">
+          <label class="check-row"><input id="continuousEnabled" type="checkbox"> Continuous scan enabled</label>
+          <label>Continuous scan interval seconds <input id="continuousInterval" type="number" min="30"></label>
+          <label>Gemini call delay ms <input id="geminiDelay" type="number" min="0"></label>
+          <label>Max cost/day <input id="maxCostDay" type="number" min="0" step="0.01"></label>
+        </div>
+        <div class="usage-row">
+          <div><span class="muted">Previous day cost</span><strong id="prevDayCost">—</strong></div>
+          <div><span class="muted">Month-to-date cost</span><strong id="monthCost">—</strong></div>
+          <div><span class="muted">Projected cost/day</span><strong id="projectedCost">—</strong></div>
+          <div><span class="muted">Next continuous scan</span><strong id="nextScanAt">—</strong></div>
+        </div>
+        <details>
+          <summary>Raw usage/settings response</summary>
+          <pre id="usageSummary"></pre>
+        </details>
+      </section>
+    </section>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>

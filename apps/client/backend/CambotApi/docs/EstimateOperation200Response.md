@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 **allowed** | **Boolean** |  | 
 **restrictionReason** | **String** |  | [optional] 
 **estimatedCameraCount** | **Number** |  | 
-**estimatedGeminiCalls** | **Number** |  | 
+**estimatedPromptCount** | **Number** |  | [optional] 
 **estimatedTokenCount** | **Number** |  | [optional] 
 **estimatedCost** | **Number** |  | 
 

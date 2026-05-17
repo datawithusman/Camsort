@@ -177,14 +177,18 @@ export default class SavedPromptsApi {
 
     /**
      * List saved prompts
+     * @param {Object} opts Optional parameters
+     * @param {module:model/String} [promptType] 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListSavedPrompts200Response} and HTTP response
      */
-    listSavedPromptsWithHttpInfo() {
+    listSavedPromptsWithHttpInfo(opts) {
+      opts = opts || {};
       let postBody = null;
 
       let pathParams = {
       };
       let queryParams = {
+        'promptType': opts['promptType']
       };
       let headerParams = {
       };
@@ -204,10 +208,12 @@ export default class SavedPromptsApi {
 
     /**
      * List saved prompts
+     * @param {Object} opts Optional parameters
+     * @param {module:model/String} opts.promptType 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListSavedPrompts200Response}
      */
-    listSavedPrompts() {
-      return this.listSavedPromptsWithHttpInfo()
+    listSavedPrompts(opts) {
+      return this.listSavedPromptsWithHttpInfo(opts)
         .then(function(response_and_data) {
           return response_and_data.data;
         });

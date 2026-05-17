@@ -12,7 +12,7 @@ Name | Type | Description | Notes
 ## Enum: StatusEnum
 
 
-* `queued` (value: `"queued"`)
+* `pending` (value: `"pending"`)
 
 * `acknowledged` (value: `"acknowledged"`)
 
