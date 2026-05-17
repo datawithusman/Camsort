@@ -28,7 +28,7 @@
   var instance;
 
   beforeEach(function() {
-    instance = new CambotApi.ListLatestFirstPassResults200Response();
+    instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerAction();
   });
 
   var getProperty = function(object, getter, property) {
@@ -47,16 +47,28 @@
       object[property] = value;
   }
 
-  describe('ListLatestFirstPassResults200Response', function() {
-    it('should create an instance of ListLatestFirstPassResults200Response', function() {
-      // uncomment below and update the code to test ListLatestFirstPassResults200Response
-      //var instance = new CambotApi.ListLatestFirstPassResults200Response();
-      //expect(instance).to.be.a(CambotApi.ListLatestFirstPassResults200Response);
+  describe('ListOperatorQueueItems200ResponseItemsInnerAction', function() {
+    it('should create an instance of ListOperatorQueueItems200ResponseItemsInnerAction', function() {
+      // uncomment below and update the code to test ListOperatorQueueItems200ResponseItemsInnerAction
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerAction();
+      //expect(instance).to.be.a(CambotApi.ListOperatorQueueItems200ResponseItemsInnerAction);
     });
 
-    it('should have the property results (base name: "results")', function() {
-      // uncomment below and update the code to test the property results
-      //var instance = new CambotApi.ListLatestFirstPassResults200Response();
+    it('should have the property title (base name: "title")', function() {
+      // uncomment below and update the code to test the property title
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerAction();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property description (base name: "description")', function() {
+      // uncomment below and update the code to test the property description
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerAction();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property recommendedAction (base name: "recommendedAction")', function() {
+      // uncomment below and update the code to test the property recommendedAction
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerAction();
       //expect(instance).to.be();
     });
 

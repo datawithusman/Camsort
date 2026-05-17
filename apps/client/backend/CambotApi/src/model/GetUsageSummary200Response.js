@@ -50,26 +50,14 @@ class GetUsageSummary200Response {
             if (data.hasOwnProperty('scansToday')) {
                 obj['scansToday'] = ApiClient.convertToType(data['scansToday'], 'Number');
             }
-            if (data.hasOwnProperty('scansYesterday')) {
-                obj['scansYesterday'] = ApiClient.convertToType(data['scansYesterday'], 'Number');
-            }
             if (data.hasOwnProperty('scansThisMonth')) {
                 obj['scansThisMonth'] = ApiClient.convertToType(data['scansThisMonth'], 'Number');
             }
             if (data.hasOwnProperty('estimatedCostToday')) {
                 obj['estimatedCostToday'] = ApiClient.convertToType(data['estimatedCostToday'], 'Number');
             }
-            if (data.hasOwnProperty('estimatedCostYesterday')) {
-                obj['estimatedCostYesterday'] = ApiClient.convertToType(data['estimatedCostYesterday'], 'Number');
-            }
             if (data.hasOwnProperty('estimatedCostThisMonth')) {
                 obj['estimatedCostThisMonth'] = ApiClient.convertToType(data['estimatedCostThisMonth'], 'Number');
-            }
-            if (data.hasOwnProperty('projectedCostPerDay')) {
-                obj['projectedCostPerDay'] = ApiClient.convertToType(data['projectedCostPerDay'], 'Number');
-            }
-            if (data.hasOwnProperty('projectedCostThisMonth')) {
-                obj['projectedCostThisMonth'] = ApiClient.convertToType(data['projectedCostThisMonth'], 'Number');
             }
             if (data.hasOwnProperty('remainingDailyBudget')) {
                 obj['remainingDailyBudget'] = ApiClient.convertToType(data['remainingDailyBudget'], 'Number');
@@ -105,11 +93,6 @@ class GetUsageSummary200Response {
 GetUsageSummary200Response.prototype['scansToday'] = undefined;
 
 /**
- * @member {Number} scansYesterday
- */
-GetUsageSummary200Response.prototype['scansYesterday'] = undefined;
-
-/**
  * @member {Number} scansThisMonth
  */
 GetUsageSummary200Response.prototype['scansThisMonth'] = undefined;
@@ -120,24 +103,9 @@ GetUsageSummary200Response.prototype['scansThisMonth'] = undefined;
 GetUsageSummary200Response.prototype['estimatedCostToday'] = undefined;
 
 /**
- * @member {Number} estimatedCostYesterday
- */
-GetUsageSummary200Response.prototype['estimatedCostYesterday'] = undefined;
-
-/**
  * @member {Number} estimatedCostThisMonth
  */
 GetUsageSummary200Response.prototype['estimatedCostThisMonth'] = undefined;
-
-/**
- * @member {Number} projectedCostPerDay
- */
-GetUsageSummary200Response.prototype['projectedCostPerDay'] = undefined;
-
-/**
- * @member {Number} projectedCostThisMonth
- */
-GetUsageSummary200Response.prototype['projectedCostThisMonth'] = undefined;
 
 /**
  * @member {Number} remainingDailyBudget

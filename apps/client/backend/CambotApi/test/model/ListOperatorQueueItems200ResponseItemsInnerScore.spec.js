@@ -28,7 +28,7 @@
   var instance;
 
   beforeEach(function() {
-    instance = new CambotApi.EstimateOperationRequest();
+    instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerScore();
   });
 
   var getProperty = function(object, getter, property) {
@@ -47,34 +47,34 @@
       object[property] = value;
   }
 
-  describe('EstimateOperationRequest', function() {
-    it('should create an instance of EstimateOperationRequest', function() {
-      // uncomment below and update the code to test EstimateOperationRequest
-      //var instance = new CambotApi.EstimateOperationRequest();
-      //expect(instance).to.be.a(CambotApi.EstimateOperationRequest);
+  describe('ListOperatorQueueItems200ResponseItemsInnerScore', function() {
+    it('should create an instance of ListOperatorQueueItems200ResponseItemsInnerScore', function() {
+      // uncomment below and update the code to test ListOperatorQueueItems200ResponseItemsInnerScore
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerScore();
+      //expect(instance).to.be.a(CambotApi.ListOperatorQueueItems200ResponseItemsInnerScore);
     });
 
-    it('should have the property operationType (base name: "operationType")', function() {
-      // uncomment below and update the code to test the property operationType
-      //var instance = new CambotApi.EstimateOperationRequest();
+    it('should have the property confidence (base name: "confidence")', function() {
+      // uncomment below and update the code to test the property confidence
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerScore();
       //expect(instance).to.be();
     });
 
-    it('should have the property target (base name: "target")', function() {
-      // uncomment below and update the code to test the property target
-      //var instance = new CambotApi.EstimateOperationRequest();
+    it('should have the property urgency (base name: "urgency")', function() {
+      // uncomment below and update the code to test the property urgency
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerScore();
       //expect(instance).to.be();
     });
 
-    it('should have the property savedPromptId (base name: "savedPromptId")', function() {
-      // uncomment below and update the code to test the property savedPromptId
-      //var instance = new CambotApi.EstimateOperationRequest();
+    it('should have the property risk (base name: "risk")', function() {
+      // uncomment below and update the code to test the property risk
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerScore();
       //expect(instance).to.be();
     });
 
-    it('should have the property temporaryPromptText (base name: "temporaryPromptText")', function() {
-      // uncomment below and update the code to test the property temporaryPromptText
-      //var instance = new CambotApi.EstimateOperationRequest();
+    it('should have the property overall (base name: "overall")', function() {
+      // uncomment below and update the code to test the property overall
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInnerScore();
       //expect(instance).to.be();
     });
 

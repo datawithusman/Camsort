@@ -32,13 +32,25 @@
         <div class="widget-header">
           <div>
             <h2>Prompt Library</h2>
-            <p class="muted">Click a prompt to view results. Use Edit to change, run once, or schedule on the background scanner.</p>
+            <p class="muted">Click a prompt to view results. Use Edit to change it, run once, or manage background schedules by camera group.</p>
           </div>
           <div class="button-row">
             <button id="refreshPromptsBtn" class="secondary">Refresh</button>
             <button id="newPromptBtn">Create New Prompt</button>
           </div>
         </div>
+        <div class="filter-row">
+          <label>
+            Filter by scheduled camera group
+            <select id="promptGroupFilter"></select>
+          </label>
+          <label>
+            Filter by camera name / id / location
+            <input id="promptCameraFilter" placeholder="Example: cam01, entrance, parking">
+          </label>
+          <button id="clearPromptFiltersBtn" class="secondary">Clear Filters</button>
+        </div>
+        <div id="promptFilterSummary" class="context-line muted">Showing all prompts.</div>
         <div id="promptList" class="prompt-list"></div>
       </section>
 
@@ -122,16 +134,9 @@
         </div>
 
         <div class="modal-section run-section">
-          <h3>Run or Schedule</h3>
-          <label>Camera group</label>
-          <select id="modalGroupSelect"></select>
-          <p id="bindingStatus" class="status-box muted">No binding loaded.</p>
-          <div class="button-row left-buttons wrap-buttons">
-            <button id="runBtn">Run Single Scan</button>
-            <button id="enableContinuousBtn" class="secondary">Schedule on Background</button>
-            <button id="disableContinuousBtn" class="secondary">Remove Background Schedule</button>
-          </div>
-          <p class="muted small">Background schedules use the global continuous scan interval. Manual scans are queued ahead of scheduled scans after the current operation finishes.</p>
+          <h3>Run or Schedule by Camera Group</h3>
+          <p class="muted small">Each camera group has its own background schedule binding. Removing a schedule only removes that specific prompt + group binding.</p>
+          <div id="modalScheduleList" class="schedule-list"></div>
         </div>
       </section>
     </div>

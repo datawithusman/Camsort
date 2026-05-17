@@ -12,6 +12,7 @@
  */
 
 import ApiClient from '../ApiClient';
+import EstimateOperationRequestTarget from './EstimateOperationRequestTarget';
 
 /**
  * The CreateOperationRequest model module.
@@ -22,12 +23,12 @@ class CreateOperationRequest {
     /**
      * Constructs a new <code>CreateOperationRequest</code>.
      * @alias module:model/CreateOperationRequest
-     * @param promptId {String} 
-     * @param cameraGroupId {String} 
+     * @param operationType {module:model/CreateOperationRequest.OperationTypeEnum} 
+     * @param target {module:model/EstimateOperationRequestTarget} 
      */
-    constructor(promptId, cameraGroupId) { 
+    constructor(operationType, target) { 
         
-        CreateOperationRequest.initialize(this, promptId, cameraGroupId);
+        CreateOperationRequest.initialize(this, operationType, target);
     }
 
     /**
@@ -35,9 +36,9 @@ class CreateOperationRequest {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, promptId, cameraGroupId) { 
-        obj['promptId'] = promptId;
-        obj['cameraGroupId'] = cameraGroupId;
+    static initialize(obj, operationType, target) { 
+        obj['operationType'] = operationType;
+        obj['target'] = target;
     }
 
     /**
@@ -51,17 +52,20 @@ class CreateOperationRequest {
         if (data) {
             obj = obj || new CreateOperationRequest();
 
-            if (data.hasOwnProperty('promptId')) {
-                obj['promptId'] = ApiClient.convertToType(data['promptId'], 'String');
+            if (data.hasOwnProperty('operationType')) {
+                obj['operationType'] = ApiClient.convertToType(data['operationType'], 'String');
             }
-            if (data.hasOwnProperty('cameraGroupId')) {
-                obj['cameraGroupId'] = ApiClient.convertToType(data['cameraGroupId'], 'String');
+            if (data.hasOwnProperty('target')) {
+                obj['target'] = EstimateOperationRequestTarget.constructFromObject(data['target']);
             }
-            if (data.hasOwnProperty('trigger')) {
-                obj['trigger'] = ApiClient.convertToType(data['trigger'], 'String');
+            if (data.hasOwnProperty('savedPromptId')) {
+                obj['savedPromptId'] = ApiClient.convertToType(data['savedPromptId'], 'String');
             }
-            if (data.hasOwnProperty('promptBindingId')) {
-                obj['promptBindingId'] = ApiClient.convertToType(data['promptBindingId'], 'String');
+            if (data.hasOwnProperty('temporaryPromptText')) {
+                obj['temporaryPromptText'] = ApiClient.convertToType(data['temporaryPromptText'], 'String');
+            }
+            if (data.hasOwnProperty('maxEstimatedCost')) {
+                obj['maxEstimatedCost'] = ApiClient.convertToType(data['maxEstimatedCost'], 'Number');
             }
         }
         return obj;
@@ -80,20 +84,20 @@ class CreateOperationRequest {
             }
         }
         // ensure the json data is a string
-        if (data['promptId'] && !(typeof data['promptId'] === 'string' || data['promptId'] instanceof String)) {
-            throw new Error("Expected the field `promptId` to be a primitive type in the JSON string but got " + data['promptId']);
+        if (data['operationType'] && !(typeof data['operationType'] === 'string' || data['operationType'] instanceof String)) {
+            throw new Error("Expected the field `operationType` to be a primitive type in the JSON string but got " + data['operationType']);
+        }
+        // validate the optional field `target`
+        if (data['target']) { // data not null
+          EstimateOperationRequestTarget.validateJSON(data['target']);
         }
         // ensure the json data is a string
-        if (data['cameraGroupId'] && !(typeof data['cameraGroupId'] === 'string' || data['cameraGroupId'] instanceof String)) {
-            throw new Error("Expected the field `cameraGroupId` to be a primitive type in the JSON string but got " + data['cameraGroupId']);
+        if (data['savedPromptId'] && !(typeof data['savedPromptId'] === 'string' || data['savedPromptId'] instanceof String)) {
+            throw new Error("Expected the field `savedPromptId` to be a primitive type in the JSON string but got " + data['savedPromptId']);
         }
         // ensure the json data is a string
-        if (data['trigger'] && !(typeof data['trigger'] === 'string' || data['trigger'] instanceof String)) {
-            throw new Error("Expected the field `trigger` to be a primitive type in the JSON string but got " + data['trigger']);
-        }
-        // ensure the json data is a string
-        if (data['promptBindingId'] && !(typeof data['promptBindingId'] === 'string' || data['promptBindingId'] instanceof String)) {
-            throw new Error("Expected the field `promptBindingId` to be a primitive type in the JSON string but got " + data['promptBindingId']);
+        if (data['temporaryPromptText'] && !(typeof data['temporaryPromptText'] === 'string' || data['temporaryPromptText'] instanceof String)) {
+            throw new Error("Expected the field `temporaryPromptText` to be a primitive type in the JSON string but got " + data['temporaryPromptText']);
         }
 
         return true;
@@ -102,51 +106,73 @@ class CreateOperationRequest {
 
 }
 
-CreateOperationRequest.RequiredProperties = ["promptId", "cameraGroupId"];
+CreateOperationRequest.RequiredProperties = ["operationType", "target"];
 
 /**
- * @member {String} promptId
+ * @member {module:model/CreateOperationRequest.OperationTypeEnum} operationType
  */
-CreateOperationRequest.prototype['promptId'] = undefined;
+CreateOperationRequest.prototype['operationType'] = undefined;
 
 /**
- * @member {String} cameraGroupId
+ * @member {module:model/EstimateOperationRequestTarget} target
  */
-CreateOperationRequest.prototype['cameraGroupId'] = undefined;
+CreateOperationRequest.prototype['target'] = undefined;
 
 /**
- * @member {module:model/CreateOperationRequest.TriggerEnum} trigger
+ * @member {String} savedPromptId
  */
-CreateOperationRequest.prototype['trigger'] = undefined;
+CreateOperationRequest.prototype['savedPromptId'] = undefined;
 
 /**
- * Set for operations created from the global continuous scan cycle.
- * @member {String} promptBindingId
+ * @member {String} temporaryPromptText
  */
-CreateOperationRequest.prototype['promptBindingId'] = undefined;
+CreateOperationRequest.prototype['temporaryPromptText'] = undefined;
+
+/**
+ * @member {Number} maxEstimatedCost
+ */
+CreateOperationRequest.prototype['maxEstimatedCost'] = undefined;
 
 
 
 
 
 /**
- * Allowed values for the <code>trigger</code> property.
+ * Allowed values for the <code>operationType</code> property.
  * @enum {String}
  * @readonly
  */
-CreateOperationRequest['TriggerEnum'] = {
+CreateOperationRequest['OperationTypeEnum'] = {
 
     /**
-     * value: "manual"
+     * value: "find"
      * @const
      */
-    "manual": "manual",
+    "find": "find",
 
     /**
-     * value: "scheduled"
+     * value: "sort"
      * @const
      */
-    "scheduled": "scheduled"
+    "sort": "sort",
+
+    /**
+     * value: "scan"
+     * @const
+     */
+    "scan": "scan",
+
+    /**
+     * value: "summarize"
+     * @const
+     */
+    "summarize": "summarize",
+
+    /**
+     * value: "monitor"
+     * @const
+     */
+    "monitor": "monitor"
 };
 
 

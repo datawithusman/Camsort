@@ -5,19 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
-**secondPassResultId** | **String** |  | 
-**operationId** | **String** |  | 
+**operationId** | **String** |  | [optional] 
 **cameraId** | **String** |  | 
-**cameraGroupId** | **String** |  | [optional] 
-**promptId** | **String** |  | [optional] 
-**frameRefId** | **String** |  | 
-**frameUrl** | **String** |  | 
-**promptScore** | **Number** | Final global prompt score from the second pass. | 
-**operatorPriorityScore** | **Number** |  | 
-**operatorAction** | **String** |  | 
-**reason** | **String** |  | 
+**cameraGroupId** | **String** |  | 
+**savedPromptId** | **String** |  | [optional] 
+**action** | [**ListOperatorQueueItems200ResponseItemsInnerAction**](ListOperatorQueueItems200ResponseItemsInnerAction.md) |  | 
+**score** | [**ListOperatorQueueItems200ResponseItemsInnerScore**](ListOperatorQueueItems200ResponseItemsInnerScore.md) |  | 
 **status** | **String** |  | 
-**operatorNote** | **String** |  | [optional] 
 **createdAt** | **Date** |  | [optional] 
 **updatedAt** | **Date** |  | [optional] 
 
@@ -26,7 +20,7 @@ Name | Type | Description | Notes
 ## Enum: StatusEnum
 
 
-* `queued` (value: `"queued"`)
+* `pending` (value: `"pending"`)
 
 * `acknowledged` (value: `"acknowledged"`)
 

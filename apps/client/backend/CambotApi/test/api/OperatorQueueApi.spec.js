@@ -48,16 +48,6 @@
   }
 
   describe('OperatorQueueApi', function() {
-    describe('createOperatorQueueItem', function() {
-      it('should call createOperatorQueueItem successfully', function(done) {
-        //uncomment below and update the code to test createOperatorQueueItem
-        //instance.createOperatorQueueItem(function(error) {
-        //  if (error) throw error;
-        //expect().to.be();
-        //});
-        done();
-      });
-    });
     describe('listOperatorQueueItems', function() {
       it('should call listOperatorQueueItems successfully', function(done) {
         //uncomment below and update the code to test listOperatorQueueItems

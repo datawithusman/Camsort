@@ -28,7 +28,7 @@
   var instance;
 
   beforeEach(function() {
-    instance = new CambotApi.CreateOperationRequest();
+    instance = new CambotApi.CreateOperation201Response();
   });
 
   var getProperty = function(object, getter, property) {
@@ -47,40 +47,64 @@
       object[property] = value;
   }
 
-  describe('CreateOperationRequest', function() {
-    it('should create an instance of CreateOperationRequest', function() {
-      // uncomment below and update the code to test CreateOperationRequest
-      //var instance = new CambotApi.CreateOperationRequest();
-      //expect(instance).to.be.a(CambotApi.CreateOperationRequest);
+  describe('CreateOperation201Response', function() {
+    it('should create an instance of CreateOperation201Response', function() {
+      // uncomment below and update the code to test CreateOperation201Response
+      //var instance = new CambotApi.CreateOperation201Response();
+      //expect(instance).to.be.a(CambotApi.CreateOperation201Response);
+    });
+
+    it('should have the property id (base name: "id")', function() {
+      // uncomment below and update the code to test the property id
+      //var instance = new CambotApi.CreateOperation201Response();
+      //expect(instance).to.be();
     });
 
     it('should have the property operationType (base name: "operationType")', function() {
       // uncomment below and update the code to test the property operationType
-      //var instance = new CambotApi.CreateOperationRequest();
+      //var instance = new CambotApi.CreateOperation201Response();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property status (base name: "status")', function() {
+      // uncomment below and update the code to test the property status
+      //var instance = new CambotApi.CreateOperation201Response();
       //expect(instance).to.be();
     });
 
     it('should have the property target (base name: "target")', function() {
       // uncomment below and update the code to test the property target
-      //var instance = new CambotApi.CreateOperationRequest();
+      //var instance = new CambotApi.CreateOperation201Response();
       //expect(instance).to.be();
     });
 
     it('should have the property savedPromptId (base name: "savedPromptId")', function() {
       // uncomment below and update the code to test the property savedPromptId
-      //var instance = new CambotApi.CreateOperationRequest();
+      //var instance = new CambotApi.CreateOperation201Response();
       //expect(instance).to.be();
     });
 
     it('should have the property temporaryPromptText (base name: "temporaryPromptText")', function() {
       // uncomment below and update the code to test the property temporaryPromptText
-      //var instance = new CambotApi.CreateOperationRequest();
+      //var instance = new CambotApi.CreateOperation201Response();
       //expect(instance).to.be();
     });
 
-    it('should have the property maxEstimatedCost (base name: "maxEstimatedCost")', function() {
-      // uncomment below and update the code to test the property maxEstimatedCost
-      //var instance = new CambotApi.CreateOperationRequest();
+    it('should have the property estimate (base name: "estimate")', function() {
+      // uncomment below and update the code to test the property estimate
+      //var instance = new CambotApi.CreateOperation201Response();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property createdAt (base name: "createdAt")', function() {
+      // uncomment below and update the code to test the property createdAt
+      //var instance = new CambotApi.CreateOperation201Response();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property completedAt (base name: "completedAt")', function() {
+      // uncomment below and update the code to test the property completedAt
+      //var instance = new CambotApi.CreateOperation201Response();
       //expect(instance).to.be();
     });
 

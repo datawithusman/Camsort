@@ -155,7 +155,7 @@ Name | Type | Description  | Notes
 
 ## listSavedPrompts
 
-> ListSavedPrompts200Response listSavedPrompts()
+> ListSavedPrompts200Response listSavedPrompts(opts)
 
 List saved prompts
 
@@ -170,7 +170,10 @@ basicAuth.username = 'YOUR USERNAME';
 basicAuth.password = 'YOUR PASSWORD';
 
 let apiInstance = new CambotApi.SavedPromptsApi();
-apiInstance.listSavedPrompts().then((data) => {
+let opts = {
+  'promptType': "promptType_example" // String | 
+};
+apiInstance.listSavedPrompts(opts).then((data) => {
   console.log('API called successfully. Returned data: ' + data);
 }, (error) => {
   console.error(error);
@@ -180,7 +183,10 @@ apiInstance.listSavedPrompts().then((data) => {
 
 ### Parameters
 
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **promptType** | **String**|  | [optional] 
 
 ### Return type
 

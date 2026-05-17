@@ -3,10 +3,13 @@ const state = {
   auth: null,
   prompts: [],
   groups: [],
+  cameras: [],
   bindings: [],
   operations: [],
   selectedPromptId: null,
   selectedGroupId: null,
+  promptGroupFilter: '',
+  promptCameraFilter: '',
   imageUrls: new Map(),
   showingFirstPass: false,
 };
@@ -16,7 +19,6 @@ const esc = (s) => String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&
 const nowish = (v) => v ? new Date(v).toLocaleString() : '—';
 const num = (v, fallback = 0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
 const fmtMoney = (v) => Number.isFinite(Number(v)) ? `$${Number(v).toFixed(2)}` : '—';
-const normalizeId = (v) => String(v ?? '').trim();
 
 function authHeader() {
   return state.auth ? { Authorization: 'Basic ' + btoa(`${state.auth.user}:${state.auth.pass}`) } : {};
@@ -49,24 +51,11 @@ function logout() {
   location.reload();
 }
 
-async function refreshAll() {
-  await Promise.all([loadPrompts(), loadGroups(), loadOperations(), loadSettings(), loadQueue(), loadUsage()]);
-  selectInitialPromptAndGroup();
-  await loadBindings();
-  renderPrompts();
-  renderGroupSelects();
-  await loadResults();
-}
-
-function selectInitialPromptAndGroup() {
-  if (!state.selectedPromptId && state.prompts.length) state.selectedPromptId = state.prompts[0].id;
-  if (!state.selectedGroupId && state.groups.length) state.selectedGroupId = state.groups[0].id;
-}
-
 function normalizePrompt(p) {
   return {
     ...p,
     id: p.id,
+    name: p.name || p.id,
     promptText: p.promptText ?? p.prompt_text ?? '',
     createdAt: p.createdAt ?? p.created_at,
     updatedAt: p.updatedAt ?? p.updated_at,
@@ -83,12 +72,23 @@ function normalizeGroup(g) {
   };
 }
 
+function normalizeCamera(c) {
+  return {
+    ...c,
+    id: c.id,
+    name: c.name || c.id,
+    location: c.location || '',
+    groupIds: c.groupIds || c.group_ids || [],
+  };
+}
+
 function normalizeBinding(b) {
   return {
     ...b,
     id: b.id,
     promptId: b.promptId ?? b.prompt_id,
     cameraGroupId: b.cameraGroupId ?? b.camera_group_id,
+    enabled: b.enabled !== false,
     lastRunAt: b.lastRunAt ?? b.last_run_at,
   };
 }
@@ -107,6 +107,21 @@ function normalizeOperation(o) {
   };
 }
 
+async function refreshAll() {
+  await Promise.all([loadPrompts(), loadGroups(), loadCameras(), loadOperations(), loadSettings(), loadQueue(), loadUsage()]);
+  selectInitialPromptAndGroup();
+  await loadBindings();
+  renderGroupSelects();
+  renderPromptFilters();
+  renderPrompts();
+  await loadResults();
+}
+
+function selectInitialPromptAndGroup() {
+  if (!state.selectedPromptId && state.prompts.length) state.selectedPromptId = state.prompts[0].id;
+  if (!state.selectedGroupId && state.groups.length) state.selectedGroupId = state.groups[0].id;
+}
+
 async function loadPrompts() {
   const data = await api('/saved-prompts');
   state.prompts = (data.prompts || []).map(normalizePrompt);
@@ -115,6 +130,15 @@ async function loadPrompts() {
 async function loadGroups() {
   const data = await api('/camera-groups');
   state.groups = (data.groups || []).map(normalizeGroup);
+}
+
+async function loadCameras() {
+  try {
+    const data = await api('/camera-system/cameras');
+    state.cameras = (data.cameras || []).map(normalizeCamera);
+  } catch {
+    state.cameras = [];
+  }
 }
 
 async function loadOperations() {
@@ -142,24 +166,82 @@ async function loadBindings() {
 function getSelectedPrompt() { return state.prompts.find(p => p.id === state.selectedPromptId) || null; }
 function getSelectedGroup() { return state.groups.find(g => g.id === state.selectedGroupId) || null; }
 function getPromptBindings(promptId) { return state.bindings.filter(b => b.promptId === promptId && b.enabled !== false); }
-function getSelectedBinding() { return state.bindings.find(b => b.promptId === state.selectedPromptId && b.cameraGroupId === state.selectedGroupId) || null; }
-function isPromptScanning(promptId) {
-  return state.operations.some(o => o.promptId === promptId && ['queued', 'running', 'first_pass_running', 'second_pass_running'].includes(String(o.status).toLowerCase()));
+function getBinding(promptId, groupId) { return state.bindings.find(b => b.promptId === promptId && b.cameraGroupId === groupId && b.enabled !== false) || null; }
+function getRunningOperations(promptId) {
+  const activeStatuses = new Set(['queued', 'running', 'first_pass_running', 'second_pass_running', 'first_pass_queued', 'second_pass_queued']);
+  return state.operations.filter(o => o.promptId === promptId && activeStatuses.has(String(o.status).toLowerCase()));
+}
+function isPromptScanning(promptId) { return getRunningOperations(promptId).length > 0; }
+
+function promptMatchesFilters(prompt) {
+  const bindings = getPromptBindings(prompt.id);
+  if (state.promptGroupFilter && !bindings.some(b => b.cameraGroupId === state.promptGroupFilter)) return false;
+
+  const q = state.promptCameraFilter.trim().toLowerCase();
+  if (!q) return true;
+
+  const matchingCameraIds = new Set(state.cameras
+    .filter(c => [c.id, c.name, c.location].some(v => String(v || '').toLowerCase().includes(q)))
+    .map(c => c.id));
+
+  if (!matchingCameraIds.size) return false;
+
+  const matchingGroupIds = new Set(state.groups
+    .filter(g => (g.cameraIds || []).some(id => matchingCameraIds.has(id)))
+    .map(g => g.id));
+
+  return bindings.some(b => matchingGroupIds.has(b.cameraGroupId));
+}
+
+function filteredPrompts() {
+  return state.prompts.filter(promptMatchesFilters);
+}
+
+function renderPromptFilters() {
+  $('promptGroupFilter').innerHTML = '<option value="">All scheduled groups</option>' +
+    state.groups.map(g => `<option value="${esc(g.id)}">${esc(g.name)} · ${g.cameraIds.length} cams</option>`).join('');
+  $('promptGroupFilter').value = state.promptGroupFilter;
+  $('promptCameraFilter').value = state.promptCameraFilter;
+  updatePromptFilterSummary();
+}
+
+function updatePromptFilterSummary() {
+  const parts = [];
+  if (state.promptGroupFilter) {
+    const group = state.groups.find(g => g.id === state.promptGroupFilter);
+    parts.push(`scheduled on ${group?.name || state.promptGroupFilter}`);
+  }
+  if (state.promptCameraFilter.trim()) parts.push(`affecting cameras matching “${state.promptCameraFilter.trim()}”`);
+  const count = filteredPrompts().length;
+  $('promptFilterSummary').textContent = parts.length
+    ? `Showing ${count} prompt${count === 1 ? '' : 's'} ${parts.join(' and ')}.`
+    : `Showing all ${state.prompts.length} prompt${state.prompts.length === 1 ? '' : 's'}.`;
 }
 
 function renderPrompts() {
   const list = $('promptList');
+  const prompts = filteredPrompts();
+  updatePromptFilterSummary();
   if (!state.prompts.length) {
     list.innerHTML = '<div class="empty">No prompts yet. Create a new prompt to begin.</div>';
     return;
   }
+  if (!prompts.length) {
+    list.innerHTML = '<div class="empty">No prompts match the current filters.</div>';
+    return;
+  }
 
-  list.innerHTML = state.prompts.map(prompt => {
-    const scheduled = getPromptBindings(prompt.id).length > 0;
-    const scanning = isPromptScanning(prompt.id);
+  list.innerHTML = prompts.map(prompt => {
+    const bindings = getPromptBindings(prompt.id);
+    const scheduled = bindings.length > 0;
+    const running = isPromptScanning(prompt.id);
     const active = prompt.id === state.selectedPromptId;
-    const groupNames = getPromptBindings(prompt.id)
+    const groupNames = bindings
       .map(b => state.groups.find(g => g.id === b.cameraGroupId)?.name || b.cameraGroupId)
+      .join(', ');
+    const runningGroups = getRunningOperations(prompt.id)
+      .map(o => state.groups.find(g => g.id === o.cameraGroupId)?.name || o.cameraGroupId)
+      .filter(Boolean)
       .join(', ');
     return `
       <article class="prompt-row ${active ? 'active' : ''}" data-prompt-id="${esc(prompt.id)}" tabindex="0">
@@ -167,11 +249,12 @@ function renderPrompts() {
           <div class="prompt-title-line">
             <strong>${esc(prompt.name || prompt.id)}</strong>
             <span class="prompt-badges">
-              ${scheduled ? `<span class="pill ok" title="Scheduled on background${groupNames ? `: ${esc(groupNames)}` : ''}">Scheduled</span>` : '<span class="pill soft">Manual</span>'}
-              ${scanning ? '<span class="pill warn">Scanning</span>' : ''}
+              ${scheduled ? `<span class="pill ok" title="Scheduled on: ${esc(groupNames)}">Scheduled · ${bindings.length}</span>` : '<span class="pill soft">Not scheduled</span>'}
+              ${running ? `<span class="pill warn" title="Running: ${esc(runningGroups)}">Scanning</span>` : '<span class="pill soft">Idle</span>'}
               ${prompt.enabled === false ? '<span class="pill danger">Disabled</span>' : ''}
             </span>
           </div>
+          ${scheduled ? `<p class="prompt-meta">Scheduled groups: ${esc(groupNames)}</p>` : '<p class="prompt-meta">No background schedules.</p>'}
           <p class="prompt-preview">${esc(prompt.promptText || 'No prompt text.')}</p>
         </div>
         <button class="edit-prompt-btn secondary" data-edit-prompt-id="${esc(prompt.id)}" title="Edit prompt">Edit</button>
@@ -184,8 +267,6 @@ function renderPrompts() {
       if (event.target.closest('.edit-prompt-btn')) return;
       state.selectedPromptId = row.dataset.promptId;
       renderPrompts();
-      await loadBindings();
-      updateBindingStatus();
       await loadResults();
     };
     row.onkeydown = async (event) => {
@@ -193,8 +274,6 @@ function renderPrompts() {
       event.preventDefault();
       state.selectedPromptId = row.dataset.promptId;
       renderPrompts();
-      await loadBindings();
-      updateBindingStatus();
       await loadResults();
     };
   });
@@ -212,19 +291,16 @@ function renderPrompts() {
 function renderGroupSelects() {
   const options = state.groups.map(g => `<option value="${esc(g.id)}">${esc(g.name)} · ${g.cameraIds.length} cams</option>`).join('');
   $('resultGroupSelect').innerHTML = options || '<option value="">No camera groups</option>';
-  $('modalGroupSelect').innerHTML = options || '<option value="">No camera groups</option>';
   if (state.selectedGroupId && [...$('resultGroupSelect').options].some(o => o.value === state.selectedGroupId)) $('resultGroupSelect').value = state.selectedGroupId;
-  if (state.selectedGroupId && [...$('modalGroupSelect').options].some(o => o.value === state.selectedGroupId)) $('modalGroupSelect').value = state.selectedGroupId;
 }
 
 async function openPromptModal(prompt = null) {
   if (!state.groups.length) await loadGroups();
   if (!state.selectedGroupId && state.groups.length) state.selectedGroupId = state.groups[0].id;
-  renderGroupSelects();
 
   const isNew = !prompt;
   $('promptModalTitle').textContent = isNew ? 'Create New Prompt' : 'Edit Prompt';
-  $('modalSubtitle').textContent = isNew ? 'Create the prompt, then choose a camera group to run or schedule it.' : 'Edit the prompt or run/schedule it on a camera group.';
+  $('modalSubtitle').textContent = isNew ? 'Create the prompt, then save it before running or scheduling.' : 'Edit the prompt and manage each camera group schedule separately.';
   $('promptId').value = prompt?.id || '';
   $('promptName').value = prompt?.name || '';
   $('promptDescription').value = prompt?.description || '';
@@ -232,7 +308,7 @@ async function openPromptModal(prompt = null) {
   $('promptEnabled').checked = prompt?.enabled !== false;
   $('deletePromptBtn').hidden = isNew;
   $('promptModal').hidden = false;
-  updateBindingStatus();
+  renderModalScheduleList();
   setTimeout(() => $('promptName').focus(), 0);
 }
 
@@ -254,7 +330,7 @@ async function savePrompt() {
   state.selectedPromptId = saved?.id || id || state.prompts.find(p => p.name === payload.name)?.id || state.selectedPromptId;
   await loadBindings();
   renderPrompts();
-  updateBindingStatus();
+  renderModalScheduleList();
   await loadResults();
 }
 
@@ -268,24 +344,26 @@ async function deletePrompt() {
   await refreshAll();
 }
 
-async function runSingleScan() {
+async function runSingleScanForGroup(groupId) {
   const prompt = getSelectedPrompt();
-  const group = getSelectedGroup();
+  const group = state.groups.find(g => g.id === groupId);
   if (!prompt) throw new Error('Select or save a prompt first.');
   if (!group) throw new Error('Select a camera group first.');
   const operation = await api('/operations', {
     method: 'POST',
     body: JSON.stringify({ promptId: prompt.id, cameraGroupId: group.id, trigger: 'manual' }),
   });
-  closePromptModal();
+  state.selectedGroupId = group.id;
+  $('resultGroupSelect').value = group.id;
   await loadOperations();
   renderPrompts();
-  alert(`Queued single scan: ${operation?.id || 'operation created'}`);
+  renderModalScheduleList();
+  alert(`Queued single scan for ${group.name}: ${operation?.id || 'operation created'}`);
 }
 
-async function enableContinuous() {
+async function enableContinuousForGroup(groupId) {
   const prompt = getSelectedPrompt();
-  const group = getSelectedGroup();
+  const group = state.groups.find(g => g.id === groupId);
   if (!prompt) throw new Error('Select or save a prompt first.');
   if (!group) throw new Error('Select a camera group first.');
   await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings`, {
@@ -294,34 +372,67 @@ async function enableContinuous() {
   });
   await loadBindings();
   renderPrompts();
-  updateBindingStatus();
+  renderModalScheduleList();
 }
 
-async function disableContinuous() {
-  const binding = getSelectedBinding();
-  const group = getSelectedGroup();
+async function disableContinuousForGroup(groupId) {
+  const prompt = getSelectedPrompt();
+  const group = state.groups.find(g => g.id === groupId);
+  const binding = prompt && group ? getBinding(prompt.id, group.id) : null;
   if (!binding || !group) return;
   await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings/${encodeURIComponent(binding.id)}`, { method: 'DELETE' });
   await loadBindings();
   renderPrompts();
-  updateBindingStatus();
+  renderModalScheduleList();
 }
 
-function updateBindingStatus() {
+function renderModalScheduleList() {
   const prompt = getSelectedPrompt();
-  const group = getSelectedGroup();
-  const binding = getSelectedBinding();
+  const list = $('modalScheduleList');
+  if (!$('promptModal') || $('promptModal').hidden) return;
   if (!prompt) {
-    $('bindingStatus').textContent = 'Save or select a prompt before scheduling.';
+    list.innerHTML = '<div class="empty">Save this prompt before running or scheduling it.</div>';
     return;
   }
-  if (!group) {
-    $('bindingStatus').textContent = 'Select a camera group before scheduling.';
+  if (!state.groups.length) {
+    list.innerHTML = '<div class="empty">No camera groups are available.</div>';
     return;
   }
-  $('bindingStatus').innerHTML = binding
-    ? `<span class="pill ok">Scheduled</span> ${esc(prompt.name)} runs on ${esc(group.name)} during the global continuous scan cycle. Last run: ${esc(nowish(binding.lastRunAt))}`
-    : `<span class="pill soft">Not scheduled</span> ${esc(prompt.name)} is not scheduled on ${esc(group.name)}.`;
+
+  list.innerHTML = state.groups.map(group => {
+    const binding = getBinding(prompt.id, group.id);
+    const running = state.operations.some(o => o.promptId === prompt.id && o.cameraGroupId === group.id && ['queued','running','first_pass_running','second_pass_running'].includes(String(o.status).toLowerCase()));
+    return `
+      <article class="schedule-row" data-schedule-group-id="${esc(group.id)}">
+        <div>
+          <strong>${esc(group.name)}</strong>
+          <p class="muted small">${esc(group.cameraIds.length)} cameras${group.description ? ` · ${esc(group.description)}` : ''}</p>
+        </div>
+        <div class="schedule-status">
+          ${binding ? '<span class="pill ok">Scheduled</span>' : '<span class="pill soft">Not scheduled</span>'}
+          ${running ? '<span class="pill warn">Scanning</span>' : '<span class="pill soft">Idle</span>'}
+          ${binding?.lastRunAt ? `<span class="pill soft">Last run ${esc(nowish(binding.lastRunAt))}</span>` : ''}
+        </div>
+        <div class="button-row schedule-actions">
+          <button class="run-group-btn" data-run-group-id="${esc(group.id)}">Run Single Scan</button>
+          ${binding
+            ? `<button class="remove-schedule-btn secondary" data-remove-schedule-group-id="${esc(group.id)}">Remove Schedule</button>`
+            : `<button class="schedule-group-btn secondary" data-schedule-group-id="${esc(group.id)}">Schedule Background</button>`
+          }
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  document.querySelectorAll('.run-group-btn').forEach(btn => {
+    btn.onclick = () => guard(() => runSingleScanForGroup(btn.dataset.runGroupId));
+  });
+  document.querySelectorAll('.schedule-group-btn').forEach(btn => {
+    btn.onclick = () => guard(() => enableContinuousForGroup(btn.dataset.scheduleGroupId));
+  });
+  document.querySelectorAll('.remove-schedule-btn').forEach(btn => {
+    btn.onclick = () => guard(() => disableContinuousForGroup(btn.dataset.removeScheduleGroupId));
+  });
 }
 
 async function imageObjectUrl(frameUrl) {
@@ -469,17 +580,16 @@ function wireEvents() {
   $('loginBtn').onclick = () => guard(login);
   $('password').onkeydown = e => { if (e.key === 'Enter') guard(login); };
   $('logoutBtn').onclick = logout;
-  $('refreshPromptsBtn').onclick = () => guard(async () => { await loadPrompts(); await loadOperations(); await loadBindings(); renderPrompts(); });
+  $('refreshPromptsBtn').onclick = () => guard(async () => { await Promise.all([loadPrompts(), loadCameras(), loadOperations(), loadBindings()]); renderPromptFilters(); renderPrompts(); renderModalScheduleList(); });
   $('newPromptBtn').onclick = () => guard(async () => openPromptModal(null));
   $('closePromptModalBtn').onclick = closePromptModal;
   $('promptModal').onclick = e => { if (e.target.id === 'promptModal') closePromptModal(); };
   $('savePromptBtn').onclick = () => guard(savePrompt);
   $('deletePromptBtn').onclick = () => guard(deletePrompt);
-  $('runBtn').onclick = () => guard(runSingleScan);
-  $('enableContinuousBtn').onclick = () => guard(enableContinuous);
-  $('disableContinuousBtn').onclick = () => guard(disableContinuous);
-  $('modalGroupSelect').onchange = async () => { state.selectedGroupId = $('modalGroupSelect').value; $('resultGroupSelect').value = state.selectedGroupId; updateBindingStatus(); await loadResults(); };
-  $('resultGroupSelect').onchange = async () => { state.selectedGroupId = $('resultGroupSelect').value; $('modalGroupSelect').value = state.selectedGroupId; await loadBindings(); updateBindingStatus(); await loadResults(); };
+  $('promptGroupFilter').onchange = () => { state.promptGroupFilter = $('promptGroupFilter').value; renderPrompts(); };
+  $('promptCameraFilter').oninput = () => { state.promptCameraFilter = $('promptCameraFilter').value; renderPrompts(); };
+  $('clearPromptFiltersBtn').onclick = () => { state.promptGroupFilter = ''; state.promptCameraFilter = ''; renderPromptFilters(); renderPrompts(); };
+  $('resultGroupSelect').onchange = async () => { state.selectedGroupId = $('resultGroupSelect').value; await loadResults(); };
   $('refreshResultsBtn').onclick = () => guard(loadResults);
   $('showFirstPassBtn').onclick = () => guard(async () => {
     state.showingFirstPass = !state.showingFirstPass;

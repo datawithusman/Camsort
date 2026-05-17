@@ -62,9 +62,6 @@ class GetUsageLimitSettings200Response {
             if (data.hasOwnProperty('blockOperationsWhenLimitReached')) {
                 obj['blockOperationsWhenLimitReached'] = ApiClient.convertToType(data['blockOperationsWhenLimitReached'], 'Boolean');
             }
-            if (data.hasOwnProperty('updatedAt')) {
-                obj['updatedAt'] = ApiClient.convertToType(data['updatedAt'], 'Date');
-            }
         }
         return obj;
     }
@@ -108,11 +105,6 @@ GetUsageLimitSettings200Response.prototype['maxEstimatedCostPerMonth'] = undefin
  * @member {Boolean} blockOperationsWhenLimitReached
  */
 GetUsageLimitSettings200Response.prototype['blockOperationsWhenLimitReached'] = undefined;
-
-/**
- * @member {Date} updatedAt
- */
-GetUsageLimitSettings200Response.prototype['updatedAt'] = undefined;
 
 
 

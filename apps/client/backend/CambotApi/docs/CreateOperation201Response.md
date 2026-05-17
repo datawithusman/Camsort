@@ -1,14 +1,18 @@
-# CambotApi.CreateOperationRequest
+# CambotApi.CreateOperation201Response
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**id** | **String** |  | 
 **operationType** | **String** |  | 
+**status** | **String** |  | 
 **target** | [**EstimateOperationRequestTarget**](EstimateOperationRequestTarget.md) |  | 
 **savedPromptId** | **String** |  | [optional] 
 **temporaryPromptText** | **String** |  | [optional] 
-**maxEstimatedCost** | **Number** |  | [optional] 
+**estimate** | [**EstimateOperation200Response**](EstimateOperation200Response.md) |  | [optional] 
+**createdAt** | **Date** |  | [optional] 
+**completedAt** | **Date** |  | [optional] 
 
 
 
@@ -24,6 +28,23 @@ Name | Type | Description | Notes
 * `summarize` (value: `"summarize"`)
 
 * `monitor` (value: `"monitor"`)
+
+
+
+
+
+## Enum: StatusEnum
+
+
+* `pending` (value: `"pending"`)
+
+* `running` (value: `"running"`)
+
+* `completed` (value: `"completed"`)
+
+* `failed` (value: `"failed"`)
+
+* `cancelled` (value: `"cancelled"`)
 
 
 

@@ -12,6 +12,7 @@
  */
 
 import ApiClient from '../ApiClient';
+import EstimateOperationRequestTarget from './EstimateOperationRequestTarget';
 
 /**
  * The EstimateOperationRequest model module.
@@ -22,12 +23,12 @@ class EstimateOperationRequest {
     /**
      * Constructs a new <code>EstimateOperationRequest</code>.
      * @alias module:model/EstimateOperationRequest
-     * @param promptId {String} 
-     * @param cameraGroupId {String} 
+     * @param operationType {module:model/EstimateOperationRequest.OperationTypeEnum} 
+     * @param target {module:model/EstimateOperationRequestTarget} 
      */
-    constructor(promptId, cameraGroupId) { 
+    constructor(operationType, target) { 
         
-        EstimateOperationRequest.initialize(this, promptId, cameraGroupId);
+        EstimateOperationRequest.initialize(this, operationType, target);
     }
 
     /**
@@ -35,9 +36,9 @@ class EstimateOperationRequest {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, promptId, cameraGroupId) { 
-        obj['promptId'] = promptId;
-        obj['cameraGroupId'] = cameraGroupId;
+    static initialize(obj, operationType, target) { 
+        obj['operationType'] = operationType;
+        obj['target'] = target;
     }
 
     /**
@@ -51,11 +52,17 @@ class EstimateOperationRequest {
         if (data) {
             obj = obj || new EstimateOperationRequest();
 
-            if (data.hasOwnProperty('promptId')) {
-                obj['promptId'] = ApiClient.convertToType(data['promptId'], 'String');
+            if (data.hasOwnProperty('operationType')) {
+                obj['operationType'] = ApiClient.convertToType(data['operationType'], 'String');
             }
-            if (data.hasOwnProperty('cameraGroupId')) {
-                obj['cameraGroupId'] = ApiClient.convertToType(data['cameraGroupId'], 'String');
+            if (data.hasOwnProperty('target')) {
+                obj['target'] = EstimateOperationRequestTarget.constructFromObject(data['target']);
+            }
+            if (data.hasOwnProperty('savedPromptId')) {
+                obj['savedPromptId'] = ApiClient.convertToType(data['savedPromptId'], 'String');
+            }
+            if (data.hasOwnProperty('temporaryPromptText')) {
+                obj['temporaryPromptText'] = ApiClient.convertToType(data['temporaryPromptText'], 'String');
             }
         }
         return obj;
@@ -74,12 +81,20 @@ class EstimateOperationRequest {
             }
         }
         // ensure the json data is a string
-        if (data['promptId'] && !(typeof data['promptId'] === 'string' || data['promptId'] instanceof String)) {
-            throw new Error("Expected the field `promptId` to be a primitive type in the JSON string but got " + data['promptId']);
+        if (data['operationType'] && !(typeof data['operationType'] === 'string' || data['operationType'] instanceof String)) {
+            throw new Error("Expected the field `operationType` to be a primitive type in the JSON string but got " + data['operationType']);
+        }
+        // validate the optional field `target`
+        if (data['target']) { // data not null
+          EstimateOperationRequestTarget.validateJSON(data['target']);
         }
         // ensure the json data is a string
-        if (data['cameraGroupId'] && !(typeof data['cameraGroupId'] === 'string' || data['cameraGroupId'] instanceof String)) {
-            throw new Error("Expected the field `cameraGroupId` to be a primitive type in the JSON string but got " + data['cameraGroupId']);
+        if (data['savedPromptId'] && !(typeof data['savedPromptId'] === 'string' || data['savedPromptId'] instanceof String)) {
+            throw new Error("Expected the field `savedPromptId` to be a primitive type in the JSON string but got " + data['savedPromptId']);
+        }
+        // ensure the json data is a string
+        if (data['temporaryPromptText'] && !(typeof data['temporaryPromptText'] === 'string' || data['temporaryPromptText'] instanceof String)) {
+            throw new Error("Expected the field `temporaryPromptText` to be a primitive type in the JSON string but got " + data['temporaryPromptText']);
         }
 
         return true;
@@ -88,20 +103,69 @@ class EstimateOperationRequest {
 
 }
 
-EstimateOperationRequest.RequiredProperties = ["promptId", "cameraGroupId"];
+EstimateOperationRequest.RequiredProperties = ["operationType", "target"];
 
 /**
- * @member {String} promptId
+ * @member {module:model/EstimateOperationRequest.OperationTypeEnum} operationType
  */
-EstimateOperationRequest.prototype['promptId'] = undefined;
+EstimateOperationRequest.prototype['operationType'] = undefined;
 
 /**
- * @member {String} cameraGroupId
+ * @member {module:model/EstimateOperationRequestTarget} target
  */
-EstimateOperationRequest.prototype['cameraGroupId'] = undefined;
+EstimateOperationRequest.prototype['target'] = undefined;
+
+/**
+ * @member {String} savedPromptId
+ */
+EstimateOperationRequest.prototype['savedPromptId'] = undefined;
+
+/**
+ * @member {String} temporaryPromptText
+ */
+EstimateOperationRequest.prototype['temporaryPromptText'] = undefined;
 
 
 
+
+
+/**
+ * Allowed values for the <code>operationType</code> property.
+ * @enum {String}
+ * @readonly
+ */
+EstimateOperationRequest['OperationTypeEnum'] = {
+
+    /**
+     * value: "find"
+     * @const
+     */
+    "find": "find",
+
+    /**
+     * value: "sort"
+     * @const
+     */
+    "sort": "sort",
+
+    /**
+     * value: "scan"
+     * @const
+     */
+    "scan": "scan",
+
+    /**
+     * value: "summarize"
+     * @const
+     */
+    "summarize": "summarize",
+
+    /**
+     * value: "monitor"
+     * @const
+     */
+    "monitor": "monitor"
+};
 
 
 
