@@ -65,6 +65,42 @@ RETURNING *
 
 @app.get("/camera-system/cameras/{camera_id}/frames/{frame_id}/url")
 def frame_url(camera_id: str, frame_id: str): return cam(f"/cameras/{camera_id}/frames/{frame_id}/url")
+
+@app.get("/camera-system/cameras/{camera_id}/frames/{frame_id}/image")
+def frame_image(camera_id: str, frame_id: str):
+    """
+    Proxy frame image bytes from the camera-system mocker through RestApi.
+
+    This makes both of these browser paths work behind nginx:
+      /camera-system/cameras/{camera_id}/frames/{frame_id}/image
+      /api/camera-system/cameras/{camera_id}/frames/{frame_id}/image
+
+    The second path is useful when the frontend treats returned frame URLs as
+    API assets and prefixes them with /api.
+    """
+    url = cam_base() + f"/cameras/{camera_id}/frames/{frame_id}/image"
+    try:
+        r = requests.get(
+            url,
+            timeout=float(os.getenv("CAMERA_SYSTEM_TIMEOUT_SECONDS", "30")),
+        )
+        r.raise_for_status()
+        return Response(
+            content=r.content,
+            media_type=r.headers.get("content-type") or "image/jpeg",
+            headers={"Cache-Control": "no-store"},
+        )
+    except requests.HTTPError as e:
+        raise HTTPException(
+            e.response.status_code,
+            {"error": "Camera frame image request failed", "url": url, "body": e.response.text},
+        )
+    except Exception as e:
+        raise HTTPException(
+            502,
+            {"error": "Camera frame image request failed", "url": url, "message": str(e)},
+        )
+
 @app.get("/camera-system/cameras/{camera_id}/stream")
 def stream(camera_id: str): return cam(f"/cameras/{camera_id}/stream")
 @app.get("/camera-system/source-camera-groups")
