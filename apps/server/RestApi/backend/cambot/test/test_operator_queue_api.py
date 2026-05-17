@@ -26,6 +26,13 @@ class TestOperatorQueueApi(unittest.TestCase):
     def tearDown(self) -> None:
         pass
 
+    def test_create_operator_queue_item(self) -> None:
+        """Test case for create_operator_queue_item
+
+        Create an operator queue item from an operation result
+        """
+        pass
+
     def test_list_operator_queue_items(self) -> None:
         """Test case for list_operator_queue_items
 

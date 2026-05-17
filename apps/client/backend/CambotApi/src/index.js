@@ -15,12 +15,11 @@
 import ApiClient from './ApiClient';
 import CreateCameraGroupPromptBindingRequest from './model/CreateCameraGroupPromptBindingRequest';
 import CreateCameraGroupRequest from './model/CreateCameraGroupRequest';
-import CreateOperation201Response from './model/CreateOperation201Response';
 import CreateOperationRequest from './model/CreateOperationRequest';
+import CreateOperatorQueueItemRequest from './model/CreateOperatorQueueItemRequest';
 import CreateSavedPromptRequest from './model/CreateSavedPromptRequest';
 import EstimateOperation200Response from './model/EstimateOperation200Response';
 import EstimateOperationRequest from './model/EstimateOperationRequest';
-import EstimateOperationRequestTarget from './model/EstimateOperationRequestTarget';
 import GetGeminiCallerSettings200Response from './model/GetGeminiCallerSettings200Response';
 import GetUsageLimitSettings200Response from './model/GetUsageLimitSettings200Response';
 import GetUsageSummary200Response from './model/GetUsageSummary200Response';
@@ -29,10 +28,12 @@ import ListCameraGroupPromptBindings200ResponseBindingsInner from './model/ListC
 import ListCameraGroups200Response from './model/ListCameraGroups200Response';
 import ListCameraGroups200ResponseGroupsInner from './model/ListCameraGroups200ResponseGroupsInner';
 import ListCameraGroups200ResponseGroupsInnerStats from './model/ListCameraGroups200ResponseGroupsInnerStats';
+import ListOperationResults200Response from './model/ListOperationResults200Response';
+import ListOperationResults200ResponseResultsInner from './model/ListOperationResults200ResponseResultsInner';
+import ListOperations200Response from './model/ListOperations200Response';
+import ListOperations200ResponseOperationsInner from './model/ListOperations200ResponseOperationsInner';
 import ListOperatorQueueItems200Response from './model/ListOperatorQueueItems200Response';
 import ListOperatorQueueItems200ResponseItemsInner from './model/ListOperatorQueueItems200ResponseItemsInner';
-import ListOperatorQueueItems200ResponseItemsInnerAction from './model/ListOperatorQueueItems200ResponseItemsInnerAction';
-import ListOperatorQueueItems200ResponseItemsInnerScore from './model/ListOperatorQueueItems200ResponseItemsInnerScore';
 import ListSavedPrompts200Response from './model/ListSavedPrompts200Response';
 import ListSavedPrompts200ResponsePromptsInner from './model/ListSavedPrompts200ResponsePromptsInner';
 import ReplaceCameraGroupCamerasRequest from './model/ReplaceCameraGroupCamerasRequest';
@@ -102,16 +103,16 @@ export {
     CreateCameraGroupRequest,
 
     /**
-     * The CreateOperation201Response model constructor.
-     * @property {module:model/CreateOperation201Response}
-     */
-    CreateOperation201Response,
-
-    /**
      * The CreateOperationRequest model constructor.
      * @property {module:model/CreateOperationRequest}
      */
     CreateOperationRequest,
+
+    /**
+     * The CreateOperatorQueueItemRequest model constructor.
+     * @property {module:model/CreateOperatorQueueItemRequest}
+     */
+    CreateOperatorQueueItemRequest,
 
     /**
      * The CreateSavedPromptRequest model constructor.
@@ -130,12 +131,6 @@ export {
      * @property {module:model/EstimateOperationRequest}
      */
     EstimateOperationRequest,
-
-    /**
-     * The EstimateOperationRequestTarget model constructor.
-     * @property {module:model/EstimateOperationRequestTarget}
-     */
-    EstimateOperationRequestTarget,
 
     /**
      * The GetGeminiCallerSettings200Response model constructor.
@@ -186,6 +181,30 @@ export {
     ListCameraGroups200ResponseGroupsInnerStats,
 
     /**
+     * The ListOperationResults200Response model constructor.
+     * @property {module:model/ListOperationResults200Response}
+     */
+    ListOperationResults200Response,
+
+    /**
+     * The ListOperationResults200ResponseResultsInner model constructor.
+     * @property {module:model/ListOperationResults200ResponseResultsInner}
+     */
+    ListOperationResults200ResponseResultsInner,
+
+    /**
+     * The ListOperations200Response model constructor.
+     * @property {module:model/ListOperations200Response}
+     */
+    ListOperations200Response,
+
+    /**
+     * The ListOperations200ResponseOperationsInner model constructor.
+     * @property {module:model/ListOperations200ResponseOperationsInner}
+     */
+    ListOperations200ResponseOperationsInner,
+
+    /**
      * The ListOperatorQueueItems200Response model constructor.
      * @property {module:model/ListOperatorQueueItems200Response}
      */
@@ -196,18 +215,6 @@ export {
      * @property {module:model/ListOperatorQueueItems200ResponseItemsInner}
      */
     ListOperatorQueueItems200ResponseItemsInner,
-
-    /**
-     * The ListOperatorQueueItems200ResponseItemsInnerAction model constructor.
-     * @property {module:model/ListOperatorQueueItems200ResponseItemsInnerAction}
-     */
-    ListOperatorQueueItems200ResponseItemsInnerAction,
-
-    /**
-     * The ListOperatorQueueItems200ResponseItemsInnerScore model constructor.
-     * @property {module:model/ListOperatorQueueItems200ResponseItemsInnerScore}
-     */
-    ListOperatorQueueItems200ResponseItemsInnerScore,
 
     /**
      * The ListSavedPrompts200Response model constructor.

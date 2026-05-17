@@ -620,7 +620,7 @@ def get_camera_stream(camera_id: str) -> JsonObject:
     return CameraStreamDto(
         camera_id=camera_id,
         stream_type="unknown",
-        stream_url=None,
+        stream_url="",
         expires_at=None,
     ).to_json()
 

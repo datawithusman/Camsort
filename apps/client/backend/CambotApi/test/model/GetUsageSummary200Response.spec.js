@@ -60,6 +60,12 @@
       //expect(instance).to.be();
     });
 
+    it('should have the property scansYesterday (base name: "scansYesterday")', function() {
+      // uncomment below and update the code to test the property scansYesterday
+      //var instance = new CambotApi.GetUsageSummary200Response();
+      //expect(instance).to.be();
+    });
+
     it('should have the property scansThisMonth (base name: "scansThisMonth")', function() {
       // uncomment below and update the code to test the property scansThisMonth
       //var instance = new CambotApi.GetUsageSummary200Response();
@@ -72,8 +78,26 @@
       //expect(instance).to.be();
     });
 
+    it('should have the property estimatedCostYesterday (base name: "estimatedCostYesterday")', function() {
+      // uncomment below and update the code to test the property estimatedCostYesterday
+      //var instance = new CambotApi.GetUsageSummary200Response();
+      //expect(instance).to.be();
+    });
+
     it('should have the property estimatedCostThisMonth (base name: "estimatedCostThisMonth")', function() {
       // uncomment below and update the code to test the property estimatedCostThisMonth
+      //var instance = new CambotApi.GetUsageSummary200Response();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property projectedCostPerDay (base name: "projectedCostPerDay")', function() {
+      // uncomment below and update the code to test the property projectedCostPerDay
+      //var instance = new CambotApi.GetUsageSummary200Response();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property projectedCostThisMonth (base name: "projectedCostThisMonth")', function() {
+      // uncomment below and update the code to test the property projectedCostThisMonth
       //var instance = new CambotApi.GetUsageSummary200Response();
       //expect(instance).to.be();
     });

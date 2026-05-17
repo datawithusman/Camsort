@@ -36,17 +36,13 @@ class TestCreateSavedPromptRequest(unittest.TestCase):
         if include_optional:
             return CreateSavedPromptRequest(
                 name = '',
-                prompt_type = 'sorting',
                 description = '',
                 prompt_text = '',
-                default_priority = 'low',
-                default_max_estimated_cost = 1.337,
                 enabled = True
             )
         else:
             return CreateSavedPromptRequest(
                 name = '',
-                prompt_type = 'sorting',
                 prompt_text = '',
         )
         """

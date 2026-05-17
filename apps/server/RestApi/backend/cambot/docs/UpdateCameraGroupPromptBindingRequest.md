@@ -6,9 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **enabled** | **bool** |  | [optional] 
-**scan_frequency** | **str** |  | [optional] 
-**priority_override** | **str** |  | [optional] 
-**max_estimated_cost_override** | **float** |  | [optional] 
+**last_run_at** | **datetime** |  | [optional] 
 
 ## Example
 

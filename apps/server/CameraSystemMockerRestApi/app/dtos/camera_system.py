@@ -229,7 +229,7 @@ class CameraStreamDto:
 
     camera_id: str
     stream_type: StreamType | None = None
-    stream_url: str | None = None
+    stream_url: str = ""
     expires_at: str | None = None
 
     @staticmethod
@@ -237,7 +237,7 @@ class CameraStreamDto:
         return CameraStreamDto(
             camera_id=str(data.get("cameraId", "")),
             stream_type=_optional_str(data.get("streamType")),
-            stream_url=_optional_str(data.get("streamUrl")),
+            stream_url=str(data.get("streamUrl") or ""),
             expires_at=_optional_str(data.get("expiresAt")),
         )
 

@@ -6,13 +6,19 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **str** |  | 
-**operation_id** | **str** |  | [optional] 
+**operation_result_id** | **str** |  | 
+**operation_id** | **str** |  | 
 **camera_id** | **str** |  | 
-**camera_group_id** | **str** |  | 
-**saved_prompt_id** | **str** |  | [optional] 
-**action** | [**ListOperatorQueueItems200ResponseItemsInnerAction**](ListOperatorQueueItems200ResponseItemsInnerAction.md) |  | 
-**score** | [**ListOperatorQueueItems200ResponseItemsInnerScore**](ListOperatorQueueItems200ResponseItemsInnerScore.md) |  | 
+**camera_group_id** | **str** |  | [optional] 
+**prompt_id** | **str** |  | [optional] 
+**frame_ref_id** | **str** |  | 
+**frame_url** | **str** |  | 
+**recommended_action** | **str** |  | 
+**reason** | **str** |  | 
+**prompt_match_score** | **float** |  | 
+**operator_priority_score** | **float** |  | 
 **status** | **str** |  | 
+**operator_note** | **str** |  | [optional] 
 **created_at** | **datetime** |  | [optional] 
 **updated_at** | **datetime** |  | [optional] 
 

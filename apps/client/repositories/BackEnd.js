@@ -283,6 +283,10 @@ export const backend = {
     },
 
     operations: {
+      async list({ promptId, cameraGroupId, status, limit = 50, offset = 0 } = {}) { const p = new URLSearchParams(); if (promptId) p.set("promptId", promptId); if (cameraGroupId) p.set("cameraGroupId", cameraGroupId); if (status) p.set("status", status); p.set("limit", String(limit)); p.set("offset", String(offset)); return await requestFromBase(state.cambotBaseUrl, `/operations?${p.toString()}`); },
+      async create(payload) { return await requestFromBase(state.cambotBaseUrl, "/operations", { method: "POST", body: payload }); },
+      async get(operationId) { return await requestFromBase(state.cambotBaseUrl, `/operations/${encodePathPart(operationId)}`); },
+      async results(operationId, include) { const p = new URLSearchParams(); if (include !== undefined && include !== null) p.set("include", String(include)); const q = p.toString(); return await requestFromBase(state.cambotBaseUrl, `/operations/${encodePathPart(operationId)}/results${q ? `?${q}` : ""}`); },
       async listFrameRefs(operationId) {
         return await requestFromBase(
           state.cambotBaseUrl,
@@ -346,6 +350,38 @@ export const backend = {
           `/camera-groups/${encodePathPart(groupId)}`,
           { method: "DELETE" }
         );
+      },
+    },
+
+
+    savedPrompts: {
+      async list() { return await requestFromBase(state.cambotBaseUrl, "/saved-prompts"); },
+      async create(payload) { return await requestFromBase(state.cambotBaseUrl, "/saved-prompts", { method: "POST", body: payload }); },
+      async update(promptId, payload) { return await requestFromBase(state.cambotBaseUrl, `/saved-prompts/${encodePathPart(promptId)}`, { method: "PUT", body: payload }); },
+      async delete(promptId) { return await requestFromBase(state.cambotBaseUrl, `/saved-prompts/${encodePathPart(promptId)}`, { method: "DELETE" }); },
+    },
+
+    promptBindings: {
+      async list(cameraGroupId) { return await requestFromBase(state.cambotBaseUrl, `/camera-groups/${encodePathPart(cameraGroupId)}/prompt-bindings`); },
+      async create(cameraGroupId, payload) { return await requestFromBase(state.cambotBaseUrl, `/camera-groups/${encodePathPart(cameraGroupId)}/prompt-bindings`, { method: "POST", body: payload }); },
+      async update(cameraGroupId, bindingId, payload) { return await requestFromBase(state.cambotBaseUrl, `/camera-groups/${encodePathPart(cameraGroupId)}/prompt-bindings/${encodePathPart(bindingId)}`, { method: "PUT", body: payload }); },
+      async delete(cameraGroupId, bindingId) { return await requestFromBase(state.cambotBaseUrl, `/camera-groups/${encodePathPart(cameraGroupId)}/prompt-bindings/${encodePathPart(bindingId)}`, { method: "DELETE" }); },
+    },
+
+    operatorQueue: {
+      async list({ status, limit = 50, offset = 0 } = {}) { const p = new URLSearchParams(); if (status) p.set("status", status); p.set("limit", String(limit)); p.set("offset", String(offset)); return await requestFromBase(state.cambotBaseUrl, `/operator-queue?${p.toString()}`); },
+      async create(payload) { return await requestFromBase(state.cambotBaseUrl, "/operator-queue", { method: "POST", body: payload }); },
+      async update(itemId, payload) { return await requestFromBase(state.cambotBaseUrl, `/operator-queue/${encodePathPart(itemId)}`, { method: "PUT", body: payload }); },
+    },
+
+    settings: {
+      gemini: {
+        async get() { return await requestFromBase(state.cambotBaseUrl, "/settings/gemini"); },
+        async update(payload) { return await requestFromBase(state.cambotBaseUrl, "/settings/gemini", { method: "PUT", body: payload }); },
+      },
+      usageLimits: {
+        async get() { return await requestFromBase(state.cambotBaseUrl, "/settings/usage-limits"); },
+        async update(payload) { return await requestFromBase(state.cambotBaseUrl, "/settings/usage-limits", { method: "PUT", body: payload }); },
       },
     },
 

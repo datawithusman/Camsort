@@ -39,7 +39,8 @@ class TestGetUsageLimitSettings200Response(unittest.TestCase):
                 max_scans_per_month = 10000,
                 max_estimated_cost_per_day = 25.0,
                 max_estimated_cost_per_month = 300.0,
-                block_operations_when_limit_reached = True
+                block_operations_when_limit_reached = True,
+                updated_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f')
             )
         else:
             return GetUsageLimitSettings200Response(

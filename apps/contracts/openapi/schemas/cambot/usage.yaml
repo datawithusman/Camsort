@@ -6,6 +6,9 @@ components:
         scansToday:
           type: integer
           example: 72
+        scansYesterday:
+          type: integer
+          example: 63
         scansThisMonth:
           type: integer
           example: 1320
@@ -13,10 +16,22 @@ components:
           type: number
           format: double
           example: 8.64
+        estimatedCostYesterday:
+          type: number
+          format: double
+          example: 7.25
         estimatedCostThisMonth:
           type: number
           format: double
           example: 158.2
+        projectedCostPerDay:
+          type: number
+          format: double
+          example: 9.10
+        projectedCostThisMonth:
+          type: number
+          format: double
+          example: 281.4
         remainingDailyBudget:
           type: number
           format: double

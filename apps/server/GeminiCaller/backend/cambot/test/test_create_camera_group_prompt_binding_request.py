@@ -36,10 +36,7 @@ class TestCreateCameraGroupPromptBindingRequest(unittest.TestCase):
         if include_optional:
             return CreateCameraGroupPromptBindingRequest(
                 prompt_id = '',
-                enabled = True,
-                scan_frequency = 'manual',
-                priority_override = 'low',
-                max_estimated_cost_override = 1.337
+                enabled = True
             )
         else:
             return CreateCameraGroupPromptBindingRequest(

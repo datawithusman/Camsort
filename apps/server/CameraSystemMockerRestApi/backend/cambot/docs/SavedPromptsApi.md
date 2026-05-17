@@ -241,7 +241,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **list_saved_prompts**
-> ListSavedPrompts200Response list_saved_prompts(prompt_type=prompt_type)
+> ListSavedPrompts200Response list_saved_prompts()
 
 List saved prompts
 
@@ -276,11 +276,10 @@ configuration = cambot_dtos.Configuration(
 with cambot_dtos.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cambot_dtos.SavedPromptsApi(api_client)
-    prompt_type = 'prompt_type_example' # str |  (optional)
 
     try:
         # List saved prompts
-        api_response = api_instance.list_saved_prompts(prompt_type=prompt_type)
+        api_response = api_instance.list_saved_prompts()
         print("The response of SavedPromptsApi->list_saved_prompts:\n")
         pprint(api_response)
     except Exception as e:
@@ -291,10 +290,7 @@ with cambot_dtos.ApiClient(configuration) as api_client:
 
 ### Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **prompt_type** | **str**|  | [optional] 
+This endpoint does not need any parameter.
 
 ### Return type
 

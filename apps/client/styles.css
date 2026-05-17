@@ -346,3 +346,8 @@ code { color: var(--accent); }
   .split-row, .compact-split { grid-template-columns: 1fr; }
   .button-row { flex-direction: column; }
 }
+
+.row-dashboard{display:flex;flex-direction:column;gap:18px;padding:18px;max-width:1400px;margin:0 auto;}
+.row-widget{width:100%;}
+.checkbox-row{display:flex;align-items:center;gap:10px;}
+.checkbox-row input{width:auto;}

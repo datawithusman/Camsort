@@ -6,11 +6,8 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **str** |  | [optional] 
-**prompt_type** | **str** |  | [optional] 
 **description** | **str** |  | [optional] 
 **prompt_text** | **str** |  | [optional] 
-**default_priority** | **str** |  | [optional] 
-**default_max_estimated_cost** | **float** |  | [optional] 
 **enabled** | **bool** |  | [optional] 
 
 ## Example

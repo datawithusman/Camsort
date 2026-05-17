@@ -14,8 +14,10 @@ from db import models
 
 
 GET_GEMINI_CALLER_SETTINGS = """-- name: get_gemini_caller_settings \\:one
-SELECT enabled, model_name, max_requests_per_minute, max_tokens_per_request,
-       max_cost_per_operation, max_cost_per_day, max_cost_per_month,
+SELECT enabled, model_name, continuous_scan_enabled, continuous_scan_interval_seconds,
+       last_continuous_scan_at, next_continuous_scan_at,
+       gemini_call_delay_ms, max_concurrent_gemini_calls,
+       max_tokens_per_request, max_cost_per_day, max_cost_per_month,
        allow_emergency_override, updated_at
 FROM gemini_caller_settings
 WHERE id = true
@@ -26,9 +28,13 @@ WHERE id = true
 class GetGeminiCallerSettingsRow:
     enabled: bool
     model_name: str
-    max_requests_per_minute: int
+    continuous_scan_enabled: bool
+    continuous_scan_interval_seconds: int
+    last_continuous_scan_at: Optional[datetime.datetime]
+    next_continuous_scan_at: Optional[datetime.datetime]
+    gemini_call_delay_ms: int
+    max_concurrent_gemini_calls: int
     max_tokens_per_request: int
-    max_cost_per_operation: decimal.Decimal
     max_cost_per_day: decimal.Decimal
     max_cost_per_month: decimal.Decimal
     allow_emergency_override: bool
@@ -53,19 +59,59 @@ class GetUsageLimitSettingsRow:
     updated_at: datetime.datetime
 
 
+MARK_CONTINUOUS_SCAN_CYCLE_RAN = """-- name: mark_continuous_scan_cycle_ran \\:one
+UPDATE gemini_caller_settings
+SET
+  last_continuous_scan_at = now(),
+  next_continuous_scan_at = now() + make_interval(secs => continuous_scan_interval_seconds),
+  updated_at = now()
+WHERE id = true
+RETURNING enabled, model_name, continuous_scan_enabled, continuous_scan_interval_seconds,
+          last_continuous_scan_at, next_continuous_scan_at,
+          gemini_call_delay_ms, max_concurrent_gemini_calls,
+          max_tokens_per_request, max_cost_per_day, max_cost_per_month,
+          allow_emergency_override, updated_at
+"""
+
+
+@dataclasses.dataclass()
+class MarkContinuousScanCycleRanRow:
+    enabled: bool
+    model_name: str
+    continuous_scan_enabled: bool
+    continuous_scan_interval_seconds: int
+    last_continuous_scan_at: Optional[datetime.datetime]
+    next_continuous_scan_at: Optional[datetime.datetime]
+    gemini_call_delay_ms: int
+    max_concurrent_gemini_calls: int
+    max_tokens_per_request: int
+    max_cost_per_day: decimal.Decimal
+    max_cost_per_month: decimal.Decimal
+    allow_emergency_override: bool
+    updated_at: datetime.datetime
+
+
 UPDATE_GEMINI_CALLER_SETTINGS = """-- name: update_gemini_caller_settings \\:one
 UPDATE gemini_caller_settings
 SET
   enabled = COALESCE(:p1, enabled),
   model_name = COALESCE(:p2, model_name),
-  max_requests_per_minute = COALESCE(:p3, max_requests_per_minute),
-  max_tokens_per_request = COALESCE(:p4, max_tokens_per_request),
-  max_cost_per_operation = COALESCE(:p5, max_cost_per_operation),
-  max_cost_per_day = COALESCE(:p6, max_cost_per_day),
-  max_cost_per_month = COALESCE(:p7, max_cost_per_month),
-  allow_emergency_override = COALESCE(:p8, allow_emergency_override)
+  continuous_scan_enabled = COALESCE(:p3, continuous_scan_enabled),
+  continuous_scan_interval_seconds = COALESCE(:p4, continuous_scan_interval_seconds),
+  last_continuous_scan_at = COALESCE(:p5, last_continuous_scan_at),
+  next_continuous_scan_at = COALESCE(:p6, next_continuous_scan_at),
+  gemini_call_delay_ms = COALESCE(:p7, gemini_call_delay_ms),
+  max_concurrent_gemini_calls = COALESCE(:p8, max_concurrent_gemini_calls),
+  max_tokens_per_request = COALESCE(:p9, max_tokens_per_request),
+  max_cost_per_day = COALESCE(:p10, max_cost_per_day),
+  max_cost_per_month = COALESCE(:p11, max_cost_per_month),
+  allow_emergency_override = COALESCE(:p12, allow_emergency_override)
 WHERE id = true
-RETURNING id, enabled, model_name, max_requests_per_minute, max_tokens_per_request, max_cost_per_operation, max_cost_per_day, max_cost_per_month, allow_emergency_override, updated_at
+RETURNING enabled, model_name, continuous_scan_enabled, continuous_scan_interval_seconds,
+          last_continuous_scan_at, next_continuous_scan_at,
+          gemini_call_delay_ms, max_concurrent_gemini_calls,
+          max_tokens_per_request, max_cost_per_day, max_cost_per_month,
+          allow_emergency_override, updated_at
 """
 
 
@@ -73,12 +119,33 @@ RETURNING id, enabled, model_name, max_requests_per_minute, max_tokens_per_reque
 class UpdateGeminiCallerSettingsParams:
     enabled: bool
     model_name: str
-    max_requests_per_minute: int
+    continuous_scan_enabled: bool
+    continuous_scan_interval_seconds: int
+    last_continuous_scan_at: Optional[datetime.datetime]
+    next_continuous_scan_at: Optional[datetime.datetime]
+    gemini_call_delay_ms: int
+    max_concurrent_gemini_calls: int
     max_tokens_per_request: int
-    max_cost_per_operation: decimal.Decimal
     max_cost_per_day: decimal.Decimal
     max_cost_per_month: decimal.Decimal
     allow_emergency_override: bool
+
+
+@dataclasses.dataclass()
+class UpdateGeminiCallerSettingsRow:
+    enabled: bool
+    model_name: str
+    continuous_scan_enabled: bool
+    continuous_scan_interval_seconds: int
+    last_continuous_scan_at: Optional[datetime.datetime]
+    next_continuous_scan_at: Optional[datetime.datetime]
+    gemini_call_delay_ms: int
+    max_concurrent_gemini_calls: int
+    max_tokens_per_request: int
+    max_cost_per_day: decimal.Decimal
+    max_cost_per_month: decimal.Decimal
+    allow_emergency_override: bool
+    updated_at: datetime.datetime
 
 
 UPDATE_USAGE_LIMIT_SETTINGS = """-- name: update_usage_limit_settings \\:one
@@ -90,8 +157,19 @@ SET
   max_estimated_cost_per_month = COALESCE(:p4, max_estimated_cost_per_month),
   block_operations_when_limit_reached = COALESCE(:p5, block_operations_when_limit_reached)
 WHERE id = true
-RETURNING id, max_scans_per_day, max_scans_per_month, max_estimated_cost_per_day, max_estimated_cost_per_month, block_operations_when_limit_reached, updated_at
+RETURNING max_scans_per_day, max_scans_per_month, max_estimated_cost_per_day,
+          max_estimated_cost_per_month, block_operations_when_limit_reached, updated_at
 """
+
+
+@dataclasses.dataclass()
+class UpdateUsageLimitSettingsRow:
+    max_scans_per_day: int
+    max_scans_per_month: int
+    max_estimated_cost_per_day: decimal.Decimal
+    max_estimated_cost_per_month: decimal.Decimal
+    block_operations_when_limit_reached: bool
+    updated_at: datetime.datetime
 
 
 class Querier:
@@ -105,13 +183,17 @@ class Querier:
         return GetGeminiCallerSettingsRow(
             enabled=row[0],
             model_name=row[1],
-            max_requests_per_minute=row[2],
-            max_tokens_per_request=row[3],
-            max_cost_per_operation=row[4],
-            max_cost_per_day=row[5],
-            max_cost_per_month=row[6],
-            allow_emergency_override=row[7],
-            updated_at=row[8],
+            continuous_scan_enabled=row[2],
+            continuous_scan_interval_seconds=row[3],
+            last_continuous_scan_at=row[4],
+            next_continuous_scan_at=row[5],
+            gemini_call_delay_ms=row[6],
+            max_concurrent_gemini_calls=row[7],
+            max_tokens_per_request=row[8],
+            max_cost_per_day=row[9],
+            max_cost_per_month=row[10],
+            allow_emergency_override=row[11],
+            updated_at=row[12],
         )
 
     def get_usage_limit_settings(self) -> Optional[GetUsageLimitSettingsRow]:
@@ -127,33 +209,60 @@ class Querier:
             updated_at=row[5],
         )
 
-    def update_gemini_caller_settings(self, arg: UpdateGeminiCallerSettingsParams) -> Optional[models.GeminiCallerSetting]:
+    def mark_continuous_scan_cycle_ran(self) -> Optional[MarkContinuousScanCycleRanRow]:
+        row = self._conn.execute(sqlalchemy.text(MARK_CONTINUOUS_SCAN_CYCLE_RAN)).first()
+        if row is None:
+            return None
+        return MarkContinuousScanCycleRanRow(
+            enabled=row[0],
+            model_name=row[1],
+            continuous_scan_enabled=row[2],
+            continuous_scan_interval_seconds=row[3],
+            last_continuous_scan_at=row[4],
+            next_continuous_scan_at=row[5],
+            gemini_call_delay_ms=row[6],
+            max_concurrent_gemini_calls=row[7],
+            max_tokens_per_request=row[8],
+            max_cost_per_day=row[9],
+            max_cost_per_month=row[10],
+            allow_emergency_override=row[11],
+            updated_at=row[12],
+        )
+
+    def update_gemini_caller_settings(self, arg: UpdateGeminiCallerSettingsParams) -> Optional[UpdateGeminiCallerSettingsRow]:
         row = self._conn.execute(sqlalchemy.text(UPDATE_GEMINI_CALLER_SETTINGS), {
             "p1": arg.enabled,
             "p2": arg.model_name,
-            "p3": arg.max_requests_per_minute,
-            "p4": arg.max_tokens_per_request,
-            "p5": arg.max_cost_per_operation,
-            "p6": arg.max_cost_per_day,
-            "p7": arg.max_cost_per_month,
-            "p8": arg.allow_emergency_override,
+            "p3": arg.continuous_scan_enabled,
+            "p4": arg.continuous_scan_interval_seconds,
+            "p5": arg.last_continuous_scan_at,
+            "p6": arg.next_continuous_scan_at,
+            "p7": arg.gemini_call_delay_ms,
+            "p8": arg.max_concurrent_gemini_calls,
+            "p9": arg.max_tokens_per_request,
+            "p10": arg.max_cost_per_day,
+            "p11": arg.max_cost_per_month,
+            "p12": arg.allow_emergency_override,
         }).first()
         if row is None:
             return None
-        return models.GeminiCallerSetting(
-            id=row[0],
-            enabled=row[1],
-            model_name=row[2],
-            max_requests_per_minute=row[3],
-            max_tokens_per_request=row[4],
-            max_cost_per_operation=row[5],
-            max_cost_per_day=row[6],
-            max_cost_per_month=row[7],
-            allow_emergency_override=row[8],
-            updated_at=row[9],
+        return UpdateGeminiCallerSettingsRow(
+            enabled=row[0],
+            model_name=row[1],
+            continuous_scan_enabled=row[2],
+            continuous_scan_interval_seconds=row[3],
+            last_continuous_scan_at=row[4],
+            next_continuous_scan_at=row[5],
+            gemini_call_delay_ms=row[6],
+            max_concurrent_gemini_calls=row[7],
+            max_tokens_per_request=row[8],
+            max_cost_per_day=row[9],
+            max_cost_per_month=row[10],
+            allow_emergency_override=row[11],
+            updated_at=row[12],
         )
 
-    def update_usage_limit_settings(self, *, max_scans_per_day: int, max_scans_per_month: int, max_estimated_cost_per_day: decimal.Decimal, max_estimated_cost_per_month: decimal.Decimal, block_operations_when_limit_reached: bool) -> Optional[models.UsageLimitSetting]:
+    def update_usage_limit_settings(self, *, max_scans_per_day: int, max_scans_per_month: int, max_estimated_cost_per_day: decimal.Decimal, max_estimated_cost_per_month: decimal.Decimal, block_operations_when_limit_reached: bool) -> Optional[UpdateUsageLimitSettingsRow]:
         row = self._conn.execute(sqlalchemy.text(UPDATE_USAGE_LIMIT_SETTINGS), {
             "p1": max_scans_per_day,
             "p2": max_scans_per_month,
@@ -163,14 +272,13 @@ class Querier:
         }).first()
         if row is None:
             return None
-        return models.UsageLimitSetting(
-            id=row[0],
-            max_scans_per_day=row[1],
-            max_scans_per_month=row[2],
-            max_estimated_cost_per_day=row[3],
-            max_estimated_cost_per_month=row[4],
-            block_operations_when_limit_reached=row[5],
-            updated_at=row[6],
+        return UpdateUsageLimitSettingsRow(
+            max_scans_per_day=row[0],
+            max_scans_per_month=row[1],
+            max_estimated_cost_per_day=row[2],
+            max_estimated_cost_per_month=row[3],
+            block_operations_when_limit_reached=row[4],
+            updated_at=row[5],
         )
 
 
@@ -185,13 +293,17 @@ class AsyncQuerier:
         return GetGeminiCallerSettingsRow(
             enabled=row[0],
             model_name=row[1],
-            max_requests_per_minute=row[2],
-            max_tokens_per_request=row[3],
-            max_cost_per_operation=row[4],
-            max_cost_per_day=row[5],
-            max_cost_per_month=row[6],
-            allow_emergency_override=row[7],
-            updated_at=row[8],
+            continuous_scan_enabled=row[2],
+            continuous_scan_interval_seconds=row[3],
+            last_continuous_scan_at=row[4],
+            next_continuous_scan_at=row[5],
+            gemini_call_delay_ms=row[6],
+            max_concurrent_gemini_calls=row[7],
+            max_tokens_per_request=row[8],
+            max_cost_per_day=row[9],
+            max_cost_per_month=row[10],
+            allow_emergency_override=row[11],
+            updated_at=row[12],
         )
 
     async def get_usage_limit_settings(self) -> Optional[GetUsageLimitSettingsRow]:
@@ -207,33 +319,60 @@ class AsyncQuerier:
             updated_at=row[5],
         )
 
-    async def update_gemini_caller_settings(self, arg: UpdateGeminiCallerSettingsParams) -> Optional[models.GeminiCallerSetting]:
+    async def mark_continuous_scan_cycle_ran(self) -> Optional[MarkContinuousScanCycleRanRow]:
+        row = (await self._conn.execute(sqlalchemy.text(MARK_CONTINUOUS_SCAN_CYCLE_RAN))).first()
+        if row is None:
+            return None
+        return MarkContinuousScanCycleRanRow(
+            enabled=row[0],
+            model_name=row[1],
+            continuous_scan_enabled=row[2],
+            continuous_scan_interval_seconds=row[3],
+            last_continuous_scan_at=row[4],
+            next_continuous_scan_at=row[5],
+            gemini_call_delay_ms=row[6],
+            max_concurrent_gemini_calls=row[7],
+            max_tokens_per_request=row[8],
+            max_cost_per_day=row[9],
+            max_cost_per_month=row[10],
+            allow_emergency_override=row[11],
+            updated_at=row[12],
+        )
+
+    async def update_gemini_caller_settings(self, arg: UpdateGeminiCallerSettingsParams) -> Optional[UpdateGeminiCallerSettingsRow]:
         row = (await self._conn.execute(sqlalchemy.text(UPDATE_GEMINI_CALLER_SETTINGS), {
             "p1": arg.enabled,
             "p2": arg.model_name,
-            "p3": arg.max_requests_per_minute,
-            "p4": arg.max_tokens_per_request,
-            "p5": arg.max_cost_per_operation,
-            "p6": arg.max_cost_per_day,
-            "p7": arg.max_cost_per_month,
-            "p8": arg.allow_emergency_override,
+            "p3": arg.continuous_scan_enabled,
+            "p4": arg.continuous_scan_interval_seconds,
+            "p5": arg.last_continuous_scan_at,
+            "p6": arg.next_continuous_scan_at,
+            "p7": arg.gemini_call_delay_ms,
+            "p8": arg.max_concurrent_gemini_calls,
+            "p9": arg.max_tokens_per_request,
+            "p10": arg.max_cost_per_day,
+            "p11": arg.max_cost_per_month,
+            "p12": arg.allow_emergency_override,
         })).first()
         if row is None:
             return None
-        return models.GeminiCallerSetting(
-            id=row[0],
-            enabled=row[1],
-            model_name=row[2],
-            max_requests_per_minute=row[3],
-            max_tokens_per_request=row[4],
-            max_cost_per_operation=row[5],
-            max_cost_per_day=row[6],
-            max_cost_per_month=row[7],
-            allow_emergency_override=row[8],
-            updated_at=row[9],
+        return UpdateGeminiCallerSettingsRow(
+            enabled=row[0],
+            model_name=row[1],
+            continuous_scan_enabled=row[2],
+            continuous_scan_interval_seconds=row[3],
+            last_continuous_scan_at=row[4],
+            next_continuous_scan_at=row[5],
+            gemini_call_delay_ms=row[6],
+            max_concurrent_gemini_calls=row[7],
+            max_tokens_per_request=row[8],
+            max_cost_per_day=row[9],
+            max_cost_per_month=row[10],
+            allow_emergency_override=row[11],
+            updated_at=row[12],
         )
 
-    async def update_usage_limit_settings(self, *, max_scans_per_day: int, max_scans_per_month: int, max_estimated_cost_per_day: decimal.Decimal, max_estimated_cost_per_month: decimal.Decimal, block_operations_when_limit_reached: bool) -> Optional[models.UsageLimitSetting]:
+    async def update_usage_limit_settings(self, *, max_scans_per_day: int, max_scans_per_month: int, max_estimated_cost_per_day: decimal.Decimal, max_estimated_cost_per_month: decimal.Decimal, block_operations_when_limit_reached: bool) -> Optional[UpdateUsageLimitSettingsRow]:
         row = (await self._conn.execute(sqlalchemy.text(UPDATE_USAGE_LIMIT_SETTINGS), {
             "p1": max_scans_per_day,
             "p2": max_scans_per_month,
@@ -243,12 +382,11 @@ class AsyncQuerier:
         })).first()
         if row is None:
             return None
-        return models.UsageLimitSetting(
-            id=row[0],
-            max_scans_per_day=row[1],
-            max_scans_per_month=row[2],
-            max_estimated_cost_per_day=row[3],
-            max_estimated_cost_per_month=row[4],
-            block_operations_when_limit_reached=row[5],
-            updated_at=row[6],
+        return UpdateUsageLimitSettingsRow(
+            max_scans_per_day=row[0],
+            max_scans_per_month=row[1],
+            max_estimated_cost_per_day=row[2],
+            max_estimated_cost_per_month=row[3],
+            block_operations_when_limit_reached=row[4],
+            updated_at=row[5],
         )

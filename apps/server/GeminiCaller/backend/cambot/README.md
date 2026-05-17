@@ -102,8 +102,12 @@ Class | Method | HTTP request | Description
 *CameraGroupsApi* | [**list_camera_groups**](docs/CameraGroupsApi.md#list_camera_groups) | **GET** /camera-groups | List CamBot camera groups
 *CameraGroupsApi* | [**replace_camera_group_cameras**](docs/CameraGroupsApi.md#replace_camera_group_cameras) | **PUT** /camera-groups/{groupId}/cameras | Replace cameras assigned to a CamBot camera group
 *CameraGroupsApi* | [**update_camera_group**](docs/CameraGroupsApi.md#update_camera_group) | **PUT** /camera-groups/{groupId} | Update a CamBot camera group
-*OperationsApi* | [**create_operation**](docs/OperationsApi.md#create_operation) | **POST** /operations | Start an AI operation
-*OperationsApi* | [**estimate_operation**](docs/OperationsApi.md#estimate_operation) | **POST** /operations/estimate | Estimate operation usage and cost
+*OperationsApi* | [**create_operation**](docs/OperationsApi.md#create_operation) | **POST** /operations | Create a prompt scan operation
+*OperationsApi* | [**estimate_operation**](docs/OperationsApi.md#estimate_operation) | **POST** /operations/estimate | Estimate prompt scan usage and cost
+*OperationsApi* | [**get_operation**](docs/OperationsApi.md#get_operation) | **GET** /operations/{operationId} | Get a prompt scan operation
+*OperationsApi* | [**list_operation_results**](docs/OperationsApi.md#list_operation_results) | **GET** /operations/{operationId}/results | List Gemini camera results for an operation
+*OperationsApi* | [**list_operations**](docs/OperationsApi.md#list_operations) | **GET** /operations | List prompt scan operations
+*OperatorQueueApi* | [**create_operator_queue_item**](docs/OperatorQueueApi.md#create_operator_queue_item) | **POST** /operator-queue | Create an operator queue item from an operation result
 *OperatorQueueApi* | [**list_operator_queue_items**](docs/OperatorQueueApi.md#list_operator_queue_items) | **GET** /operator-queue | List operator queue items
 *OperatorQueueApi* | [**update_operator_queue_item**](docs/OperatorQueueApi.md#update_operator_queue_item) | **PUT** /operator-queue/{queueItemId} | Update operator queue item status
 *PromptBindingsApi* | [**create_camera_group_prompt_binding**](docs/PromptBindingsApi.md#create_camera_group_prompt_binding) | **POST** /camera-groups/{groupId}/prompt-bindings | Apply a saved prompt to a camera group
@@ -126,12 +130,11 @@ Class | Method | HTTP request | Description
 
  - [CreateCameraGroupPromptBindingRequest](docs/CreateCameraGroupPromptBindingRequest.md)
  - [CreateCameraGroupRequest](docs/CreateCameraGroupRequest.md)
- - [CreateOperation201Response](docs/CreateOperation201Response.md)
  - [CreateOperationRequest](docs/CreateOperationRequest.md)
+ - [CreateOperatorQueueItemRequest](docs/CreateOperatorQueueItemRequest.md)
  - [CreateSavedPromptRequest](docs/CreateSavedPromptRequest.md)
  - [EstimateOperation200Response](docs/EstimateOperation200Response.md)
  - [EstimateOperationRequest](docs/EstimateOperationRequest.md)
- - [EstimateOperationRequestTarget](docs/EstimateOperationRequestTarget.md)
  - [GetGeminiCallerSettings200Response](docs/GetGeminiCallerSettings200Response.md)
  - [GetUsageLimitSettings200Response](docs/GetUsageLimitSettings200Response.md)
  - [GetUsageSummary200Response](docs/GetUsageSummary200Response.md)
@@ -140,10 +143,12 @@ Class | Method | HTTP request | Description
  - [ListCameraGroups200Response](docs/ListCameraGroups200Response.md)
  - [ListCameraGroups200ResponseGroupsInner](docs/ListCameraGroups200ResponseGroupsInner.md)
  - [ListCameraGroups200ResponseGroupsInnerStats](docs/ListCameraGroups200ResponseGroupsInnerStats.md)
+ - [ListOperationResults200Response](docs/ListOperationResults200Response.md)
+ - [ListOperationResults200ResponseResultsInner](docs/ListOperationResults200ResponseResultsInner.md)
+ - [ListOperations200Response](docs/ListOperations200Response.md)
+ - [ListOperations200ResponseOperationsInner](docs/ListOperations200ResponseOperationsInner.md)
  - [ListOperatorQueueItems200Response](docs/ListOperatorQueueItems200Response.md)
  - [ListOperatorQueueItems200ResponseItemsInner](docs/ListOperatorQueueItems200ResponseItemsInner.md)
- - [ListOperatorQueueItems200ResponseItemsInnerAction](docs/ListOperatorQueueItems200ResponseItemsInnerAction.md)
- - [ListOperatorQueueItems200ResponseItemsInnerScore](docs/ListOperatorQueueItems200ResponseItemsInnerScore.md)
  - [ListSavedPrompts200Response](docs/ListSavedPrompts200Response.md)
  - [ListSavedPrompts200ResponsePromptsInner](docs/ListSavedPrompts200ResponsePromptsInner.md)
  - [ReplaceCameraGroupCamerasRequest](docs/ReplaceCameraGroupCamerasRequest.md)

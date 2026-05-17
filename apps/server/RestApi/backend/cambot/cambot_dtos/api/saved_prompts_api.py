@@ -16,8 +16,7 @@ from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import StrictStr, field_validator
-from typing import Optional
+from pydantic import StrictStr
 from cambot_dtos.models.create_saved_prompt_request import CreateSavedPromptRequest
 from cambot_dtos.models.list_saved_prompts200_response import ListSavedPrompts200Response
 from cambot_dtos.models.list_saved_prompts200_response_prompts_inner import ListSavedPrompts200ResponsePromptsInner
@@ -824,7 +823,6 @@ class SavedPromptsApi:
     @validate_call
     def list_saved_prompts(
         self,
-        prompt_type: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -841,8 +839,6 @@ class SavedPromptsApi:
         """List saved prompts
 
 
-        :param prompt_type:
-        :type prompt_type: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -866,7 +862,6 @@ class SavedPromptsApi:
         """ # noqa: E501
 
         _param = self._list_saved_prompts_serialize(
-            prompt_type=prompt_type,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -890,7 +885,6 @@ class SavedPromptsApi:
     @validate_call
     def list_saved_prompts_with_http_info(
         self,
-        prompt_type: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -907,8 +901,6 @@ class SavedPromptsApi:
         """List saved prompts
 
 
-        :param prompt_type:
-        :type prompt_type: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -932,7 +924,6 @@ class SavedPromptsApi:
         """ # noqa: E501
 
         _param = self._list_saved_prompts_serialize(
-            prompt_type=prompt_type,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -956,7 +947,6 @@ class SavedPromptsApi:
     @validate_call
     def list_saved_prompts_without_preload_content(
         self,
-        prompt_type: Optional[StrictStr] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -973,8 +963,6 @@ class SavedPromptsApi:
         """List saved prompts
 
 
-        :param prompt_type:
-        :type prompt_type: str
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -998,7 +986,6 @@ class SavedPromptsApi:
         """ # noqa: E501
 
         _param = self._list_saved_prompts_serialize(
-            prompt_type=prompt_type,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -1017,7 +1004,6 @@ class SavedPromptsApi:
 
     def _list_saved_prompts_serialize(
         self,
-        prompt_type,
         _request_auth,
         _content_type,
         _headers,
@@ -1040,10 +1026,6 @@ class SavedPromptsApi:
 
         # process the path parameters
         # process the query parameters
-        if prompt_type is not None:
-            
-            _query_params.append(('promptType', prompt_type))
-            
         # process the header parameters
         # process the form parameters
         # process the body parameter

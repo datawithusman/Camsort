@@ -8,10 +8,8 @@ Name | Type | Description | Notes
 **id** | **str** |  | 
 **camera_group_id** | **str** |  | 
 **prompt_id** | **str** |  | 
-**enabled** | **bool** |  | 
-**scan_frequency** | **str** |  | [optional] 
-**priority_override** | **str** |  | [optional] 
-**max_estimated_cost_override** | **float** |  | [optional] 
+**enabled** | **bool** | When true, this prompt/camera-group pair participates in the global continuous scan cycle and can also be run manually. | 
+**last_run_at** | **datetime** | Last time this prompt binding was executed by a manual or scheduled operation. | [optional] 
 **created_at** | **datetime** |  | [optional] 
 **updated_at** | **datetime** |  | [optional] 
 

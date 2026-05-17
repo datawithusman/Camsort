@@ -13,6 +13,7 @@
 
 
 import ApiClient from "../ApiClient";
+import CreateOperatorQueueItemRequest from '../model/CreateOperatorQueueItemRequest';
 import ListOperatorQueueItems200Response from '../model/ListOperatorQueueItems200Response';
 import ListOperatorQueueItems200ResponseItemsInner from '../model/ListOperatorQueueItems200ResponseItemsInner';
 import UpdateOperatorQueueItemRequest from '../model/UpdateOperatorQueueItemRequest';
@@ -35,6 +36,51 @@ export default class OperatorQueueApi {
         this.apiClient = apiClient || ApiClient.instance;
     }
 
+
+
+    /**
+     * Create an operator queue item from an operation result
+     * @param {module:model/CreateOperatorQueueItemRequest} createOperatorQueueItemRequest 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperatorQueueItems200ResponseItemsInner} and HTTP response
+     */
+    createOperatorQueueItemWithHttpInfo(createOperatorQueueItemRequest) {
+      let postBody = createOperatorQueueItemRequest;
+      // verify the required parameter 'createOperatorQueueItemRequest' is set
+      if (createOperatorQueueItemRequest === undefined || createOperatorQueueItemRequest === null) {
+        throw new Error("Missing the required parameter 'createOperatorQueueItemRequest' when calling createOperatorQueueItem");
+      }
+
+      let pathParams = {
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = ['application/json'];
+      let accepts = ['application/json'];
+      let returnType = ListOperatorQueueItems200ResponseItemsInner;
+      return this.apiClient.callApi(
+        '/operator-queue', 'POST',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Create an operator queue item from an operation result
+     * @param {module:model/CreateOperatorQueueItemRequest} createOperatorQueueItemRequest 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperatorQueueItems200ResponseItemsInner}
+     */
+    createOperatorQueueItem(createOperatorQueueItemRequest) {
+      return this.createOperatorQueueItemWithHttpInfo(createOperatorQueueItemRequest)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
 
 
     /**

@@ -35,12 +35,12 @@ class TestUpdateOperatorQueueItemRequest(unittest.TestCase):
         model = UpdateOperatorQueueItemRequest()
         if include_optional:
             return UpdateOperatorQueueItemRequest(
-                status = 'pending',
+                status = 'queued',
                 operator_note = ''
             )
         else:
             return UpdateOperatorQueueItemRequest(
-                status = 'pending',
+                status = 'queued',
         )
         """
 

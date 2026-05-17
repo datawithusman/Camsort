@@ -38,7 +38,7 @@ class TestEstimateOperation200Response(unittest.TestCase):
                 allowed = True,
                 restriction_reason = '',
                 estimated_camera_count = 56,
-                estimated_prompt_count = 56,
+                estimated_gemini_calls = 56,
                 estimated_token_count = 56,
                 estimated_cost = 1.337
             )
@@ -46,6 +46,7 @@ class TestEstimateOperation200Response(unittest.TestCase):
             return EstimateOperation200Response(
                 allowed = True,
                 estimated_camera_count = 56,
+                estimated_gemini_calls = 56,
                 estimated_cost = 1.337,
         )
         """

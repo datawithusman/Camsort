@@ -36,11 +36,8 @@ class TestUpdateSavedPromptRequest(unittest.TestCase):
         if include_optional:
             return UpdateSavedPromptRequest(
                 name = '',
-                prompt_type = 'sorting',
                 description = '',
                 prompt_text = '',
-                default_priority = 'low',
-                default_max_estimated_cost = 1.337,
                 enabled = True
             )
         else:

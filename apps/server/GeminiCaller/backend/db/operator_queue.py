@@ -2,7 +2,6 @@
 # versions:
 #   sqlc v1.31.1
 # source: operator_queue.sql
-import dataclasses
 from typing import Any, AsyncIterator, Iterator, Optional
 
 import sqlalchemy
@@ -11,72 +10,96 @@ import sqlalchemy.ext.asyncio
 from db import models
 
 
-CREATE_OPERATOR_QUEUE_ITEM = """-- name: create_operator_queue_item \\:one
+CREATE_OPERATOR_QUEUE_ITEM_FROM_RESULT = """-- name: create_operator_queue_item_from_result \\:one
 INSERT INTO operator_queue_items (
   id,
+  operation_result_id,
   operation_id,
   camera_id,
   camera_group_id,
-  saved_prompt_id,
-  title,
-  description,
+  prompt_id,
+  frame_ref_id,
+  frame_url,
   recommended_action,
-  confidence,
-  urgency,
-  risk,
-  overall,
+  reason,
+  prompt_match_score,
+  operator_priority_score,
   status
 )
-VALUES (
-  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
-  :p2,
-  :p3,
-  :p4,
-  :p5,
-  :p6,
-  :p7,
-  :p8,
-  COALESCE(:p9, 0),
-  COALESCE(:p10, 0),
-  COALESCE(:p11, 0),
-  COALESCE(:p12, 0),
-  COALESCE(:p13, 'pending')
-)
-RETURNING id, operation_id, camera_id, camera_group_id, saved_prompt_id, title, description, recommended_action, confidence, urgency, risk, overall, status, operator_note, created_at, updated_at
+SELECT
+  COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text) AS id,
+  r.id AS operation_result_id,
+  r.operation_id AS operation_id,
+  r.camera_id AS camera_id,
+  r.camera_group_id AS camera_group_id,
+  r.prompt_id AS prompt_id,
+  r.frame_ref_id AS frame_ref_id,
+  r.frame_url AS frame_url,
+  r.recommended_action AS recommended_action,
+  r.reason AS reason,
+  r.prompt_match_score AS prompt_match_score,
+  r.operator_priority_score AS operator_priority_score,
+  COALESCE(:p2, 'queued') AS status
+FROM operation_results r
+WHERE r.id = :p3
+ON CONFLICT (operation_result_id)
+DO UPDATE SET
+  recommended_action = EXCLUDED.recommended_action,
+  reason = EXCLUDED.reason,
+  prompt_match_score = EXCLUDED.prompt_match_score,
+  operator_priority_score = EXCLUDED.operator_priority_score,
+  updated_at = now()
+RETURNING
+  id,
+  operation_result_id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  frame_ref_id,
+  frame_url,
+  recommended_action,
+  reason,
+  prompt_match_score,
+  operator_priority_score,
+  status,
+  operator_note,
+  created_at,
+  updated_at
 """
 
 
-@dataclasses.dataclass()
-class CreateOperatorQueueItemParams:
-    id: Optional[Any]
-    operation_id: Optional[str]
-    camera_id: str
-    camera_group_id: Optional[str]
-    saved_prompt_id: Optional[str]
-    title: str
-    description: str
-    recommended_action: Optional[str]
-    confidence: Optional[Any]
-    urgency: Optional[Any]
-    risk: Optional[Any]
-    overall: Optional[Any]
-    status: Optional[Any]
-
-
 LIST_OPERATOR_QUEUE_ITEMS = """-- name: list_operator_queue_items \\:many
-SELECT id, operation_id, camera_id, camera_group_id, saved_prompt_id, title, description, recommended_action, confidence, urgency, risk, overall, status, operator_note, created_at, updated_at
+SELECT
+  id,
+  operation_result_id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  frame_ref_id,
+  frame_url,
+  recommended_action,
+  reason,
+  prompt_match_score,
+  operator_priority_score,
+  status,
+  operator_note,
+  created_at,
+  updated_at
 FROM operator_queue_items
+WHERE (:p1\\:\\:text IS NULL OR status = :p1)
 ORDER BY
   CASE status
-    WHEN 'pending' THEN 0
+    WHEN 'queued' THEN 0
     WHEN 'acknowledged' THEN 1
     WHEN 'completed' THEN 2
     WHEN 'dismissed' THEN 3
     ELSE 4
   END,
-  overall DESC,
-  created_at DESC
-LIMIT :p2 OFFSET :p1
+  operator_priority_score DESC,
+  created_at ASC
+LIMIT :p3 OFFSET :p2
 """
 
 
@@ -84,9 +107,26 @@ UPDATE_OPERATOR_QUEUE_ITEM_STATUS = """-- name: update_operator_queue_item_statu
 UPDATE operator_queue_items
 SET
   status = :p1,
-  operator_note = COALESCE(:p2, operator_note)
+  operator_note = COALESCE(:p2, operator_note),
+  updated_at = now()
 WHERE id = :p3
-RETURNING id, operation_id, camera_id, camera_group_id, saved_prompt_id, title, description, recommended_action, confidence, urgency, risk, overall, status, operator_note, created_at, updated_at
+RETURNING
+  id,
+  operation_result_id,
+  operation_id,
+  camera_id,
+  camera_group_id,
+  prompt_id,
+  frame_ref_id,
+  frame_url,
+  recommended_action,
+  reason,
+  prompt_match_score,
+  operator_priority_score,
+  status,
+  operator_note,
+  created_at,
+  updated_at
 """
 
 
@@ -94,59 +134,45 @@ class Querier:
     def __init__(self, conn: sqlalchemy.engine.Connection):
         self._conn = conn
 
-    def create_operator_queue_item(self, arg: CreateOperatorQueueItemParams) -> Optional[models.OperatorQueueItem]:
-        row = self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM), {
-            "p1": arg.id,
-            "p2": arg.operation_id,
-            "p3": arg.camera_id,
-            "p4": arg.camera_group_id,
-            "p5": arg.saved_prompt_id,
-            "p6": arg.title,
-            "p7": arg.description,
-            "p8": arg.recommended_action,
-            "p9": arg.confidence,
-            "p10": arg.urgency,
-            "p11": arg.risk,
-            "p12": arg.overall,
-            "p13": arg.status,
-        }).first()
+    def create_operator_queue_item_from_result(self, *, id: Optional[Any], status: str, operation_result_id: str) -> Optional[models.OperatorQueueItem]:
+        row = self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM_FROM_RESULT), {"p1": id, "p2": status, "p3": operation_result_id}).first()
         if row is None:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_id=row[1],
-            camera_id=row[2],
-            camera_group_id=row[3],
-            saved_prompt_id=row[4],
-            title=row[5],
-            description=row[6],
-            recommended_action=row[7],
-            confidence=row[8],
-            urgency=row[9],
-            risk=row[10],
-            overall=row[11],
+            operation_result_id=row[1],
+            operation_id=row[2],
+            camera_id=row[3],
+            camera_group_id=row[4],
+            prompt_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            recommended_action=row[8],
+            reason=row[9],
+            prompt_match_score=row[10],
+            operator_priority_score=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],
             updated_at=row[15],
         )
 
-    def list_operator_queue_items(self, *, offset_count: int, limit_count: int) -> Iterator[models.OperatorQueueItem]:
-        result = self._conn.execute(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": offset_count, "p2": limit_count})
+    def list_operator_queue_items(self, *, filter_status: Optional[str], offset_count: int, limit_count: int) -> Iterator[models.OperatorQueueItem]:
+        result = self._conn.execute(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": filter_status, "p2": offset_count, "p3": limit_count})
         for row in result:
             yield models.OperatorQueueItem(
                 id=row[0],
-                operation_id=row[1],
-                camera_id=row[2],
-                camera_group_id=row[3],
-                saved_prompt_id=row[4],
-                title=row[5],
-                description=row[6],
-                recommended_action=row[7],
-                confidence=row[8],
-                urgency=row[9],
-                risk=row[10],
-                overall=row[11],
+                operation_result_id=row[1],
+                operation_id=row[2],
+                camera_id=row[3],
+                camera_group_id=row[4],
+                prompt_id=row[5],
+                frame_ref_id=row[6],
+                frame_url=row[7],
+                recommended_action=row[8],
+                reason=row[9],
+                prompt_match_score=row[10],
+                operator_priority_score=row[11],
                 status=row[12],
                 operator_note=row[13],
                 created_at=row[14],
@@ -159,17 +185,17 @@ class Querier:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_id=row[1],
-            camera_id=row[2],
-            camera_group_id=row[3],
-            saved_prompt_id=row[4],
-            title=row[5],
-            description=row[6],
-            recommended_action=row[7],
-            confidence=row[8],
-            urgency=row[9],
-            risk=row[10],
-            overall=row[11],
+            operation_result_id=row[1],
+            operation_id=row[2],
+            camera_id=row[3],
+            camera_group_id=row[4],
+            prompt_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            recommended_action=row[8],
+            reason=row[9],
+            prompt_match_score=row[10],
+            operator_priority_score=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],
@@ -181,59 +207,45 @@ class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
 
-    async def create_operator_queue_item(self, arg: CreateOperatorQueueItemParams) -> Optional[models.OperatorQueueItem]:
-        row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM), {
-            "p1": arg.id,
-            "p2": arg.operation_id,
-            "p3": arg.camera_id,
-            "p4": arg.camera_group_id,
-            "p5": arg.saved_prompt_id,
-            "p6": arg.title,
-            "p7": arg.description,
-            "p8": arg.recommended_action,
-            "p9": arg.confidence,
-            "p10": arg.urgency,
-            "p11": arg.risk,
-            "p12": arg.overall,
-            "p13": arg.status,
-        })).first()
+    async def create_operator_queue_item_from_result(self, *, id: Optional[Any], status: str, operation_result_id: str) -> Optional[models.OperatorQueueItem]:
+        row = (await self._conn.execute(sqlalchemy.text(CREATE_OPERATOR_QUEUE_ITEM_FROM_RESULT), {"p1": id, "p2": status, "p3": operation_result_id})).first()
         if row is None:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_id=row[1],
-            camera_id=row[2],
-            camera_group_id=row[3],
-            saved_prompt_id=row[4],
-            title=row[5],
-            description=row[6],
-            recommended_action=row[7],
-            confidence=row[8],
-            urgency=row[9],
-            risk=row[10],
-            overall=row[11],
+            operation_result_id=row[1],
+            operation_id=row[2],
+            camera_id=row[3],
+            camera_group_id=row[4],
+            prompt_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            recommended_action=row[8],
+            reason=row[9],
+            prompt_match_score=row[10],
+            operator_priority_score=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],
             updated_at=row[15],
         )
 
-    async def list_operator_queue_items(self, *, offset_count: int, limit_count: int) -> AsyncIterator[models.OperatorQueueItem]:
-        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": offset_count, "p2": limit_count})
+    async def list_operator_queue_items(self, *, filter_status: Optional[str], offset_count: int, limit_count: int) -> AsyncIterator[models.OperatorQueueItem]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_OPERATOR_QUEUE_ITEMS), {"p1": filter_status, "p2": offset_count, "p3": limit_count})
         async for row in result:
             yield models.OperatorQueueItem(
                 id=row[0],
-                operation_id=row[1],
-                camera_id=row[2],
-                camera_group_id=row[3],
-                saved_prompt_id=row[4],
-                title=row[5],
-                description=row[6],
-                recommended_action=row[7],
-                confidence=row[8],
-                urgency=row[9],
-                risk=row[10],
-                overall=row[11],
+                operation_result_id=row[1],
+                operation_id=row[2],
+                camera_id=row[3],
+                camera_group_id=row[4],
+                prompt_id=row[5],
+                frame_ref_id=row[6],
+                frame_url=row[7],
+                recommended_action=row[8],
+                reason=row[9],
+                prompt_match_score=row[10],
+                operator_priority_score=row[11],
                 status=row[12],
                 operator_note=row[13],
                 created_at=row[14],
@@ -246,17 +258,17 @@ class AsyncQuerier:
             return None
         return models.OperatorQueueItem(
             id=row[0],
-            operation_id=row[1],
-            camera_id=row[2],
-            camera_group_id=row[3],
-            saved_prompt_id=row[4],
-            title=row[5],
-            description=row[6],
-            recommended_action=row[7],
-            confidence=row[8],
-            urgency=row[9],
-            risk=row[10],
-            overall=row[11],
+            operation_result_id=row[1],
+            operation_id=row[2],
+            camera_id=row[3],
+            camera_group_id=row[4],
+            prompt_id=row[5],
+            frame_ref_id=row[6],
+            frame_url=row[7],
+            recommended_action=row[8],
+            reason=row[9],
+            prompt_match_score=row[10],
+            operator_priority_score=row[11],
             status=row[12],
             operator_note=row[13],
             created_at=row[14],

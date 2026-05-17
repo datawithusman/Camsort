@@ -1,66 +1,37 @@
 components:
   schemas:
-    OperationType:
+    OperationTrigger:
       type: string
       enum:
-        - find
-        - sort
-        - scan
-        - summarize
-        - monitor
+        - manual
+        - scheduled
 
     OperationStatus:
       type: string
       enum:
-        - pending
+        - queued
         - running
         - completed
         - failed
         - cancelled
 
-    OperationTargetType:
-      type: string
-      enum:
-        - camera
-        - camera-group
-        - facility
-
-    OperationTarget:
-      type: object
-      required:
-        - type
-      properties:
-        type:
-          $ref: "#/components/schemas/OperationTargetType"
-        cameraId:
-          type: string
-          nullable: true
-        cameraGroupId:
-          type: string
-          nullable: true
-
     OperationEstimateRequest:
       type: object
       required:
-        - operationType
-        - target
+        - promptId
+        - cameraGroupId
       properties:
-        operationType:
-          $ref: "#/components/schemas/OperationType"
-        target:
-          $ref: "#/components/schemas/OperationTarget"
-        savedPromptId:
+        promptId:
           type: string
-          nullable: true
-        temporaryPromptText:
+        cameraGroupId:
           type: string
-          nullable: true
 
     OperationEstimate:
       type: object
       required:
         - allowed
         - estimatedCameraCount
+        - estimatedGeminiCalls
         - estimatedCost
       properties:
         allowed:
@@ -70,7 +41,7 @@ components:
           nullable: true
         estimatedCameraCount:
           type: integer
-        estimatedPromptCount:
+        estimatedGeminiCalls:
           type: integer
         estimatedTokenCount:
           type: integer
@@ -81,53 +52,163 @@ components:
     CreateOperationRequest:
       type: object
       required:
-        - operationType
-        - target
+        - promptId
+        - cameraGroupId
       properties:
-        operationType:
-          $ref: "#/components/schemas/OperationType"
-        target:
-          $ref: "#/components/schemas/OperationTarget"
-        savedPromptId:
+        promptId:
+          type: string
+        cameraGroupId:
+          type: string
+        trigger:
+          $ref: "#/components/schemas/OperationTrigger"
+        promptBindingId:
           type: string
           nullable: true
-        temporaryPromptText:
-          type: string
-          nullable: true
-        maxEstimatedCost:
-          type: number
-          format: double
-          nullable: true
+          description: Set for operations created from a scheduled prompt binding.
 
     Operation:
       type: object
       required:
         - id
-        - operationType
+        - promptId
+        - cameraGroupId
+        - trigger
         - status
-        - target
+        - totalCameras
+        - processedCameras
+        - matchedCameras
       properties:
         id:
           type: string
           example: operation-001
-        operationType:
-          $ref: "#/components/schemas/OperationType"
+        promptId:
+          type: string
+        cameraGroupId:
+          type: string
+        promptBindingId:
+          type: string
+          nullable: true
+        trigger:
+          $ref: "#/components/schemas/OperationTrigger"
         status:
           $ref: "#/components/schemas/OperationStatus"
-        target:
-          $ref: "#/components/schemas/OperationTarget"
-        savedPromptId:
+        totalCameras:
+          type: integer
+          example: 50
+        processedCameras:
+          type: integer
+          example: 12
+        matchedCameras:
+          type: integer
+          example: 3
+        estimatedGeminiCalls:
+          type: integer
+          nullable: true
+        estimatedCost:
+          type: number
+          format: double
+          nullable: true
+        actualGeminiCalls:
+          type: integer
+          nullable: true
+        actualCost:
+          type: number
+          format: double
+          nullable: true
+        errorMessage:
           type: string
           nullable: true
-        temporaryPromptText:
-          type: string
-          nullable: true
-        estimate:
-          $ref: "#/components/schemas/OperationEstimate"
         createdAt:
           type: string
           format: date-time
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
         completedAt:
           type: string
           format: date-time
           nullable: true
+
+    OperationListResponse:
+      type: object
+      required:
+        - operations
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Operation"
+
+    OperationResult:
+      type: object
+      required:
+        - id
+        - operationId
+        - cameraId
+        - frameRefId
+        - frameUrl
+        - include
+        - promptMatchScore
+        - operatorPriorityScore
+        - recommendedAction
+        - reason
+      properties:
+        id:
+          type: string
+          example: result-001
+        operationId:
+          type: string
+        cameraId:
+          type: string
+          example: cam01
+        cameraGroupId:
+          type: string
+          nullable: true
+        promptId:
+          type: string
+          nullable: true
+        frameRefId:
+          type: string
+          example: frame-ref-abc
+        frameUrl:
+          type: string
+          example: /camera-system/cameras/cam01/frames/frame-cam01-00000001-idx-000000/image
+        include:
+          type: boolean
+          description: True when the result should appear in the prompt result camera list.
+        promptMatchScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: Score from 0 to 100 indicating how strongly the snapshot matches the prompt.
+        operatorPriorityScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: Score from 0 to 100 indicating how urgently an operator should handle this recommended action.
+        recommendedAction:
+          type: string
+          example: Send maintenance to salt the entrance walkway.
+        reason:
+          type: string
+          example: The snapshot appears to show a slick surface near the doorway.
+        rawModelJson:
+          type: object
+          nullable: true
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    OperationResultListResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperationResult"

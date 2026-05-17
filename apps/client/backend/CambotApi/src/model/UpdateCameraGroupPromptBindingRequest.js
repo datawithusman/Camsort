@@ -50,14 +50,8 @@ class UpdateCameraGroupPromptBindingRequest {
             if (data.hasOwnProperty('enabled')) {
                 obj['enabled'] = ApiClient.convertToType(data['enabled'], 'Boolean');
             }
-            if (data.hasOwnProperty('scanFrequency')) {
-                obj['scanFrequency'] = ApiClient.convertToType(data['scanFrequency'], 'String');
-            }
-            if (data.hasOwnProperty('priorityOverride')) {
-                obj['priorityOverride'] = ApiClient.convertToType(data['priorityOverride'], 'String');
-            }
-            if (data.hasOwnProperty('maxEstimatedCostOverride')) {
-                obj['maxEstimatedCostOverride'] = ApiClient.convertToType(data['maxEstimatedCostOverride'], 'Number');
+            if (data.hasOwnProperty('lastRunAt')) {
+                obj['lastRunAt'] = ApiClient.convertToType(data['lastRunAt'], 'Date');
             }
         }
         return obj;
@@ -69,14 +63,6 @@ class UpdateCameraGroupPromptBindingRequest {
      * @return {boolean} to indicate whether the JSON data is valid with respect to <code>UpdateCameraGroupPromptBindingRequest</code>.
      */
     static validateJSON(data) {
-        // ensure the json data is a string
-        if (data['scanFrequency'] && !(typeof data['scanFrequency'] === 'string' || data['scanFrequency'] instanceof String)) {
-            throw new Error("Expected the field `scanFrequency` to be a primitive type in the JSON string but got " + data['scanFrequency']);
-        }
-        // ensure the json data is a string
-        if (data['priorityOverride'] && !(typeof data['priorityOverride'] === 'string' || data['priorityOverride'] instanceof String)) {
-            throw new Error("Expected the field `priorityOverride` to be a primitive type in the JSON string but got " + data['priorityOverride']);
-        }
 
         return true;
     }
@@ -92,88 +78,12 @@ class UpdateCameraGroupPromptBindingRequest {
 UpdateCameraGroupPromptBindingRequest.prototype['enabled'] = undefined;
 
 /**
- * @member {module:model/UpdateCameraGroupPromptBindingRequest.ScanFrequencyEnum} scanFrequency
+ * @member {Date} lastRunAt
  */
-UpdateCameraGroupPromptBindingRequest.prototype['scanFrequency'] = undefined;
-
-/**
- * @member {module:model/UpdateCameraGroupPromptBindingRequest.PriorityOverrideEnum} priorityOverride
- */
-UpdateCameraGroupPromptBindingRequest.prototype['priorityOverride'] = undefined;
-
-/**
- * @member {Number} maxEstimatedCostOverride
- */
-UpdateCameraGroupPromptBindingRequest.prototype['maxEstimatedCostOverride'] = undefined;
+UpdateCameraGroupPromptBindingRequest.prototype['lastRunAt'] = undefined;
 
 
 
-
-
-/**
- * Allowed values for the <code>scanFrequency</code> property.
- * @enum {String}
- * @readonly
- */
-UpdateCameraGroupPromptBindingRequest['ScanFrequencyEnum'] = {
-
-    /**
-     * value: "manual"
-     * @const
-     */
-    "manual": "manual",
-
-    /**
-     * value: "hourly"
-     * @const
-     */
-    "hourly": "hourly",
-
-    /**
-     * value: "daily"
-     * @const
-     */
-    "daily": "daily",
-
-    /**
-     * value: "continuous"
-     * @const
-     */
-    "continuous": "continuous"
-};
-
-
-/**
- * Allowed values for the <code>priorityOverride</code> property.
- * @enum {String}
- * @readonly
- */
-UpdateCameraGroupPromptBindingRequest['PriorityOverrideEnum'] = {
-
-    /**
-     * value: "low"
-     * @const
-     */
-    "low": "low",
-
-    /**
-     * value: "normal"
-     * @const
-     */
-    "normal": "normal",
-
-    /**
-     * value: "high"
-     * @const
-     */
-    "high": "high",
-
-    /**
-     * value: "emergency"
-     * @const
-     */
-    "emergency": "emergency"
-};
 
 
 

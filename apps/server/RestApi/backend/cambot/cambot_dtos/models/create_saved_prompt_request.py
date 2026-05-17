@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,30 +27,10 @@ class CreateSavedPromptRequest(BaseModel):
     CreateSavedPromptRequest
     """ # noqa: E501
     name: StrictStr
-    prompt_type: StrictStr = Field(alias="promptType")
     description: Optional[StrictStr] = None
     prompt_text: StrictStr = Field(alias="promptText")
-    default_priority: Optional[StrictStr] = Field(default=None, alias="defaultPriority")
-    default_max_estimated_cost: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="defaultMaxEstimatedCost")
     enabled: Optional[StrictBool] = True
-    __properties: ClassVar[List[str]] = ["name", "promptType", "description", "promptText", "defaultPriority", "defaultMaxEstimatedCost", "enabled"]
-
-    @field_validator('prompt_type')
-    def prompt_type_validate_enum(cls, value):
-        """Validates the enum"""
-        if value not in set(['sorting', 'finding', 'monitoring', 'summarization']):
-            raise ValueError("must be one of enum values ('sorting', 'finding', 'monitoring', 'summarization')")
-        return value
-
-    @field_validator('default_priority')
-    def default_priority_validate_enum(cls, value):
-        """Validates the enum"""
-        if value is None:
-            return value
-
-        if value not in set(['low', 'normal', 'high', 'emergency']):
-            raise ValueError("must be one of enum values ('low', 'normal', 'high', 'emergency')")
-        return value
+    __properties: ClassVar[List[str]] = ["name", "description", "promptText", "enabled"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -104,11 +84,8 @@ class CreateSavedPromptRequest(BaseModel):
 
         _obj = cls.model_validate({
             "name": obj.get("name"),
-            "promptType": obj.get("promptType"),
             "description": obj.get("description"),
             "promptText": obj.get("promptText"),
-            "defaultPriority": obj.get("defaultPriority"),
-            "defaultMaxEstimatedCost": obj.get("defaultMaxEstimatedCost"),
             "enabled": obj.get("enabled") if obj.get("enabled") is not None else True
         })
         return _obj

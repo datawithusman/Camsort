@@ -2,8 +2,7 @@
 # versions:
 #   sqlc v1.31.1
 # source: prompt_bindings.sql
-import dataclasses
-import decimal
+import datetime
 from typing import Any, AsyncIterator, Iterator, Optional
 
 import sqlalchemy
@@ -18,32 +17,17 @@ INSERT INTO prompt_bindings (
   camera_group_id,
   prompt_id,
   enabled,
-  scan_frequency,
-  priority_override,
-  max_estimated_cost_override
+  last_run_at
 )
 VALUES (
   COALESCE(NULLIF(:p1, ''), gen_random_uuid()\\:\\:text),
   :p2,
   :p3,
   COALESCE(:p4, true),
-  COALESCE(:p5, 'manual'),
-  :p6,
-  :p7
+  :p5
 )
-RETURNING id, camera_group_id, prompt_id, enabled, scan_frequency, priority_override, max_estimated_cost_override, created_at, updated_at
+RETURNING id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at
 """
-
-
-@dataclasses.dataclass()
-class CreatePromptBindingParams:
-    id: Optional[Any]
-    camera_group_id: str
-    prompt_id: str
-    enabled: Optional[Any]
-    scan_frequency: Optional[Any]
-    priority_override: Optional[str]
-    max_estimated_cost_override: Optional[decimal.Decimal]
 
 
 DELETE_PROMPT_BINDING = """-- name: delete_prompt_binding \\:exec
@@ -52,11 +36,28 @@ WHERE id = :p1
 """
 
 
+LIST_ENABLED_PROMPT_BINDINGS = """-- name: list_enabled_prompt_bindings \\:many
+SELECT id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at
+FROM prompt_bindings
+WHERE enabled = true
+ORDER BY created_at ASC
+LIMIT :p2 OFFSET :p1
+"""
+
+
 LIST_PROMPT_BINDINGS_FOR_CAMERA_GROUP = """-- name: list_prompt_bindings_for_camera_group \\:many
-SELECT id, camera_group_id, prompt_id, enabled, scan_frequency, priority_override, max_estimated_cost_override, created_at, updated_at
+SELECT id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at
 FROM prompt_bindings
 WHERE camera_group_id = :p1
 ORDER BY created_at DESC
+"""
+
+
+MARK_PROMPT_BINDING_RAN = """-- name: mark_prompt_binding_ran \\:one
+UPDATE prompt_bindings
+SET last_run_at = now()
+WHERE id = :p1
+RETURNING id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at
 """
 
 
@@ -64,11 +65,9 @@ UPDATE_PROMPT_BINDING = """-- name: update_prompt_binding \\:one
 UPDATE prompt_bindings
 SET
   enabled = COALESCE(:p1, enabled),
-  scan_frequency = COALESCE(:p2, scan_frequency),
-  priority_override = COALESCE(:p3, priority_override),
-  max_estimated_cost_override = COALESCE(:p4, max_estimated_cost_override)
-WHERE id = :p5
-RETURNING id, camera_group_id, prompt_id, enabled, scan_frequency, priority_override, max_estimated_cost_override, created_at, updated_at
+  last_run_at = COALESCE(:p2, last_run_at)
+WHERE id = :p3
+RETURNING id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at
 """
 
 
@@ -76,15 +75,13 @@ class Querier:
     def __init__(self, conn: sqlalchemy.engine.Connection):
         self._conn = conn
 
-    def create_prompt_binding(self, arg: CreatePromptBindingParams) -> Optional[models.PromptBinding]:
+    def create_prompt_binding(self, *, id: Optional[Any], camera_group_id: str, prompt_id: str, enabled: Optional[Any], last_run_at: Optional[datetime.datetime]) -> Optional[models.PromptBinding]:
         row = self._conn.execute(sqlalchemy.text(CREATE_PROMPT_BINDING), {
-            "p1": arg.id,
-            "p2": arg.camera_group_id,
-            "p3": arg.prompt_id,
-            "p4": arg.enabled,
-            "p5": arg.scan_frequency,
-            "p6": arg.priority_override,
-            "p7": arg.max_estimated_cost_override,
+            "p1": id,
+            "p2": camera_group_id,
+            "p3": prompt_id,
+            "p4": enabled,
+            "p5": last_run_at,
         }).first()
         if row is None:
             return None
@@ -93,15 +90,26 @@ class Querier:
             camera_group_id=row[1],
             prompt_id=row[2],
             enabled=row[3],
-            scan_frequency=row[4],
-            priority_override=row[5],
-            max_estimated_cost_override=row[6],
-            created_at=row[7],
-            updated_at=row[8],
+            last_run_at=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
     def delete_prompt_binding(self, *, id: str) -> None:
         self._conn.execute(sqlalchemy.text(DELETE_PROMPT_BINDING), {"p1": id})
+
+    def list_enabled_prompt_bindings(self, *, offset_count: int, limit_count: int) -> Iterator[models.PromptBinding]:
+        result = self._conn.execute(sqlalchemy.text(LIST_ENABLED_PROMPT_BINDINGS), {"p1": offset_count, "p2": limit_count})
+        for row in result:
+            yield models.PromptBinding(
+                id=row[0],
+                camera_group_id=row[1],
+                prompt_id=row[2],
+                enabled=row[3],
+                last_run_at=row[4],
+                created_at=row[5],
+                updated_at=row[6],
+            )
 
     def list_prompt_bindings_for_camera_group(self, *, camera_group_id: str) -> Iterator[models.PromptBinding]:
         result = self._conn.execute(sqlalchemy.text(LIST_PROMPT_BINDINGS_FOR_CAMERA_GROUP), {"p1": camera_group_id})
@@ -111,21 +119,13 @@ class Querier:
                 camera_group_id=row[1],
                 prompt_id=row[2],
                 enabled=row[3],
-                scan_frequency=row[4],
-                priority_override=row[5],
-                max_estimated_cost_override=row[6],
-                created_at=row[7],
-                updated_at=row[8],
+                last_run_at=row[4],
+                created_at=row[5],
+                updated_at=row[6],
             )
 
-    def update_prompt_binding(self, *, enabled: bool, scan_frequency: str, priority_override: Optional[str], max_estimated_cost_override: Optional[decimal.Decimal], id: str) -> Optional[models.PromptBinding]:
-        row = self._conn.execute(sqlalchemy.text(UPDATE_PROMPT_BINDING), {
-            "p1": enabled,
-            "p2": scan_frequency,
-            "p3": priority_override,
-            "p4": max_estimated_cost_override,
-            "p5": id,
-        }).first()
+    def mark_prompt_binding_ran(self, *, id: str) -> Optional[models.PromptBinding]:
+        row = self._conn.execute(sqlalchemy.text(MARK_PROMPT_BINDING_RAN), {"p1": id}).first()
         if row is None:
             return None
         return models.PromptBinding(
@@ -133,11 +133,23 @@ class Querier:
             camera_group_id=row[1],
             prompt_id=row[2],
             enabled=row[3],
-            scan_frequency=row[4],
-            priority_override=row[5],
-            max_estimated_cost_override=row[6],
-            created_at=row[7],
-            updated_at=row[8],
+            last_run_at=row[4],
+            created_at=row[5],
+            updated_at=row[6],
+        )
+
+    def update_prompt_binding(self, *, enabled: bool, last_run_at: Optional[datetime.datetime], id: str) -> Optional[models.PromptBinding]:
+        row = self._conn.execute(sqlalchemy.text(UPDATE_PROMPT_BINDING), {"p1": enabled, "p2": last_run_at, "p3": id}).first()
+        if row is None:
+            return None
+        return models.PromptBinding(
+            id=row[0],
+            camera_group_id=row[1],
+            prompt_id=row[2],
+            enabled=row[3],
+            last_run_at=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
 
@@ -145,15 +157,13 @@ class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
 
-    async def create_prompt_binding(self, arg: CreatePromptBindingParams) -> Optional[models.PromptBinding]:
+    async def create_prompt_binding(self, *, id: Optional[Any], camera_group_id: str, prompt_id: str, enabled: Optional[Any], last_run_at: Optional[datetime.datetime]) -> Optional[models.PromptBinding]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_PROMPT_BINDING), {
-            "p1": arg.id,
-            "p2": arg.camera_group_id,
-            "p3": arg.prompt_id,
-            "p4": arg.enabled,
-            "p5": arg.scan_frequency,
-            "p6": arg.priority_override,
-            "p7": arg.max_estimated_cost_override,
+            "p1": id,
+            "p2": camera_group_id,
+            "p3": prompt_id,
+            "p4": enabled,
+            "p5": last_run_at,
         })).first()
         if row is None:
             return None
@@ -162,15 +172,26 @@ class AsyncQuerier:
             camera_group_id=row[1],
             prompt_id=row[2],
             enabled=row[3],
-            scan_frequency=row[4],
-            priority_override=row[5],
-            max_estimated_cost_override=row[6],
-            created_at=row[7],
-            updated_at=row[8],
+            last_run_at=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
     async def delete_prompt_binding(self, *, id: str) -> None:
         await self._conn.execute(sqlalchemy.text(DELETE_PROMPT_BINDING), {"p1": id})
+
+    async def list_enabled_prompt_bindings(self, *, offset_count: int, limit_count: int) -> AsyncIterator[models.PromptBinding]:
+        result = await self._conn.stream(sqlalchemy.text(LIST_ENABLED_PROMPT_BINDINGS), {"p1": offset_count, "p2": limit_count})
+        async for row in result:
+            yield models.PromptBinding(
+                id=row[0],
+                camera_group_id=row[1],
+                prompt_id=row[2],
+                enabled=row[3],
+                last_run_at=row[4],
+                created_at=row[5],
+                updated_at=row[6],
+            )
 
     async def list_prompt_bindings_for_camera_group(self, *, camera_group_id: str) -> AsyncIterator[models.PromptBinding]:
         result = await self._conn.stream(sqlalchemy.text(LIST_PROMPT_BINDINGS_FOR_CAMERA_GROUP), {"p1": camera_group_id})
@@ -180,21 +201,13 @@ class AsyncQuerier:
                 camera_group_id=row[1],
                 prompt_id=row[2],
                 enabled=row[3],
-                scan_frequency=row[4],
-                priority_override=row[5],
-                max_estimated_cost_override=row[6],
-                created_at=row[7],
-                updated_at=row[8],
+                last_run_at=row[4],
+                created_at=row[5],
+                updated_at=row[6],
             )
 
-    async def update_prompt_binding(self, *, enabled: bool, scan_frequency: str, priority_override: Optional[str], max_estimated_cost_override: Optional[decimal.Decimal], id: str) -> Optional[models.PromptBinding]:
-        row = (await self._conn.execute(sqlalchemy.text(UPDATE_PROMPT_BINDING), {
-            "p1": enabled,
-            "p2": scan_frequency,
-            "p3": priority_override,
-            "p4": max_estimated_cost_override,
-            "p5": id,
-        })).first()
+    async def mark_prompt_binding_ran(self, *, id: str) -> Optional[models.PromptBinding]:
+        row = (await self._conn.execute(sqlalchemy.text(MARK_PROMPT_BINDING_RAN), {"p1": id})).first()
         if row is None:
             return None
         return models.PromptBinding(
@@ -202,9 +215,21 @@ class AsyncQuerier:
             camera_group_id=row[1],
             prompt_id=row[2],
             enabled=row[3],
-            scan_frequency=row[4],
-            priority_override=row[5],
-            max_estimated_cost_override=row[6],
-            created_at=row[7],
-            updated_at=row[8],
+            last_run_at=row[4],
+            created_at=row[5],
+            updated_at=row[6],
+        )
+
+    async def update_prompt_binding(self, *, enabled: bool, last_run_at: Optional[datetime.datetime], id: str) -> Optional[models.PromptBinding]:
+        row = (await self._conn.execute(sqlalchemy.text(UPDATE_PROMPT_BINDING), {"p1": enabled, "p2": last_run_at, "p3": id})).first()
+        if row is None:
+            return None
+        return models.PromptBinding(
+            id=row[0],
+            camera_group_id=row[1],
+            prompt_id=row[2],
+            enabled=row[3],
+            last_run_at=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )

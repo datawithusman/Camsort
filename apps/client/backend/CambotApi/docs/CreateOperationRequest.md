@@ -4,26 +4,19 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**operationType** | **String** |  | 
-**target** | [**EstimateOperationRequestTarget**](EstimateOperationRequestTarget.md) |  | 
-**savedPromptId** | **String** |  | [optional] 
-**temporaryPromptText** | **String** |  | [optional] 
-**maxEstimatedCost** | **Number** |  | [optional] 
+**promptId** | **String** |  | 
+**cameraGroupId** | **String** |  | 
+**trigger** | **String** |  | [optional] 
+**promptBindingId** | **String** | Set for operations created from a scheduled prompt binding. | [optional] 
 
 
 
-## Enum: OperationTypeEnum
+## Enum: TriggerEnum
 
 
-* `find` (value: `"find"`)
+* `manual` (value: `"manual"`)
 
-* `sort` (value: `"sort"`)
-
-* `scan` (value: `"scan"`)
-
-* `summarize` (value: `"summarize"`)
-
-* `monitor` (value: `"monitor"`)
+* `scheduled` (value: `"scheduled"`)
 
 
 

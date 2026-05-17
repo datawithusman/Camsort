@@ -6,9 +6,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **scans_today** | **int** |  | [optional] 
+**scans_yesterday** | **int** |  | [optional] 
 **scans_this_month** | **int** |  | [optional] 
 **estimated_cost_today** | **float** |  | [optional] 
+**estimated_cost_yesterday** | **float** |  | [optional] 
 **estimated_cost_this_month** | **float** |  | [optional] 
+**projected_cost_per_day** | **float** |  | [optional] 
+**projected_cost_this_month** | **float** |  | [optional] 
 **remaining_daily_budget** | **float** |  | [optional] 
 **remaining_monthly_budget** | **float** |  | [optional] 
 **last_updated_at** | **datetime** |  | [optional] 

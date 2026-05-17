@@ -9,6 +9,12 @@ from app.clients.camera_system_client import CameraSystemClient, CameraSystemCli
 from app.db.connection import check_database_connection
 from repositories.camera_frame_refs_repository import CameraFrameRefsRepository
 from repositories.camera_groups_repository import CameraGroupsRepository
+from repositories.saved_prompts_repository import SavedPromptsRepository
+from repositories.prompt_bindings_repository import PromptBindingsRepository
+from repositories.operations_repository import OperationsRepository
+from repositories.operator_queue_repository import OperatorQueueRepository
+from repositories.settings_repository import SettingsRepository
+from repositories.usage_repository import UsageRepository
 
 
 app = FastAPI(title="CamBot REST API")
@@ -260,6 +266,17 @@ def get_camera_group(group_id: str) -> JsonObject:
     return group
 
 
+@app.get("/camera-groups/{group_id}/stats")
+def get_camera_group_stats(group_id: str) -> JsonObject:
+    repo = CameraGroupsRepository()
+    group = repo.get_camera_group(group_id)
+
+    if group is None:
+        not_found("Camera group", group_id)
+
+    return group.get("stats") or {}
+
+
 @app.put("/camera-groups/{group_id}")
 def update_camera_group(group_id: str, payload: JsonObject) -> JsonObject:
     repo = CameraGroupsRepository()
@@ -301,6 +318,242 @@ def delete_camera_group(group_id: str) -> Response:
         not_found("Camera group", group_id)
 
     return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# Prompt library
+# ---------------------------------------------------------------------------
+
+@app.get("/saved-prompts")
+def list_saved_prompts() -> JsonObject:
+    return {"prompts": SavedPromptsRepository().list_saved_prompts()}
+
+
+@app.post("/saved-prompts", status_code=201)
+def create_saved_prompt(payload: JsonObject) -> JsonObject:
+    return SavedPromptsRepository().create_saved_prompt(payload)
+
+
+@app.get("/saved-prompts/{prompt_id}")
+def get_saved_prompt(prompt_id: str) -> JsonObject:
+    prompt = SavedPromptsRepository().get_saved_prompt(prompt_id)
+    if prompt is None:
+        not_found("Saved prompt", prompt_id)
+    return prompt
+
+
+@app.put("/saved-prompts/{prompt_id}")
+def update_saved_prompt(prompt_id: str, payload: JsonObject) -> JsonObject:
+    prompt = SavedPromptsRepository().update_saved_prompt(prompt_id, payload)
+    if prompt is None:
+        not_found("Saved prompt", prompt_id)
+    return prompt
+
+
+@app.delete("/saved-prompts/{prompt_id}", status_code=204)
+def delete_saved_prompt(prompt_id: str) -> Response:
+    deleted = SavedPromptsRepository().delete_saved_prompt(prompt_id)
+    if not deleted:
+        not_found("Saved prompt", prompt_id)
+    return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# Prompt bindings: prompt + camera group. Global Gemini settings control continuous scan interval.
+# ---------------------------------------------------------------------------
+
+@app.get("/camera-groups/{group_id}/prompt-bindings")
+def list_camera_group_prompt_bindings(group_id: str) -> JsonObject:
+    return {"bindings": PromptBindingsRepository().list_for_camera_group(group_id)}
+
+
+@app.post("/camera-groups/{group_id}/prompt-bindings", status_code=201)
+def create_camera_group_prompt_binding(group_id: str, payload: JsonObject) -> JsonObject:
+    # Validate camera group exists so typo'd bindings fail clearly.
+    if CameraGroupsRepository().get_camera_group(group_id) is None:
+        not_found("Camera group", group_id)
+    if SavedPromptsRepository().get_saved_prompt(payload["promptId"]) is None:
+        not_found("Saved prompt", payload["promptId"])
+    return PromptBindingsRepository().create_binding(group_id, payload)
+
+
+@app.put("/camera-groups/{group_id}/prompt-bindings/{binding_id}")
+def update_camera_group_prompt_binding(group_id: str, binding_id: str, payload: JsonObject) -> JsonObject:
+    binding = PromptBindingsRepository().update_binding(group_id, binding_id, payload)
+    if binding is None:
+        not_found("Prompt binding", binding_id)
+    return binding
+
+
+@app.delete("/camera-groups/{group_id}/prompt-bindings/{binding_id}", status_code=204)
+def delete_camera_group_prompt_binding(group_id: str, binding_id: str) -> Response:
+    deleted = PromptBindingsRepository().delete_binding(group_id, binding_id)
+    if not deleted:
+        not_found("Prompt binding", binding_id)
+    return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# Operations and operation results
+# ---------------------------------------------------------------------------
+
+
+def _operation_estimate(prompt_id: str, camera_group_id: str) -> JsonObject:
+    prompt = SavedPromptsRepository().get_saved_prompt(prompt_id)
+    group = CameraGroupsRepository().get_camera_group(camera_group_id)
+
+    if prompt is None:
+        not_found("Saved prompt", prompt_id)
+    if group is None:
+        not_found("Camera group", camera_group_id)
+
+    camera_count = len(group.get("cameraIds") or [])
+    estimated_calls = camera_count
+    # Placeholder until pricing/token estimates are implemented in GeminiCaller.
+    estimated_token_count = camera_count * 1024
+    estimated_cost = 0.0
+
+    return {
+        "allowed": True,
+        "restrictionReason": None,
+        "estimatedCameraCount": camera_count,
+        "estimatedGeminiCalls": estimated_calls,
+        "estimatedTokenCount": estimated_token_count,
+        "estimatedCost": estimated_cost,
+    }
+
+
+@app.post("/operations/estimate")
+def estimate_operation(payload: JsonObject) -> JsonObject:
+    return _operation_estimate(payload["promptId"], payload["cameraGroupId"])
+
+
+@app.get("/operations")
+def list_operations(
+    prompt_id: str | None = Query(default=None, alias="promptId"),
+    camera_group_id: str | None = Query(default=None, alias="cameraGroupId"),
+    status: str | None = None,
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> JsonObject:
+    return {
+        "operations": OperationsRepository().list_operations(
+            prompt_id=prompt_id,
+            camera_group_id=camera_group_id,
+            status=status,
+            limit_count=limit,
+            offset_count=offset,
+        )
+    }
+
+
+@app.post("/operations", status_code=201)
+def create_operation(payload: JsonObject) -> JsonObject:
+    estimate = _operation_estimate(payload["promptId"], payload["cameraGroupId"])
+    return OperationsRepository().create_operation(
+        payload,
+        total_cameras=estimate["estimatedCameraCount"],
+        estimated_calls=estimate["estimatedGeminiCalls"],
+        estimated_cost=estimate["estimatedCost"],
+    )
+
+
+@app.get("/operations/{operation_id}")
+def get_operation(operation_id: str) -> JsonObject:
+    operation = OperationsRepository().get_operation(operation_id)
+    if operation is None:
+        not_found("Operation", operation_id)
+    return operation
+
+
+@app.get("/operations/{operation_id}/results")
+def list_operation_results(
+    operation_id: str,
+    include: bool | None = Query(default=None),
+) -> JsonObject:
+    if OperationsRepository().get_operation(operation_id) is None:
+        not_found("Operation", operation_id)
+    return {
+        "results": OperationsRepository().list_results(operation_id, include=include)
+    }
+
+
+# ---------------------------------------------------------------------------
+# Operator action queue
+# ---------------------------------------------------------------------------
+
+@app.get("/operator-queue")
+def list_operator_queue_items(
+    status: str | None = None,
+    limit: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> JsonObject:
+    return {
+        "items": OperatorQueueRepository().list_items(
+            status=status,
+            limit_count=limit,
+            offset_count=offset,
+        )
+    }
+
+
+@app.post("/operator-queue", status_code=201)
+def create_operator_queue_item(payload: JsonObject) -> JsonObject:
+    if OperationsRepository().get_result(payload["operationResultId"]) is None:
+        not_found("Operation result", payload["operationResultId"])
+    return OperatorQueueRepository().create_from_result(payload)
+
+
+@app.put("/operator-queue/{queue_item_id}")
+def update_operator_queue_item(queue_item_id: str, payload: JsonObject) -> JsonObject:
+    item = OperatorQueueRepository().update_status(queue_item_id, payload)
+    if item is None:
+        not_found("Operator queue item", queue_item_id)
+    return item
+
+
+# ---------------------------------------------------------------------------
+# Settings and usage summary
+# ---------------------------------------------------------------------------
+
+@app.get("/settings/gemini")
+def get_gemini_caller_settings() -> JsonObject:
+    settings = SettingsRepository().get_gemini()
+    if settings is None:
+        not_found("Gemini caller settings", "singleton")
+    return settings
+
+
+@app.put("/settings/gemini")
+def update_gemini_caller_settings(payload: JsonObject) -> JsonObject:
+    settings = SettingsRepository().update_gemini(payload)
+    if settings is None:
+        not_found("Gemini caller settings", "singleton")
+    return settings
+
+
+@app.get("/settings/usage-limits")
+def get_usage_limit_settings() -> JsonObject:
+    settings = SettingsRepository().get_usage_limits()
+    if settings is None:
+        not_found("Usage limit settings", "singleton")
+    return settings
+
+
+@app.put("/settings/usage-limits")
+def update_usage_limit_settings(payload: JsonObject) -> JsonObject:
+    settings = SettingsRepository().update_usage_limits(payload)
+    if settings is None:
+        not_found("Usage limit settings", "singleton")
+    return settings
+
+
+@app.get("/usage/summary")
+def get_usage_summary(
+    camera_id: str | None = Query(default=None, alias="cameraId"),
+    camera_group_id: str | None = Query(default=None, alias="cameraGroupId"),
+) -> JsonObject:
+    return UsageRepository().summary(camera_id=camera_id, camera_group_id=camera_group_id)
 
 
 @app.get("/debug/routes")

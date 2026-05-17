@@ -36,9 +36,7 @@ class TestUpdateCameraGroupPromptBindingRequest(unittest.TestCase):
         if include_optional:
             return UpdateCameraGroupPromptBindingRequest(
                 enabled = True,
-                scan_frequency = 'manual',
-                priority_override = 'low',
-                max_estimated_cost_override = 1.337
+                last_run_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f')
             )
         else:
             return UpdateCameraGroupPromptBindingRequest(

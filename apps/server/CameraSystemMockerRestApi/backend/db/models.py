@@ -39,9 +39,13 @@ class GeminiCallerSetting:
     id: bool
     enabled: bool
     model_name: str
-    max_requests_per_minute: int
+    continuous_scan_enabled: bool
+    continuous_scan_interval_seconds: int
+    last_continuous_scan_at: Optional[datetime.datetime]
+    next_continuous_scan_at: Optional[datetime.datetime]
+    gemini_call_delay_ms: int
+    max_concurrent_gemini_calls: int
     max_tokens_per_request: int
-    max_cost_per_operation: decimal.Decimal
     max_cost_per_day: decimal.Decimal
     max_cost_per_month: decimal.Decimal
     allow_emergency_override: bool
@@ -51,22 +55,20 @@ class GeminiCallerSetting:
 @dataclasses.dataclass()
 class Operation:
     id: str
-    operation_type: str
+    prompt_id: str
+    camera_group_id: str
+    prompt_binding_id: Optional[str]
+    trigger: str
     status: str
-    target_type: str
-    target_camera_id: Optional[str]
-    target_camera_group_id: Optional[str]
-    saved_prompt_id: Optional[str]
-    temporary_prompt_text: Optional[str]
-    allowed: Optional[bool]
-    restriction_reason: Optional[str]
-    estimated_camera_count: int
-    estimated_prompt_count: int
-    estimated_token_count: int
-    estimated_cost: decimal.Decimal
-    max_estimated_cost: Optional[decimal.Decimal]
+    total_cameras: int
+    processed_cameras: int
+    matched_cameras: int
+    estimated_gemini_calls: Optional[int]
+    estimated_token_count: Optional[int]
+    estimated_cost: Optional[decimal.Decimal]
+    actual_gemini_calls: Optional[int]
+    actual_cost: Optional[decimal.Decimal]
     error_message: Optional[str]
-    result_json: Any
     created_at: datetime.datetime
     started_at: Optional[datetime.datetime]
     completed_at: Optional[datetime.datetime]
@@ -81,19 +83,37 @@ class OperationFrameRef:
 
 
 @dataclasses.dataclass()
-class OperatorQueueItem:
+class OperationResult:
     id: str
-    operation_id: Optional[str]
+    operation_id: str
     camera_id: str
     camera_group_id: Optional[str]
-    saved_prompt_id: Optional[str]
-    title: str
-    description: str
-    recommended_action: Optional[str]
-    confidence: decimal.Decimal
-    urgency: decimal.Decimal
-    risk: decimal.Decimal
-    overall: decimal.Decimal
+    prompt_id: Optional[str]
+    frame_ref_id: str
+    frame_url: str
+    include: bool
+    prompt_match_score: decimal.Decimal
+    operator_priority_score: decimal.Decimal
+    recommended_action: str
+    reason: str
+    raw_model_json: Optional[Any]
+    created_at: datetime.datetime
+
+
+@dataclasses.dataclass()
+class OperatorQueueItem:
+    id: str
+    operation_result_id: str
+    operation_id: str
+    camera_id: str
+    camera_group_id: Optional[str]
+    prompt_id: Optional[str]
+    frame_ref_id: str
+    frame_url: str
+    recommended_action: str
+    reason: str
+    prompt_match_score: decimal.Decimal
+    operator_priority_score: decimal.Decimal
     status: str
     operator_note: Optional[str]
     created_at: datetime.datetime
@@ -106,9 +126,7 @@ class PromptBinding:
     camera_group_id: str
     prompt_id: str
     enabled: bool
-    scan_frequency: str
-    priority_override: Optional[str]
-    max_estimated_cost_override: Optional[decimal.Decimal]
+    last_run_at: Optional[datetime.datetime]
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
@@ -117,11 +135,8 @@ class PromptBinding:
 class SavedPrompt:
     id: str
     name: str
-    prompt_type: str
     description: Optional[str]
     prompt_text: str
-    default_priority: str
-    default_max_estimated_cost: Optional[decimal.Decimal]
     enabled: bool
     created_at: datetime.datetime
     updated_at: datetime.datetime

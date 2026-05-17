@@ -5,11 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**operation_type** | **str** |  | 
-**target** | [**EstimateOperationRequestTarget**](EstimateOperationRequestTarget.md) |  | 
-**saved_prompt_id** | **str** |  | [optional] 
-**temporary_prompt_text** | **str** |  | [optional] 
-**max_estimated_cost** | **float** |  | [optional] 
+**prompt_id** | **str** |  | 
+**camera_group_id** | **str** |  | 
+**trigger** | **str** |  | [optional] 
+**prompt_binding_id** | **str** | Set for operations created from a scheduled prompt binding. | [optional] 
 
 ## Example
 

@@ -68,6 +68,36 @@
         done();
       });
     });
+    describe('getOperation', function() {
+      it('should call getOperation successfully', function(done) {
+        //uncomment below and update the code to test getOperation
+        //instance.getOperation(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
+    describe('listOperationResults', function() {
+      it('should call listOperationResults successfully', function(done) {
+        //uncomment below and update the code to test listOperationResults
+        //instance.listOperationResults(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
+    describe('listOperations', function() {
+      it('should call listOperations successfully', function(done) {
+        //uncomment below and update the code to test listOperations
+        //instance.listOperations(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
   });
 
 }));

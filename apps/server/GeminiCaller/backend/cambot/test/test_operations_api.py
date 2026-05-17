@@ -29,14 +29,35 @@ class TestOperationsApi(unittest.TestCase):
     def test_create_operation(self) -> None:
         """Test case for create_operation
 
-        Start an AI operation
+        Create a prompt scan operation
         """
         pass
 
     def test_estimate_operation(self) -> None:
         """Test case for estimate_operation
 
-        Estimate operation usage and cost
+        Estimate prompt scan usage and cost
+        """
+        pass
+
+    def test_get_operation(self) -> None:
+        """Test case for get_operation
+
+        Get a prompt scan operation
+        """
+        pass
+
+    def test_list_operation_results(self) -> None:
+        """Test case for list_operation_results
+
+        List Gemini camera results for an operation
+        """
+        pass
+
+    def test_list_operations(self) -> None:
+        """Test case for list_operations
+
+        List prompt scan operations
         """
         pass
 

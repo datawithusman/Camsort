@@ -35,21 +35,13 @@ class TestEstimateOperationRequest(unittest.TestCase):
         model = EstimateOperationRequest()
         if include_optional:
             return EstimateOperationRequest(
-                operation_type = 'find',
-                target = cambot_dtos.models.estimate_operation_request_target.estimateOperation_request_target(
-                    type = 'camera', 
-                    camera_id = '', 
-                    camera_group_id = '', ),
-                saved_prompt_id = '',
-                temporary_prompt_text = ''
+                prompt_id = '',
+                camera_group_id = ''
             )
         else:
             return EstimateOperationRequest(
-                operation_type = 'find',
-                target = cambot_dtos.models.estimate_operation_request_target.estimateOperation_request_target(
-                    type = 'camera', 
-                    camera_id = '', 
-                    camera_group_id = '', ),
+                prompt_id = '',
+                camera_group_id = '',
         )
         """
 

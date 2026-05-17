@@ -29,10 +29,10 @@ class EstimateOperation200Response(BaseModel):
     allowed: StrictBool
     restriction_reason: Optional[StrictStr] = Field(default=None, alias="restrictionReason")
     estimated_camera_count: StrictInt = Field(alias="estimatedCameraCount")
-    estimated_prompt_count: Optional[StrictInt] = Field(default=None, alias="estimatedPromptCount")
+    estimated_gemini_calls: StrictInt = Field(alias="estimatedGeminiCalls")
     estimated_token_count: Optional[StrictInt] = Field(default=None, alias="estimatedTokenCount")
     estimated_cost: Union[StrictFloat, StrictInt] = Field(alias="estimatedCost")
-    __properties: ClassVar[List[str]] = ["allowed", "restrictionReason", "estimatedCameraCount", "estimatedPromptCount", "estimatedTokenCount", "estimatedCost"]
+    __properties: ClassVar[List[str]] = ["allowed", "restrictionReason", "estimatedCameraCount", "estimatedGeminiCalls", "estimatedTokenCount", "estimatedCost"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -88,7 +88,7 @@ class EstimateOperation200Response(BaseModel):
             "allowed": obj.get("allowed"),
             "restrictionReason": obj.get("restrictionReason"),
             "estimatedCameraCount": obj.get("estimatedCameraCount"),
-            "estimatedPromptCount": obj.get("estimatedPromptCount"),
+            "estimatedGeminiCalls": obj.get("estimatedGeminiCalls"),
             "estimatedTokenCount": obj.get("estimatedTokenCount"),
             "estimatedCost": obj.get("estimatedCost")
         })

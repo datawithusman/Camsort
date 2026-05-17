@@ -17,6 +17,7 @@ import pprint
 import re  # noqa: F401
 import json
 
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt
 from typing import Any, ClassVar, Dict, List, Optional, Union
 from typing import Optional, Set
@@ -31,7 +32,8 @@ class GetUsageLimitSettings200Response(BaseModel):
     max_estimated_cost_per_day: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxEstimatedCostPerDay")
     max_estimated_cost_per_month: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxEstimatedCostPerMonth")
     block_operations_when_limit_reached: Optional[StrictBool] = Field(default=None, alias="blockOperationsWhenLimitReached")
-    __properties: ClassVar[List[str]] = ["maxScansPerDay", "maxScansPerMonth", "maxEstimatedCostPerDay", "maxEstimatedCostPerMonth", "blockOperationsWhenLimitReached"]
+    updated_at: Optional[datetime] = Field(default=None, alias="updatedAt")
+    __properties: ClassVar[List[str]] = ["maxScansPerDay", "maxScansPerMonth", "maxEstimatedCostPerDay", "maxEstimatedCostPerMonth", "blockOperationsWhenLimitReached", "updatedAt"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -88,7 +90,8 @@ class GetUsageLimitSettings200Response(BaseModel):
             "maxScansPerMonth": obj.get("maxScansPerMonth"),
             "maxEstimatedCostPerDay": obj.get("maxEstimatedCostPerDay"),
             "maxEstimatedCostPerMonth": obj.get("maxEstimatedCostPerMonth"),
-            "blockOperationsWhenLimitReached": obj.get("blockOperationsWhenLimitReached")
+            "blockOperationsWhenLimitReached": obj.get("blockOperationsWhenLimitReached"),
+            "updatedAt": obj.get("updatedAt")
         })
         return _obj
 

@@ -60,12 +60,6 @@
       //expect(instance).to.be();
     });
 
-    it('should have the property promptType (base name: "promptType")', function() {
-      // uncomment below and update the code to test the property promptType
-      //var instance = new CambotApi.UpdateSavedPromptRequest();
-      //expect(instance).to.be();
-    });
-
     it('should have the property description (base name: "description")', function() {
       // uncomment below and update the code to test the property description
       //var instance = new CambotApi.UpdateSavedPromptRequest();
@@ -74,18 +68,6 @@
 
     it('should have the property promptText (base name: "promptText")', function() {
       // uncomment below and update the code to test the property promptText
-      //var instance = new CambotApi.UpdateSavedPromptRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property defaultPriority (base name: "defaultPriority")', function() {
-      // uncomment below and update the code to test the property defaultPriority
-      //var instance = new CambotApi.UpdateSavedPromptRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property defaultMaxEstimatedCost (base name: "defaultMaxEstimatedCost")', function() {
-      // uncomment below and update the code to test the property defaultMaxEstimatedCost
       //var instance = new CambotApi.UpdateSavedPromptRequest();
       //expect(instance).to.be();
     });

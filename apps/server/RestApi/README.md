@@ -158,3 +158,19 @@ CAMERA_SYSTEM_TIMEOUT_SECONDS=30
 ```
 
 `Containerfile` sets `PYTHONPATH` so the generated clients can be imported from inside `backend/`.
+
+## Prompt scan/operator-priority routes
+
+This package has been updated for the prompt-scan model generated from the current contracts:
+
+- saved prompts: `/saved-prompts`
+- prompt bindings: `/camera-groups/{groupId}/prompt-bindings`
+- operations: `/operations`, `/operations/{operationId}/results`
+- operator queue: `/operator-queue`
+- settings: `/settings/gemini`, `/settings/usage-limits`
+- usage dashboard summary: `/usage/summary`
+
+The operation execution worker/Gemini caller is still expected to process queued operations separately. RestApi owns CRUD/list endpoints and stores/returns the generated DB contract shapes.
+
+
+Global continuous-scan model: prompt bindings only connect a prompt to a camera group. `gemini_caller_settings.continuous_scan_interval_seconds` controls the interval for all enabled prompt bindings. `gemini_call_delay_ms` controls pacing between individual Gemini image calls.

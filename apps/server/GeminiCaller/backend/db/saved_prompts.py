@@ -2,8 +2,6 @@
 # versions:
 #   sqlc v1.31.1
 # source: saved_prompts.sql
-import dataclasses
-import decimal
 from typing import Any, AsyncIterator, Iterator, Optional
 
 import sqlalchemy
@@ -16,11 +14,8 @@ CREATE_SAVED_PROMPT = """-- name: create_saved_prompt \\:one
 INSERT INTO saved_prompts (
   id,
   name,
-  prompt_type,
   description,
   prompt_text,
-  default_priority,
-  default_max_estimated_cost,
   enabled
 )
 VALUES (
@@ -28,25 +23,10 @@ VALUES (
   :p2,
   :p3,
   :p4,
-  :p5,
-  COALESCE(:p6, 'normal'),
-  :p7,
-  COALESCE(:p8, true)
+  COALESCE(:p5, true)
 )
-RETURNING id, name, prompt_type, description, prompt_text, default_priority, default_max_estimated_cost, enabled, created_at, updated_at
+RETURNING id, name, description, prompt_text, enabled, created_at, updated_at
 """
-
-
-@dataclasses.dataclass()
-class CreateSavedPromptParams:
-    id: Optional[Any]
-    name: str
-    prompt_type: str
-    description: Optional[str]
-    prompt_text: str
-    default_priority: Optional[Any]
-    default_max_estimated_cost: Optional[decimal.Decimal]
-    enabled: Optional[Any]
 
 
 DELETE_SAVED_PROMPT = """-- name: delete_saved_prompt \\:exec
@@ -56,14 +36,14 @@ WHERE id = :p1
 
 
 GET_SAVED_PROMPT = """-- name: get_saved_prompt \\:one
-SELECT id, name, prompt_type, description, prompt_text, default_priority, default_max_estimated_cost, enabled, created_at, updated_at
+SELECT id, name, description, prompt_text, enabled, created_at, updated_at
 FROM saved_prompts
 WHERE id = :p1
 """
 
 
 LIST_SAVED_PROMPTS = """-- name: list_saved_prompts \\:many
-SELECT id, name, prompt_type, description, prompt_text, default_priority, default_max_estimated_cost, enabled, created_at, updated_at
+SELECT id, name, description, prompt_text, enabled, created_at, updated_at
 FROM saved_prompts
 ORDER BY created_at DESC
 """
@@ -73,57 +53,36 @@ UPDATE_SAVED_PROMPT = """-- name: update_saved_prompt \\:one
 UPDATE saved_prompts
 SET
   name = COALESCE(:p1, name),
-  prompt_type = COALESCE(:p2, prompt_type),
-  description = COALESCE(:p3, description),
-  prompt_text = COALESCE(:p4, prompt_text),
-  default_priority = COALESCE(:p5, default_priority),
-  default_max_estimated_cost = COALESCE(:p6, default_max_estimated_cost),
-  enabled = COALESCE(:p7, enabled)
-WHERE id = :p8
-RETURNING id, name, prompt_type, description, prompt_text, default_priority, default_max_estimated_cost, enabled, created_at, updated_at
+  description = COALESCE(:p2, description),
+  prompt_text = COALESCE(:p3, prompt_text),
+  enabled = COALESCE(:p4, enabled)
+WHERE id = :p5
+RETURNING id, name, description, prompt_text, enabled, created_at, updated_at
 """
-
-
-@dataclasses.dataclass()
-class UpdateSavedPromptParams:
-    name: str
-    prompt_type: str
-    description: Optional[str]
-    prompt_text: str
-    default_priority: str
-    default_max_estimated_cost: Optional[decimal.Decimal]
-    enabled: bool
-    id: str
 
 
 class Querier:
     def __init__(self, conn: sqlalchemy.engine.Connection):
         self._conn = conn
 
-    def create_saved_prompt(self, arg: CreateSavedPromptParams) -> Optional[models.SavedPrompt]:
+    def create_saved_prompt(self, *, id: Optional[Any], name: str, description: Optional[str], prompt_text: str, enabled: Optional[Any]) -> Optional[models.SavedPrompt]:
         row = self._conn.execute(sqlalchemy.text(CREATE_SAVED_PROMPT), {
-            "p1": arg.id,
-            "p2": arg.name,
-            "p3": arg.prompt_type,
-            "p4": arg.description,
-            "p5": arg.prompt_text,
-            "p6": arg.default_priority,
-            "p7": arg.default_max_estimated_cost,
-            "p8": arg.enabled,
+            "p1": id,
+            "p2": name,
+            "p3": description,
+            "p4": prompt_text,
+            "p5": enabled,
         }).first()
         if row is None:
             return None
         return models.SavedPrompt(
             id=row[0],
             name=row[1],
-            prompt_type=row[2],
-            description=row[3],
-            prompt_text=row[4],
-            default_priority=row[5],
-            default_max_estimated_cost=row[6],
-            enabled=row[7],
-            created_at=row[8],
-            updated_at=row[9],
+            description=row[2],
+            prompt_text=row[3],
+            enabled=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
     def delete_saved_prompt(self, *, id: str) -> None:
@@ -136,14 +95,11 @@ class Querier:
         return models.SavedPrompt(
             id=row[0],
             name=row[1],
-            prompt_type=row[2],
-            description=row[3],
-            prompt_text=row[4],
-            default_priority=row[5],
-            default_max_estimated_cost=row[6],
-            enabled=row[7],
-            created_at=row[8],
-            updated_at=row[9],
+            description=row[2],
+            prompt_text=row[3],
+            enabled=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
     def list_saved_prompts(self) -> Iterator[models.SavedPrompt]:
@@ -152,40 +108,31 @@ class Querier:
             yield models.SavedPrompt(
                 id=row[0],
                 name=row[1],
-                prompt_type=row[2],
-                description=row[3],
-                prompt_text=row[4],
-                default_priority=row[5],
-                default_max_estimated_cost=row[6],
-                enabled=row[7],
-                created_at=row[8],
-                updated_at=row[9],
+                description=row[2],
+                prompt_text=row[3],
+                enabled=row[4],
+                created_at=row[5],
+                updated_at=row[6],
             )
 
-    def update_saved_prompt(self, arg: UpdateSavedPromptParams) -> Optional[models.SavedPrompt]:
+    def update_saved_prompt(self, *, name: str, description: Optional[str], prompt_text: str, enabled: bool, id: str) -> Optional[models.SavedPrompt]:
         row = self._conn.execute(sqlalchemy.text(UPDATE_SAVED_PROMPT), {
-            "p1": arg.name,
-            "p2": arg.prompt_type,
-            "p3": arg.description,
-            "p4": arg.prompt_text,
-            "p5": arg.default_priority,
-            "p6": arg.default_max_estimated_cost,
-            "p7": arg.enabled,
-            "p8": arg.id,
+            "p1": name,
+            "p2": description,
+            "p3": prompt_text,
+            "p4": enabled,
+            "p5": id,
         }).first()
         if row is None:
             return None
         return models.SavedPrompt(
             id=row[0],
             name=row[1],
-            prompt_type=row[2],
-            description=row[3],
-            prompt_text=row[4],
-            default_priority=row[5],
-            default_max_estimated_cost=row[6],
-            enabled=row[7],
-            created_at=row[8],
-            updated_at=row[9],
+            description=row[2],
+            prompt_text=row[3],
+            enabled=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
 
@@ -193,30 +140,24 @@ class AsyncQuerier:
     def __init__(self, conn: sqlalchemy.ext.asyncio.AsyncConnection):
         self._conn = conn
 
-    async def create_saved_prompt(self, arg: CreateSavedPromptParams) -> Optional[models.SavedPrompt]:
+    async def create_saved_prompt(self, *, id: Optional[Any], name: str, description: Optional[str], prompt_text: str, enabled: Optional[Any]) -> Optional[models.SavedPrompt]:
         row = (await self._conn.execute(sqlalchemy.text(CREATE_SAVED_PROMPT), {
-            "p1": arg.id,
-            "p2": arg.name,
-            "p3": arg.prompt_type,
-            "p4": arg.description,
-            "p5": arg.prompt_text,
-            "p6": arg.default_priority,
-            "p7": arg.default_max_estimated_cost,
-            "p8": arg.enabled,
+            "p1": id,
+            "p2": name,
+            "p3": description,
+            "p4": prompt_text,
+            "p5": enabled,
         })).first()
         if row is None:
             return None
         return models.SavedPrompt(
             id=row[0],
             name=row[1],
-            prompt_type=row[2],
-            description=row[3],
-            prompt_text=row[4],
-            default_priority=row[5],
-            default_max_estimated_cost=row[6],
-            enabled=row[7],
-            created_at=row[8],
-            updated_at=row[9],
+            description=row[2],
+            prompt_text=row[3],
+            enabled=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
     async def delete_saved_prompt(self, *, id: str) -> None:
@@ -229,14 +170,11 @@ class AsyncQuerier:
         return models.SavedPrompt(
             id=row[0],
             name=row[1],
-            prompt_type=row[2],
-            description=row[3],
-            prompt_text=row[4],
-            default_priority=row[5],
-            default_max_estimated_cost=row[6],
-            enabled=row[7],
-            created_at=row[8],
-            updated_at=row[9],
+            description=row[2],
+            prompt_text=row[3],
+            enabled=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )
 
     async def list_saved_prompts(self) -> AsyncIterator[models.SavedPrompt]:
@@ -245,38 +183,29 @@ class AsyncQuerier:
             yield models.SavedPrompt(
                 id=row[0],
                 name=row[1],
-                prompt_type=row[2],
-                description=row[3],
-                prompt_text=row[4],
-                default_priority=row[5],
-                default_max_estimated_cost=row[6],
-                enabled=row[7],
-                created_at=row[8],
-                updated_at=row[9],
+                description=row[2],
+                prompt_text=row[3],
+                enabled=row[4],
+                created_at=row[5],
+                updated_at=row[6],
             )
 
-    async def update_saved_prompt(self, arg: UpdateSavedPromptParams) -> Optional[models.SavedPrompt]:
+    async def update_saved_prompt(self, *, name: str, description: Optional[str], prompt_text: str, enabled: bool, id: str) -> Optional[models.SavedPrompt]:
         row = (await self._conn.execute(sqlalchemy.text(UPDATE_SAVED_PROMPT), {
-            "p1": arg.name,
-            "p2": arg.prompt_type,
-            "p3": arg.description,
-            "p4": arg.prompt_text,
-            "p5": arg.default_priority,
-            "p6": arg.default_max_estimated_cost,
-            "p7": arg.enabled,
-            "p8": arg.id,
+            "p1": name,
+            "p2": description,
+            "p3": prompt_text,
+            "p4": enabled,
+            "p5": id,
         })).first()
         if row is None:
             return None
         return models.SavedPrompt(
             id=row[0],
             name=row[1],
-            prompt_type=row[2],
-            description=row[3],
-            prompt_text=row[4],
-            default_priority=row[5],
-            default_max_estimated_cost=row[6],
-            enabled=row[7],
-            created_at=row[8],
-            updated_at=row[9],
+            description=row[2],
+            prompt_text=row[3],
+            enabled=row[4],
+            created_at=row[5],
+            updated_at=row[6],
         )

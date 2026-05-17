@@ -36,9 +36,13 @@ class TestGetUsageSummary200Response(unittest.TestCase):
         if include_optional:
             return GetUsageSummary200Response(
                 scans_today = 72,
+                scans_yesterday = 63,
                 scans_this_month = 1320,
                 estimated_cost_today = 8.64,
+                estimated_cost_yesterday = 7.25,
                 estimated_cost_this_month = 158.2,
+                projected_cost_per_day = 9.1,
+                projected_cost_this_month = 281.4,
                 remaining_daily_budget = 16.36,
                 remaining_monthly_budget = 141.8,
                 last_updated_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f')

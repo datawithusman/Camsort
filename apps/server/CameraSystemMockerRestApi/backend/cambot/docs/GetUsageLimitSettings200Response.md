@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 **max_estimated_cost_per_day** | **float** |  | [optional] 
 **max_estimated_cost_per_month** | **float** |  | [optional] 
 **block_operations_when_limit_reached** | **bool** |  | [optional] 
+**updated_at** | **datetime** |  | [optional] 
 
 ## Example
 

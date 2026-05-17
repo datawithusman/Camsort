@@ -110,10 +110,10 @@ UpdateOperatorQueueItemRequest.prototype['operatorNote'] = undefined;
 UpdateOperatorQueueItemRequest['StatusEnum'] = {
 
     /**
-     * value: "pending"
+     * value: "queued"
      * @const
      */
-    "pending": "pending",
+    "queued": "queued",
 
     /**
      * value: "acknowledged"

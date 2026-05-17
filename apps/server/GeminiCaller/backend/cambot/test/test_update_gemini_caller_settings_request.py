@@ -37,9 +37,13 @@ class TestUpdateGeminiCallerSettingsRequest(unittest.TestCase):
             return UpdateGeminiCallerSettingsRequest(
                 enabled = True,
                 model_name = '',
-                max_requests_per_minute = 56,
+                continuous_scan_enabled = True,
+                continuous_scan_interval_seconds = 30,
+                last_continuous_scan_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
+                next_continuous_scan_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
+                gemini_call_delay_ms = 0,
+                max_concurrent_gemini_calls = 1,
                 max_tokens_per_request = 56,
-                max_cost_per_operation = 1.337,
                 max_cost_per_day = 1.337,
                 max_cost_per_month = 1.337,
                 allow_emergency_override = True

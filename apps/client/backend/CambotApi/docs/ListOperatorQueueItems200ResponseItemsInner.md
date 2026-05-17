@@ -5,13 +5,19 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **String** |  | 
-**operationId** | **String** |  | [optional] 
+**operationResultId** | **String** |  | 
+**operationId** | **String** |  | 
 **cameraId** | **String** |  | 
-**cameraGroupId** | **String** |  | 
-**savedPromptId** | **String** |  | [optional] 
-**action** | [**ListOperatorQueueItems200ResponseItemsInnerAction**](ListOperatorQueueItems200ResponseItemsInnerAction.md) |  | 
-**score** | [**ListOperatorQueueItems200ResponseItemsInnerScore**](ListOperatorQueueItems200ResponseItemsInnerScore.md) |  | 
+**cameraGroupId** | **String** |  | [optional] 
+**promptId** | **String** |  | [optional] 
+**frameRefId** | **String** |  | 
+**frameUrl** | **String** |  | 
+**recommendedAction** | **String** |  | 
+**reason** | **String** |  | 
+**promptMatchScore** | **Number** |  | 
+**operatorPriorityScore** | **Number** |  | 
 **status** | **String** |  | 
+**operatorNote** | **String** |  | [optional] 
 **createdAt** | **Date** |  | [optional] 
 **updatedAt** | **Date** |  | [optional] 
 
@@ -20,7 +26,7 @@ Name | Type | Description | Notes
 ## Enum: StatusEnum
 
 
-* `pending` (value: `"pending"`)
+* `queued` (value: `"queued"`)
 
 * `acknowledged` (value: `"acknowledged"`)
 

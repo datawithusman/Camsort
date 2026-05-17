@@ -35,23 +35,19 @@ class TestListSavedPrompts200ResponsePromptsInner(unittest.TestCase):
         model = ListSavedPrompts200ResponsePromptsInner()
         if include_optional:
             return ListSavedPrompts200ResponsePromptsInner(
-                id = 'prompt-after-hours-person-detection',
-                name = 'After-hours person detection',
-                prompt_type = 'sorting',
-                description = 'Find cameras where a person appears near a restricted entrance after hours.',
-                prompt_text = 'Look for a person standing near a restricted entrance after normal operating hours.',
-                default_priority = 'low',
-                default_max_estimated_cost = 5.0,
+                id = 'prompt-ice-near-entrances',
+                name = 'Ice near entrances',
+                description = 'Checks entrance snapshots for ice, snow, slick surfaces, or blocked paths.',
+                prompt_text = 'Inspect this camera snapshot for ice, snow, slick surfaces, blocked entrances, or other conditions that require staff action. Return structured JSON only.',
                 enabled = True,
                 created_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
                 updated_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f')
             )
         else:
             return ListSavedPrompts200ResponsePromptsInner(
-                id = 'prompt-after-hours-person-detection',
-                name = 'After-hours person detection',
-                prompt_type = 'sorting',
-                prompt_text = 'Look for a person standing near a restricted entrance after normal operating hours.',
+                id = 'prompt-ice-near-entrances',
+                name = 'Ice near entrances',
+                prompt_text = 'Inspect this camera snapshot for ice, snow, slick surfaces, blocked entrances, or other conditions that require staff action. Return structured JSON only.',
                 enabled = True,
         )
         """

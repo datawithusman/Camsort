@@ -12,179 +12,19 @@
   </head>
   <body>
     <div id="app" class="app-shell">
-      <section id="login-view" class="login-view">
-        <div class="login-card">
-          <div class="brand-row">
-            <div class="brand-glyph">CB</div>
-            <div>
-              <h1>CamBot</h1>
-              <p>Prompt camera lists from saved snapshots</p>
-            </div>
-          </div>
-
-          <form id="login-form" class="login-form">
-            <label>
-              Username
-              <input id="login-user" autocomplete="username" placeholder="admin" />
-            </label>
-            <label>
-              Password
-              <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••" />
-            </label>
-            <button type="submit">Connect</button>
-          </form>
-
-          <p class="login-note">
-            Dev login is remembered in this browser until logout so the dashboard does not stack underneath the login form.
-          </p>
-          <p id="login-error" class="error-text" hidden></p>
-        </div>
-      </section>
-
+      <section id="login-view" class="login-view"><div class="login-card"><div class="brand-row"><div class="brand-glyph">CB</div><div><h1>CamBot</h1><p>Prompt camera lists from saved snapshots</p></div></div><form id="login-form" class="login-form"><label>Username<input id="login-user" autocomplete="username" placeholder="admin" /></label><label>Password<input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••" /></label><button type="submit">Connect</button></form><p class="login-note">Dev login is remembered in this browser until logout.</p><p id="login-error" class="error-text" hidden></p></div></section>
       <section id="dashboard-view" class="dashboard-view" hidden>
-        <header class="topbar">
-          <div class="topbar-brand">
-            <span class="brand-glyph compact">CB</span>
-            <div>
-              <strong>CamBot</strong>
-              <small>RestApi prompt workflow</small>
-            </div>
-          </div>
-
-          <div class="health-pill" id="health-pill">checking...</div>
-
-          <div class="topbar-actions">
-            <button id="refresh-cameras-btn" class="ghost-button">Refresh</button>
-            <button id="logout-btn" class="ghost-button danger">Logout</button>
-          </div>
-        </header>
-
-        <main class="dashboard-layout">
-          <aside class="control-panel">
-            <section class="panel selected-prompt-panel">
-              <p class="eyebrow">Run Prompt</p>
-              <h2 id="results-title">No prompt selected</h2>
-              <p id="results-subtitle" class="muted-line">Create or select a prompt, then run a scan.</p>
-
-              <div class="run-stack">
-                <label>
-                  Selected prompt
-                  <select id="selected-prompt"></select>
-                </label>
-                <div class="split-row compact-split">
-                  <label>
-                    Limit
-                    <input id="camera-limit" type="number" min="1" max="20" value="6" />
-                  </label>
-                  <label>
-                    Filter
-                    <input id="camera-search" placeholder="optional" />
-                  </label>
-                </div>
-                <div class="button-row">
-                  <button id="run-scan-btn">Run Scan</button>
-                  <button id="schedule-btn" class="secondary-button">Schedule</button>
-                </div>
-              </div>
-            </section>
-
-            <section class="panel prompt-panel">
-              <div class="panel-header slim">
-                <div>
-                  <p class="eyebrow">Prompt Library</p>
-                  <h2>Saved prompts</h2>
-                </div>
-                <span id="prompt-count" class="count-pill">0</span>
-              </div>
-
-              <details class="prompt-editor">
-                <summary>New / Edit Prompt</summary>
-                <form id="prompt-form" class="stack-form">
-                  <input id="prompt-id" type="hidden" />
-
-                  <label>
-                    Name
-                    <input id="prompt-name" placeholder="Example: Ice near entrances" required />
-                  </label>
-
-                  <label>
-                    Type
-                    <select id="prompt-type">
-                      <option value="sort">Sort cameras</option>
-                      <option value="find">Find matching cameras</option>
-                      <option value="classify">Classify cameras</option>
-                    </select>
-                  </label>
-
-                  <label>
-                    Prompt text
-                    <textarea id="prompt-text" rows="4" placeholder="Prioritize cameras that show unsafe conditions, blocked doors, or ice near walkways." required></textarea>
-                  </label>
-
-                  <div class="button-row">
-                    <button type="submit" id="save-prompt-btn">Save</button>
-                    <button type="button" id="reset-prompt-btn" class="secondary-button">Clear</button>
-                  </div>
-                </form>
-              </details>
-
-              <div id="prompt-list" class="prompt-list"></div>
-            </section>
-          </aside>
-
-          <section class="workspace">
-            <div class="activity-strip">
-              <div>
-                <span id="camera-count">0</span>
-                <small>cameras</small>
-              </div>
-              <div>
-                <span id="scheduled-count">0</span>
-                <small>scheduled</small>
-              </div>
-              <div>
-                <span id="running-count">0</span>
-                <small>running</small>
-              </div>
-              <div class="workflow-note">
-                Prompt results display the snapshot captured for the run, not a live feed.
-              </div>
-            </div>
-
-            <div id="scan-banner" class="scan-banner" hidden>
-              <div class="spinner"></div>
-              <div>
-                <strong>Scan running</strong>
-                <p>Capturing RestApi snapshots and saving frame refs.</p>
-              </div>
-            </div>
-
-            <section class="panel results-panel">
-              <div id="empty-results" class="empty-state">
-                <h3>No generated camera list yet</h3>
-                <p>Run a prompt to capture snapshots through <code>/api/camera-system</code> and render the exact frames used by the scan.</p>
-              </div>
-
-              <div id="result-grid" class="result-grid"></div>
-            </section>
-
-            <section class="panel activity-panel">
-              <div class="panel-header slim">
-                <div>
-                  <p class="eyebrow">Prompt Activity</p>
-                  <h2>Runs and schedules</h2>
-                </div>
-              </div>
-              <div id="activity-list" class="activity-list"></div>
-              <p class="dev-note-inline">Prompt CRUD and scheduling are local UI state for now. Snapshot capture and frame refs are real RestApi calls.</p>
-            </section>
-          </section>
+        <header class="topbar"><div class="topbar-brand"><span class="brand-glyph compact">CB</span><div><strong>CamBot</strong><small>Global continuous scan workflow</small></div></div><div class="health-pill" id="health-pill">checking...</div><div class="topbar-actions"><button id="refresh-cameras-btn" class="ghost-button">Refresh</button><button id="logout-btn" class="ghost-button danger">Logout</button></div></header>
+        <main class="row-dashboard">
+          <section class="panel prompt-panel row-widget"><div class="panel-header slim"><div><p class="eyebrow">Prompt Library</p><h2>Prompts</h2></div><span id="prompt-count" class="count-pill">0</span></div><div class="run-stack"><label>Selected prompt<select id="selected-prompt"></select></label><label>Camera group<select id="camera-group-select"></select></label><div class="button-row"><button id="run-scan-btn">Run single scan</button><button id="schedule-btn" class="secondary-button">Toggle continuous scan</button></div></div><details class="prompt-editor"><summary>+ New / Edit Prompt</summary><form id="prompt-form" class="stack-form"><input id="prompt-id" type="hidden" /><label>Name<input id="prompt-name" placeholder="Example: Ice near entrances" required /></label><label>Prompt text<textarea id="prompt-text" rows="4" placeholder="Tell Gemini what to identify and what action to recommend." required></textarea></label><div class="button-row"><button type="submit" id="save-prompt-btn">Save</button><button type="button" id="reset-prompt-btn" class="secondary-button">Clear</button></div></form></details><div id="prompt-list" class="prompt-list"></div></section>
+          <section class="panel results-panel row-widget"><div class="panel-header slim"><div><p class="eyebrow">Prompt Result Viewer</p><h2 id="results-title">No prompt selected</h2><p id="results-subtitle" class="muted-line">Latest completed operation for selected prompt.</p></div></div><div id="scan-banner" class="scan-banner" hidden><div class="spinner"></div><div><strong>Scan queued/running</strong><p>Manual scans are pushed to the front of the queue after the current prompt finishes.</p></div></div><div id="empty-results" class="empty-state"><h3>No generated camera list yet</h3><p>Prompt results display the exact snapshot used by Gemini, plus promptMatchScore and operatorPriorityScore.</p></div><div id="result-grid" class="result-grid"></div></section>
+          <section class="panel row-widget"><div class="panel-header slim"><div><p class="eyebrow">Operator Action Queue</p><h2>Recommended actions</h2></div></div><div id="operator-queue-list" class="activity-list"></div></section>
+          <section class="panel row-widget"><div class="panel-header slim"><div><p class="eyebrow">Global Settings</p><h2>Gemini and cost controls</h2></div></div><form id="settings-form" class="stack-form"><label class="checkbox-row"><input id="continuous-scan-enabled" type="checkbox" /> Enable global continuous scan cycle</label><div class="split-row compact-split"><label>Continuous scan interval seconds<input id="continuous-scan-interval" type="number" min="30" value="900" /></label><label>Gemini call delay ms<input id="gemini-call-delay" type="number" min="0" value="2000" /></label></div><button type="submit">Save settings</button></form><p id="cost-summary" class="dev-note-inline">Projected cost/day depends on enabled prompt bindings × cameras per binding × global interval.</p></section>
+          <section class="panel activity-panel row-widget"><div class="activity-strip"><div><span id="camera-count">0</span><small>cameras in groups</small></div><div><span id="scheduled-count">global</span><small>schedule</small></div><div><span id="running-count">0</span><small>queued actions</small></div><div class="workflow-note">Prompt bindings do not own intervals. Global settings control the continuous scan cycle.</div></div><div id="activity-list" class="activity-list"></div></section>
         </main>
       </section>
-
       <div id="toast" class="toast" hidden></div>
     </div>
-
     <script type="module" src="./main.js"></script>
   </body>
 </html>

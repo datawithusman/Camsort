@@ -17,8 +17,10 @@ import pprint
 import re  # noqa: F401
 import json
 
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing_extensions import Annotated
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -28,13 +30,17 @@ class UpdateGeminiCallerSettingsRequest(BaseModel):
     """ # noqa: E501
     enabled: Optional[StrictBool] = None
     model_name: Optional[StrictStr] = Field(default=None, alias="modelName")
-    max_requests_per_minute: Optional[StrictInt] = Field(default=None, alias="maxRequestsPerMinute")
+    continuous_scan_enabled: Optional[StrictBool] = Field(default=None, alias="continuousScanEnabled")
+    continuous_scan_interval_seconds: Optional[Annotated[int, Field(strict=True, ge=30)]] = Field(default=None, alias="continuousScanIntervalSeconds")
+    last_continuous_scan_at: Optional[datetime] = Field(default=None, alias="lastContinuousScanAt")
+    next_continuous_scan_at: Optional[datetime] = Field(default=None, alias="nextContinuousScanAt")
+    gemini_call_delay_ms: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, alias="geminiCallDelayMs")
+    max_concurrent_gemini_calls: Optional[Annotated[int, Field(strict=True, ge=1)]] = Field(default=None, alias="maxConcurrentGeminiCalls")
     max_tokens_per_request: Optional[StrictInt] = Field(default=None, alias="maxTokensPerRequest")
-    max_cost_per_operation: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxCostPerOperation")
     max_cost_per_day: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxCostPerDay")
     max_cost_per_month: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxCostPerMonth")
     allow_emergency_override: Optional[StrictBool] = Field(default=None, alias="allowEmergencyOverride")
-    __properties: ClassVar[List[str]] = ["enabled", "modelName", "maxRequestsPerMinute", "maxTokensPerRequest", "maxCostPerOperation", "maxCostPerDay", "maxCostPerMonth", "allowEmergencyOverride"]
+    __properties: ClassVar[List[str]] = ["enabled", "modelName", "continuousScanEnabled", "continuousScanIntervalSeconds", "lastContinuousScanAt", "nextContinuousScanAt", "geminiCallDelayMs", "maxConcurrentGeminiCalls", "maxTokensPerRequest", "maxCostPerDay", "maxCostPerMonth", "allowEmergencyOverride"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -89,9 +95,13 @@ class UpdateGeminiCallerSettingsRequest(BaseModel):
         _obj = cls.model_validate({
             "enabled": obj.get("enabled"),
             "modelName": obj.get("modelName"),
-            "maxRequestsPerMinute": obj.get("maxRequestsPerMinute"),
+            "continuousScanEnabled": obj.get("continuousScanEnabled"),
+            "continuousScanIntervalSeconds": obj.get("continuousScanIntervalSeconds"),
+            "lastContinuousScanAt": obj.get("lastContinuousScanAt"),
+            "nextContinuousScanAt": obj.get("nextContinuousScanAt"),
+            "geminiCallDelayMs": obj.get("geminiCallDelayMs"),
+            "maxConcurrentGeminiCalls": obj.get("maxConcurrentGeminiCalls"),
             "maxTokensPerRequest": obj.get("maxTokensPerRequest"),
-            "maxCostPerOperation": obj.get("maxCostPerOperation"),
             "maxCostPerDay": obj.get("maxCostPerDay"),
             "maxCostPerMonth": obj.get("maxCostPerMonth"),
             "allowEmergencyOverride": obj.get("allowEmergencyOverride")

@@ -9,16 +9,37 @@ components:
         modelName:
           type: string
           example: gemini-1.5-flash
-        maxRequestsPerMinute:
+        continuousScanEnabled:
+          type: boolean
+          example: true
+          description: Enables the global continuous scan cycle. When enabled, all enabled prompt bindings are scanned every continuousScanIntervalSeconds.
+        continuousScanIntervalSeconds:
           type: integer
-          example: 30
+          minimum: 30
+          example: 900
+          description: Global interval between continuous scan cycles. Each cycle runs all enabled prompt bindings.
+        lastContinuousScanAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time a global continuous scan cycle was started or completed.
+        nextContinuousScanAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Next time the worker should start a global continuous scan cycle.
+        geminiCallDelayMs:
+          type: integer
+          minimum: 0
+          example: 2000
+          description: Global delay between individual Gemini calls used by the background scan worker for rate limiting.
+        maxConcurrentGeminiCalls:
+          type: integer
+          minimum: 1
+          example: 1
         maxTokensPerRequest:
           type: integer
           example: 8192
-        maxCostPerOperation:
-          type: number
-          format: double
-          example: 2.5
         maxCostPerDay:
           type: number
           format: double
@@ -30,6 +51,9 @@ components:
         allowEmergencyOverride:
           type: boolean
           example: true
+        updatedAt:
+          type: string
+          format: date-time
 
     UpdateGeminiCallerSettingsRequest:
       type: object
@@ -38,13 +62,27 @@ components:
           type: boolean
         modelName:
           type: string
-        maxRequestsPerMinute:
+        continuousScanEnabled:
+          type: boolean
+        continuousScanIntervalSeconds:
           type: integer
+          minimum: 30
+        lastContinuousScanAt:
+          type: string
+          format: date-time
+          nullable: true
+        nextContinuousScanAt:
+          type: string
+          format: date-time
+          nullable: true
+        geminiCallDelayMs:
+          type: integer
+          minimum: 0
+        maxConcurrentGeminiCalls:
+          type: integer
+          minimum: 1
         maxTokensPerRequest:
           type: integer
-        maxCostPerOperation:
-          type: number
-          format: double
         maxCostPerDay:
           type: number
           format: double
@@ -74,6 +112,9 @@ components:
         blockOperationsWhenLimitReached:
           type: boolean
           example: true
+        updatedAt:
+          type: string
+          format: date-time
 
     UpdateUsageLimitSettingsRequest:
       type: object

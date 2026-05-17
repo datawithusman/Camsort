@@ -3,85 +3,78 @@ components:
     OperatorQueueStatus:
       type: string
       enum:
-        - pending
+        - queued
         - acknowledged
         - dismissed
         - completed
-
-    ActionScore:
-      type: object
-      properties:
-        confidence:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        urgency:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        risk:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        overall:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-
-    OperatorAction:
-      type: object
-      required:
-        - title
-        - description
-      properties:
-        title:
-          type: string
-          example: Review restricted entrance
-        description:
-          type: string
-          example: A person appears to be standing near the restricted entrance.
-        recommendedAction:
-          type: string
-          example: Dispatch operator to verify the entrance area.
 
     OperatorQueueItem:
       type: object
       required:
         - id
+        - operationResultId
+        - operationId
         - cameraId
-        - cameraGroupId
-        - action
-        - score
+        - frameRefId
+        - frameUrl
+        - recommendedAction
+        - reason
+        - promptMatchScore
+        - operatorPriorityScore
         - status
       properties:
         id:
           type: string
+        operationResultId:
+          type: string
         operationId:
           type: string
-          nullable: true
         cameraId:
           type: string
         cameraGroupId:
           type: string
-        savedPromptId:
+          nullable: true
+        promptId:
           type: string
           nullable: true
-        action:
-          $ref: "#/components/schemas/OperatorAction"
-        score:
-          $ref: "#/components/schemas/ActionScore"
+        frameRefId:
+          type: string
+        frameUrl:
+          type: string
+        recommendedAction:
+          type: string
+        reason:
+          type: string
+        promptMatchScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        operatorPriorityScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
         status:
           $ref: "#/components/schemas/OperatorQueueStatus"
+        operatorNote:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+
+    CreateOperatorQueueItemRequest:
+      type: object
+      required:
+        - operationResultId
+      properties:
+        operationResultId:
+          type: string
+          description: Creates a queue item from a stored Gemini operation result.
 
     UpdateOperatorQueueItemRequest:
       type: object

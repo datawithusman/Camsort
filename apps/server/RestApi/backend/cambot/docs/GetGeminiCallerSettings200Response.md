@@ -7,12 +7,17 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **enabled** | **bool** |  | [optional] 
 **model_name** | **str** |  | [optional] 
-**max_requests_per_minute** | **int** |  | [optional] 
+**continuous_scan_enabled** | **bool** | Enables the global continuous scan cycle. When enabled, all enabled prompt bindings are scanned every continuousScanIntervalSeconds. | [optional] 
+**continuous_scan_interval_seconds** | **int** | Global interval between continuous scan cycles. Each cycle runs all enabled prompt bindings. | [optional] 
+**last_continuous_scan_at** | **datetime** | Last time a global continuous scan cycle was started or completed. | [optional] 
+**next_continuous_scan_at** | **datetime** | Next time the worker should start a global continuous scan cycle. | [optional] 
+**gemini_call_delay_ms** | **int** | Global delay between individual Gemini calls used by the background scan worker for rate limiting. | [optional] 
+**max_concurrent_gemini_calls** | **int** |  | [optional] 
 **max_tokens_per_request** | **int** |  | [optional] 
-**max_cost_per_operation** | **float** |  | [optional] 
 **max_cost_per_day** | **float** |  | [optional] 
 **max_cost_per_month** | **float** |  | [optional] 
 **allow_emergency_override** | **bool** |  | [optional] 
+**updated_at** | **datetime** |  | [optional] 
 
 ## Example
 

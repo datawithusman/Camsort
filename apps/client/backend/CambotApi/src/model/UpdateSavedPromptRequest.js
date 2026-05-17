@@ -50,20 +50,11 @@ class UpdateSavedPromptRequest {
             if (data.hasOwnProperty('name')) {
                 obj['name'] = ApiClient.convertToType(data['name'], 'String');
             }
-            if (data.hasOwnProperty('promptType')) {
-                obj['promptType'] = ApiClient.convertToType(data['promptType'], 'String');
-            }
             if (data.hasOwnProperty('description')) {
                 obj['description'] = ApiClient.convertToType(data['description'], 'String');
             }
             if (data.hasOwnProperty('promptText')) {
                 obj['promptText'] = ApiClient.convertToType(data['promptText'], 'String');
-            }
-            if (data.hasOwnProperty('defaultPriority')) {
-                obj['defaultPriority'] = ApiClient.convertToType(data['defaultPriority'], 'String');
-            }
-            if (data.hasOwnProperty('defaultMaxEstimatedCost')) {
-                obj['defaultMaxEstimatedCost'] = ApiClient.convertToType(data['defaultMaxEstimatedCost'], 'Number');
             }
             if (data.hasOwnProperty('enabled')) {
                 obj['enabled'] = ApiClient.convertToType(data['enabled'], 'Boolean');
@@ -83,20 +74,12 @@ class UpdateSavedPromptRequest {
             throw new Error("Expected the field `name` to be a primitive type in the JSON string but got " + data['name']);
         }
         // ensure the json data is a string
-        if (data['promptType'] && !(typeof data['promptType'] === 'string' || data['promptType'] instanceof String)) {
-            throw new Error("Expected the field `promptType` to be a primitive type in the JSON string but got " + data['promptType']);
-        }
-        // ensure the json data is a string
         if (data['description'] && !(typeof data['description'] === 'string' || data['description'] instanceof String)) {
             throw new Error("Expected the field `description` to be a primitive type in the JSON string but got " + data['description']);
         }
         // ensure the json data is a string
         if (data['promptText'] && !(typeof data['promptText'] === 'string' || data['promptText'] instanceof String)) {
             throw new Error("Expected the field `promptText` to be a primitive type in the JSON string but got " + data['promptText']);
-        }
-        // ensure the json data is a string
-        if (data['defaultPriority'] && !(typeof data['defaultPriority'] === 'string' || data['defaultPriority'] instanceof String)) {
-            throw new Error("Expected the field `defaultPriority` to be a primitive type in the JSON string but got " + data['defaultPriority']);
         }
 
         return true;
@@ -113,11 +96,6 @@ class UpdateSavedPromptRequest {
 UpdateSavedPromptRequest.prototype['name'] = undefined;
 
 /**
- * @member {module:model/UpdateSavedPromptRequest.PromptTypeEnum} promptType
- */
-UpdateSavedPromptRequest.prototype['promptType'] = undefined;
-
-/**
  * @member {String} description
  */
 UpdateSavedPromptRequest.prototype['description'] = undefined;
@@ -128,88 +106,12 @@ UpdateSavedPromptRequest.prototype['description'] = undefined;
 UpdateSavedPromptRequest.prototype['promptText'] = undefined;
 
 /**
- * @member {module:model/UpdateSavedPromptRequest.DefaultPriorityEnum} defaultPriority
- */
-UpdateSavedPromptRequest.prototype['defaultPriority'] = undefined;
-
-/**
- * @member {Number} defaultMaxEstimatedCost
- */
-UpdateSavedPromptRequest.prototype['defaultMaxEstimatedCost'] = undefined;
-
-/**
  * @member {Boolean} enabled
  */
 UpdateSavedPromptRequest.prototype['enabled'] = undefined;
 
 
 
-
-
-/**
- * Allowed values for the <code>promptType</code> property.
- * @enum {String}
- * @readonly
- */
-UpdateSavedPromptRequest['PromptTypeEnum'] = {
-
-    /**
-     * value: "sorting"
-     * @const
-     */
-    "sorting": "sorting",
-
-    /**
-     * value: "finding"
-     * @const
-     */
-    "finding": "finding",
-
-    /**
-     * value: "monitoring"
-     * @const
-     */
-    "monitoring": "monitoring",
-
-    /**
-     * value: "summarization"
-     * @const
-     */
-    "summarization": "summarization"
-};
-
-
-/**
- * Allowed values for the <code>defaultPriority</code> property.
- * @enum {String}
- * @readonly
- */
-UpdateSavedPromptRequest['DefaultPriorityEnum'] = {
-
-    /**
-     * value: "low"
-     * @const
-     */
-    "low": "low",
-
-    /**
-     * value: "normal"
-     * @const
-     */
-    "normal": "normal",
-
-    /**
-     * value: "high"
-     * @const
-     */
-    "high": "high",
-
-    /**
-     * value: "emergency"
-     * @const
-     */
-    "emergency": "emergency"
-};
 
 
 

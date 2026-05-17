@@ -2,6 +2,9 @@ FROM docker.io/python:3.12-slim
 
 WORKDIR /app
 
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="/app:/app/backend:/app/backend/cambot:/app/backend/camera_system_integrator:${PYTHONPATH}"
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

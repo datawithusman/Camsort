@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,31 +27,8 @@ class CreateCameraGroupPromptBindingRequest(BaseModel):
     CreateCameraGroupPromptBindingRequest
     """ # noqa: E501
     prompt_id: StrictStr = Field(alias="promptId")
-    enabled: Optional[StrictBool] = True
-    scan_frequency: Optional[StrictStr] = Field(default=None, alias="scanFrequency")
-    priority_override: Optional[StrictStr] = Field(default=None, alias="priorityOverride")
-    max_estimated_cost_override: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxEstimatedCostOverride")
-    __properties: ClassVar[List[str]] = ["promptId", "enabled", "scanFrequency", "priorityOverride", "maxEstimatedCostOverride"]
-
-    @field_validator('scan_frequency')
-    def scan_frequency_validate_enum(cls, value):
-        """Validates the enum"""
-        if value is None:
-            return value
-
-        if value not in set(['manual', 'hourly', 'daily', 'continuous']):
-            raise ValueError("must be one of enum values ('manual', 'hourly', 'daily', 'continuous')")
-        return value
-
-    @field_validator('priority_override')
-    def priority_override_validate_enum(cls, value):
-        """Validates the enum"""
-        if value is None:
-            return value
-
-        if value not in set(['low', 'normal', 'high', 'emergency']):
-            raise ValueError("must be one of enum values ('low', 'normal', 'high', 'emergency')")
-        return value
+    enabled: Optional[StrictBool] = Field(default=True, description="When true, the binding participates in global continuous scan cycles.")
+    __properties: ClassVar[List[str]] = ["promptId", "enabled"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -105,10 +82,7 @@ class CreateCameraGroupPromptBindingRequest(BaseModel):
 
         _obj = cls.model_validate({
             "promptId": obj.get("promptId"),
-            "enabled": obj.get("enabled") if obj.get("enabled") is not None else True,
-            "scanFrequency": obj.get("scanFrequency"),
-            "priorityOverride": obj.get("priorityOverride"),
-            "maxEstimatedCostOverride": obj.get("maxEstimatedCostOverride")
+            "enabled": obj.get("enabled") if obj.get("enabled") is not None else True
         })
         return _obj
 

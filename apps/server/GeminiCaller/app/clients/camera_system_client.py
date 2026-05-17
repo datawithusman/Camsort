@@ -1,363 +1,82 @@
 from __future__ import annotations
 
-import json
 import os
-from dataclasses import dataclass
 from typing import Any
-from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
-from urllib.request import Request, urlopen
 
-from app.dtos.camera_system import (
-    CameraStreamDto,
-    CameraSystemCameraDto,
-    CameraSystemCameraListDto,
-    CameraSystemGroupDto,
-    CameraSystemGroupListDto,
-    CameraSystemStatusDto,
-)
+import requests
 
 
-JsonObject = dict[str, Any]
-
-
-class CameraSystemClientError(Exception):
-    """
-    Error raised when the camera-system API request fails.
-
-    This wrapper raises CameraSystemClientError for:
-      - HTTP 4xx/5xx responses
-      - network failures
-      - malformed/unexpected response bodies
-
-    Attributes:
-      status_code:
-        HTTP status code, or None for network/client-side failures.
-
-      body:
-        Parsed JSON error body when available, otherwise text/None.
-
-      url:
-        Full URL that failed.
-    """
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        status_code: int | None = None,
-        body: Any = None,
-        url: str | None = None,
-    ) -> None:
+class CameraSystemClientError(RuntimeError):
+    def __init__(self, message: str, *, url: str | None = None, status_code: int | None = None, body: Any = None):
         super().__init__(message)
+        self.url = url
         self.status_code = status_code
         self.body = body
-        self.url = url
-
-
-@dataclass(frozen=True)
-class CameraSystemClientConfig:
-    """
-    Configuration for internal RestApi -> CameraSystem calls.
-
-    Important:
-      This config is for internal pod-to-pod calls.
-
-      Public browser calls go through nginx:
-        https://host/camera-system/...
-
-      Internal RestApi calls should go directly to the service:
-        http://camera-system-mocker-rest-api:8080
-
-      Because nginx owns public authentication, this internal wrapper does not
-      send Basic Auth.
-
-    Environment:
-      CAMERA_SYSTEM_BASE_URL:
-        Base URL for the internal camera-system service.
-
-      CAMERA_SYSTEM_TIMEOUT_SECONDS:
-        HTTP timeout for camera-system calls.
-    """
-
-    base_url: str
-    timeout_seconds: float = 30.0
-
-    @staticmethod
-    def from_env() -> "CameraSystemClientConfig":
-        return CameraSystemClientConfig(
-            base_url=os.environ.get(
-                "CAMERA_SYSTEM_BASE_URL",
-                "http://camera-system-mocker-rest-api:8080",
-            ),
-            timeout_seconds=float(
-                os.environ.get("CAMERA_SYSTEM_TIMEOUT_SECONDS", "30")
-            ),
-        )
 
 
 class CameraSystemClient:
-    """
-    Backend-facing wrapper around the Camera System Integrator API.
+    def __init__(self, base_url: str, timeout_seconds: float = 20.0):
+        self.base_url = base_url.rstrip("/")
+        self.timeout_seconds = timeout_seconds
 
-    This is handwritten application code. It should live under app/clients, not
-    under backend/, because backend/ is generated code and may be recreated.
-
-    Snapshot model:
-      The camera-system API exposes one simple snapshot endpoint:
-
-        GET /cameras/{cameraId}/snapshot
-
-      That endpoint returns image bytes directly.
-
-      There is no CameraSnapshot metadata DTO.
-      There is no /snapshot/image endpoint.
-      Historical snapshot retrieval is intentionally not implemented.
-    """
-
-    def __init__(self, config: CameraSystemClientConfig) -> None:
-        self.config = config
-        self.base_url = config.base_url.rstrip("/")
-
-    @staticmethod
-    def from_env() -> "CameraSystemClient":
-        return CameraSystemClient(CameraSystemClientConfig.from_env())
-
-    def _url(self, path: str, query: dict[str, str] | None = None) -> str:
-        clean_path = path if path.startswith("/") else f"/{path}"
-        url = f"{self.base_url}{clean_path}"
-
-        if query:
-            url = f"{url}?{urlencode(query)}"
-
-        return url
-
-    def _request_json(
-        self,
-        method: str,
-        path: str,
-        *,
-        query: dict[str, str] | None = None,
-    ) -> JsonObject:
-        body = self._request(
-            method,
-            path,
-            query=query,
-            accept="application/json",
+    @classmethod
+    def from_env(cls) -> "CameraSystemClient":
+        return cls(
+            base_url=os.environ.get("CAMERA_SYSTEM_BASE_URL", "http://camera-system-mocker-rest-api:8080"),
+            timeout_seconds=float(os.environ.get("CAMERA_SYSTEM_TIMEOUT_SECONDS", "20")),
         )
 
-        if body is None:
-            return {}
+    def _request_json(self, method: str, path: str, **kwargs) -> dict[str, Any]:
+        url = f"{self.base_url}{path}"
+        try:
+            response = requests.request(method, url, timeout=self.timeout_seconds, **kwargs)
+        except requests.RequestException as exc:
+            raise CameraSystemClientError(str(exc), url=url) from exc
 
-        if not isinstance(body, dict):
+        if response.status_code >= 400:
+            try:
+                body = response.json()
+            except Exception:
+                body = response.text
             raise CameraSystemClientError(
-                "Camera system returned a non-object JSON response.",
-                status_code=None,
+                f"Camera system returned HTTP {response.status_code}",
+                url=url,
+                status_code=response.status_code,
                 body=body,
-                url=self._url(path, query=query),
             )
 
-        return body
-
-    def _request_bytes(
-        self,
-        method: str,
-        path: str,
-        *,
-        query: dict[str, str] | None = None,
-        accept: str = "application/octet-stream",
-    ) -> bytes:
-        body = self._request(
-            method,
-            path,
-            query=query,
-            accept=accept,
-        )
-
-        if isinstance(body, bytes):
-            return body
-
-        raise CameraSystemClientError(
-            "Camera system returned a non-bytes response.",
-            status_code=None,
-            body=body,
-            url=self._url(path, query=query),
-        )
-
-    def _request(
-        self,
-        method: str,
-        path: str,
-        *,
-        query: dict[str, str] | None = None,
-        accept: str = "application/json",
-    ) -> Any:
-        url = self._url(path, query=query)
-
-        request = Request(
-            url,
-            method=method.upper(),
-            headers={
-                "Accept": accept,
-            },
-        )
-
         try:
-            with urlopen(request, timeout=self.config.timeout_seconds) as response:
-                content_type = response.headers.get("content-type", "")
-                raw_body = response.read()
+            return response.json()
+        except ValueError as exc:
+            raise CameraSystemClientError("Camera system returned non-JSON response", url=url, body=response.text) from exc
 
-                if "application/json" in content_type:
-                    if not raw_body:
-                        return None
-
-                    return json.loads(raw_body.decode("utf-8"))
-
-                return raw_body
-
-        except HTTPError as exc:
-            body = self._read_error_body(exc)
-            raise CameraSystemClientError(
-                f"Camera system request failed: {exc.code}",
-                status_code=exc.code,
-                body=body,
-                url=url,
-            ) from exc
-
-        except URLError as exc:
-            raise CameraSystemClientError(
-                f"Camera system request failed: {exc.reason}",
-                status_code=None,
-                body=None,
-                url=url,
-            ) from exc
-
-        except json.JSONDecodeError as exc:
-            raise CameraSystemClientError(
-                "Camera system returned invalid JSON.",
-                status_code=None,
-                body=None,
-                url=url,
-            ) from exc
-
-    @staticmethod
-    def _read_error_body(exc: HTTPError) -> Any:
+    def _request_bytes(self, method: str, path: str, **kwargs) -> tuple[bytes, str]:
+        url = f"{self.base_url}{path}"
         try:
-            raw = exc.read()
-            if not raw:
-                return None
+            response = requests.request(method, url, timeout=self.timeout_seconds, **kwargs)
+        except requests.RequestException as exc:
+            raise CameraSystemClientError(str(exc), url=url) from exc
 
-            text = raw.decode("utf-8", errors="replace")
-            content_type = exc.headers.get("content-type", "")
+        if response.status_code >= 400:
+            raise CameraSystemClientError(
+                f"Camera system returned HTTP {response.status_code}",
+                url=url,
+                status_code=response.status_code,
+                body=response.text,
+            )
+        return response.content, response.headers.get("content-type", "image/jpeg")
 
-            if "application/json" in content_type:
-                return json.loads(text)
+    def get_snapshot(self, camera_id: str) -> dict[str, Any]:
+        return self._request_json("GET", f"/cameras/{camera_id}/snapshot")
 
-            return text
-        except Exception:
-            return None
-
-    def health(self) -> JsonObject:
-        """
-        Calls GET /health.
-
-        Returns raw health JSON because this is mostly a debug/ops endpoint.
-        """
-        return self._request_json("GET", "/health")
-
-    def system_status(self) -> CameraSystemStatusDto:
-        """
-        Calls GET /system/status.
-        """
-        data = self._request_json("GET", "/system/status")
-        return CameraSystemStatusDto.from_json(data)
-
-    def list_cameras(
-        self,
-        *,
-        group_id: str | None = None,
-        search: str | None = None,
-    ) -> CameraSystemCameraListDto:
-        """
-        Calls GET /cameras.
-        """
-        query: dict[str, str] = {}
-
-        if group_id:
-            query["groupId"] = group_id
-
-        if search:
-            query["search"] = search
-
-        data = self._request_json("GET", "/cameras", query=query or None)
-        return CameraSystemCameraListDto.from_json(data)
-
-    def get_camera(self, camera_id: str) -> CameraSystemCameraDto:
-        """
-        Calls GET /cameras/{cameraId}.
-        """
-        data = self._request_json(
-            "GET",
-            f"/cameras/{quote(camera_id, safe='')}",
-        )
-        return CameraSystemCameraDto.from_json(data)
-
-    def get_snapshot_image(self, camera_id: str) -> bytes:
-        """
-        Calls GET /cameras/{cameraId}/snapshot.
-
-        Returns image bytes directly.
-
-        This is the primary snapshot method.
-        """
-        return self._request_bytes(
-            "GET",
-            f"/cameras/{quote(camera_id, safe='')}/snapshot",
-            accept="image/*",
-        )
-
-    def request_snapshot(self, camera_id: str) -> bytes:
-        """
-        Backward-compatible alias for get_snapshot_image().
-
-        Older code may call request_snapshot(), but the contract now returns
-        image bytes directly rather than snapshot metadata.
-        """
-        return self.get_snapshot_image(camera_id)
-
-    def get_stream(self, camera_id: str) -> CameraStreamDto:
-        """
-        Calls GET /cameras/{cameraId}/stream.
-        """
-        data = self._request_json(
-            "GET",
-            f"/cameras/{quote(camera_id, safe='')}/stream",
-        )
-        return CameraStreamDto.from_json(data)
-
-    def list_camera_groups(self) -> CameraSystemGroupListDto:
-        """
-        Calls GET /camera-groups.
-        """
-        data = self._request_json("GET", "/camera-groups")
-        return CameraSystemGroupListDto.from_json(data)
-
-    def get_camera_group(self, group_id: str) -> CameraSystemGroupDto:
-        """
-        Calls GET /camera-groups/{groupId}.
-        """
-        data = self._request_json(
-            "GET",
-            f"/camera-groups/{quote(group_id, safe='')}",
-        )
-        return CameraSystemGroupDto.from_json(data)
-
-    def list_cameras_for_group(self, group_id: str) -> CameraSystemCameraListDto:
-        """
-        Calls GET /camera-groups/{groupId}/cameras.
-        """
-        data = self._request_json(
-            "GET",
-            f"/camera-groups/{quote(group_id, safe='')}/cameras",
-        )
-        return CameraSystemCameraListDto.from_json(data)
+    def get_frame_image(self, frame_url: str) -> tuple[bytes, str]:
+        # Snapshot frame URLs are intentionally path-only, such as
+        # /camera-system/cameras/cam01/frames/... when exposed through nginx.
+        # Internally the camera system service serves the same resource without
+        # the /camera-system reverse-proxy prefix.
+        path = frame_url
+        if path.startswith("/camera-system/"):
+            path = path[len("/camera-system"):]
+        if not path.startswith("/"):
+            path = f"/{path}"
+        return self._request_bytes("GET", path)

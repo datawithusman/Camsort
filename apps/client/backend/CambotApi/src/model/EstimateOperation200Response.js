@@ -24,11 +24,12 @@ class EstimateOperation200Response {
      * @alias module:model/EstimateOperation200Response
      * @param allowed {Boolean} 
      * @param estimatedCameraCount {Number} 
+     * @param estimatedGeminiCalls {Number} 
      * @param estimatedCost {Number} 
      */
-    constructor(allowed, estimatedCameraCount, estimatedCost) { 
+    constructor(allowed, estimatedCameraCount, estimatedGeminiCalls, estimatedCost) { 
         
-        EstimateOperation200Response.initialize(this, allowed, estimatedCameraCount, estimatedCost);
+        EstimateOperation200Response.initialize(this, allowed, estimatedCameraCount, estimatedGeminiCalls, estimatedCost);
     }
 
     /**
@@ -36,9 +37,10 @@ class EstimateOperation200Response {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, allowed, estimatedCameraCount, estimatedCost) { 
+    static initialize(obj, allowed, estimatedCameraCount, estimatedGeminiCalls, estimatedCost) { 
         obj['allowed'] = allowed;
         obj['estimatedCameraCount'] = estimatedCameraCount;
+        obj['estimatedGeminiCalls'] = estimatedGeminiCalls;
         obj['estimatedCost'] = estimatedCost;
     }
 
@@ -62,8 +64,8 @@ class EstimateOperation200Response {
             if (data.hasOwnProperty('estimatedCameraCount')) {
                 obj['estimatedCameraCount'] = ApiClient.convertToType(data['estimatedCameraCount'], 'Number');
             }
-            if (data.hasOwnProperty('estimatedPromptCount')) {
-                obj['estimatedPromptCount'] = ApiClient.convertToType(data['estimatedPromptCount'], 'Number');
+            if (data.hasOwnProperty('estimatedGeminiCalls')) {
+                obj['estimatedGeminiCalls'] = ApiClient.convertToType(data['estimatedGeminiCalls'], 'Number');
             }
             if (data.hasOwnProperty('estimatedTokenCount')) {
                 obj['estimatedTokenCount'] = ApiClient.convertToType(data['estimatedTokenCount'], 'Number');
@@ -98,7 +100,7 @@ class EstimateOperation200Response {
 
 }
 
-EstimateOperation200Response.RequiredProperties = ["allowed", "estimatedCameraCount", "estimatedCost"];
+EstimateOperation200Response.RequiredProperties = ["allowed", "estimatedCameraCount", "estimatedGeminiCalls", "estimatedCost"];
 
 /**
  * @member {Boolean} allowed
@@ -116,9 +118,9 @@ EstimateOperation200Response.prototype['restrictionReason'] = undefined;
 EstimateOperation200Response.prototype['estimatedCameraCount'] = undefined;
 
 /**
- * @member {Number} estimatedPromptCount
+ * @member {Number} estimatedGeminiCalls
  */
-EstimateOperation200Response.prototype['estimatedPromptCount'] = undefined;
+EstimateOperation200Response.prototype['estimatedGeminiCalls'] = undefined;
 
 /**
  * @member {Number} estimatedTokenCount

@@ -33,8 +33,8 @@ class UpdateOperatorQueueItemRequest(BaseModel):
     @field_validator('status')
     def status_validate_enum(cls, value):
         """Validates the enum"""
-        if value not in set(['pending', 'acknowledged', 'dismissed', 'completed']):
-            raise ValueError("must be one of enum values ('pending', 'acknowledged', 'dismissed', 'completed')")
+        if value not in set(['queued', 'acknowledged', 'dismissed', 'completed']):
+            raise ValueError("must be one of enum values ('queued', 'acknowledged', 'dismissed', 'completed')")
         return value
 
     model_config = ConfigDict(

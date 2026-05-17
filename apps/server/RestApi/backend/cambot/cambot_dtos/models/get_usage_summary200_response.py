@@ -28,13 +28,17 @@ class GetUsageSummary200Response(BaseModel):
     GetUsageSummary200Response
     """ # noqa: E501
     scans_today: Optional[StrictInt] = Field(default=None, alias="scansToday")
+    scans_yesterday: Optional[StrictInt] = Field(default=None, alias="scansYesterday")
     scans_this_month: Optional[StrictInt] = Field(default=None, alias="scansThisMonth")
     estimated_cost_today: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="estimatedCostToday")
+    estimated_cost_yesterday: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="estimatedCostYesterday")
     estimated_cost_this_month: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="estimatedCostThisMonth")
+    projected_cost_per_day: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="projectedCostPerDay")
+    projected_cost_this_month: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="projectedCostThisMonth")
     remaining_daily_budget: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="remainingDailyBudget")
     remaining_monthly_budget: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="remainingMonthlyBudget")
     last_updated_at: Optional[datetime] = Field(default=None, alias="lastUpdatedAt")
-    __properties: ClassVar[List[str]] = ["scansToday", "scansThisMonth", "estimatedCostToday", "estimatedCostThisMonth", "remainingDailyBudget", "remainingMonthlyBudget", "lastUpdatedAt"]
+    __properties: ClassVar[List[str]] = ["scansToday", "scansYesterday", "scansThisMonth", "estimatedCostToday", "estimatedCostYesterday", "estimatedCostThisMonth", "projectedCostPerDay", "projectedCostThisMonth", "remainingDailyBudget", "remainingMonthlyBudget", "lastUpdatedAt"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -88,9 +92,13 @@ class GetUsageSummary200Response(BaseModel):
 
         _obj = cls.model_validate({
             "scansToday": obj.get("scansToday"),
+            "scansYesterday": obj.get("scansYesterday"),
             "scansThisMonth": obj.get("scansThisMonth"),
             "estimatedCostToday": obj.get("estimatedCostToday"),
+            "estimatedCostYesterday": obj.get("estimatedCostYesterday"),
             "estimatedCostThisMonth": obj.get("estimatedCostThisMonth"),
+            "projectedCostPerDay": obj.get("projectedCostPerDay"),
+            "projectedCostThisMonth": obj.get("projectedCostThisMonth"),
             "remainingDailyBudget": obj.get("remainingDailyBudget"),
             "remainingMonthlyBudget": obj.get("remainingMonthlyBudget"),
             "lastUpdatedAt": obj.get("lastUpdatedAt")

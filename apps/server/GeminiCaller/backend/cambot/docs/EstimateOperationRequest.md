@@ -5,10 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**operation_type** | **str** |  | 
-**target** | [**EstimateOperationRequestTarget**](EstimateOperationRequestTarget.md) |  | 
-**saved_prompt_id** | **str** |  | [optional] 
-**temporary_prompt_text** | **str** |  | [optional] 
+**prompt_id** | **str** |  | 
+**camera_group_id** | **str** |  | 
 
 ## Example
 

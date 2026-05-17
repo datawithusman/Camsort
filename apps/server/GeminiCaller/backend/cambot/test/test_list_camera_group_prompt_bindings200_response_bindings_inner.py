@@ -35,21 +35,19 @@ class TestListCameraGroupPromptBindings200ResponseBindingsInner(unittest.TestCas
         model = ListCameraGroupPromptBindings200ResponseBindingsInner()
         if include_optional:
             return ListCameraGroupPromptBindings200ResponseBindingsInner(
-                id = 'binding-main-entrances-after-hours',
+                id = 'binding-main-entrances-ice',
                 camera_group_id = 'group-main-entrances',
-                prompt_id = 'prompt-after-hours-person-detection',
+                prompt_id = 'prompt-ice-near-entrances',
                 enabled = True,
-                scan_frequency = 'manual',
-                priority_override = 'low',
-                max_estimated_cost_override = 2.5,
+                last_run_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
                 created_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
                 updated_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f')
             )
         else:
             return ListCameraGroupPromptBindings200ResponseBindingsInner(
-                id = 'binding-main-entrances-after-hours',
+                id = 'binding-main-entrances-ice',
                 camera_group_id = 'group-main-entrances',
-                prompt_id = 'prompt-after-hours-person-detection',
+                prompt_id = 'prompt-ice-near-entrances',
                 enabled = True,
         )
         """

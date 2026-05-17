@@ -6,10 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **prompt_id** | **str** |  | 
-**enabled** | **bool** |  | [optional] [default to True]
-**scan_frequency** | **str** |  | [optional] 
-**priority_override** | **str** |  | [optional] 
-**max_estimated_cost_override** | **float** |  | [optional] 
+**enabled** | **bool** | When true, the binding participates in global continuous scan cycles. | [optional] [default to True]
 
 ## Example
 

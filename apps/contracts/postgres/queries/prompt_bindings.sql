@@ -1,8 +1,15 @@
 -- name: ListPromptBindingsForCameraGroup :many
-SELECT id, camera_group_id, prompt_id, enabled, scan_frequency, priority_override, max_estimated_cost_override, created_at, updated_at
+SELECT id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at
 FROM prompt_bindings
 WHERE camera_group_id = sqlc.arg(camera_group_id)
 ORDER BY created_at DESC;
+
+-- name: ListEnabledPromptBindings :many
+SELECT id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at
+FROM prompt_bindings
+WHERE enabled = true
+ORDER BY created_at ASC
+LIMIT sqlc.arg(limit_count) OFFSET sqlc.arg(offset_count);
 
 -- name: CreatePromptBinding :one
 INSERT INTO prompt_bindings (
@@ -10,30 +17,30 @@ INSERT INTO prompt_bindings (
   camera_group_id,
   prompt_id,
   enabled,
-  scan_frequency,
-  priority_override,
-  max_estimated_cost_override
+  last_run_at
 )
 VALUES (
   COALESCE(NULLIF(sqlc.arg(id), ''), gen_random_uuid()::text),
   sqlc.arg(camera_group_id),
   sqlc.arg(prompt_id),
   COALESCE(sqlc.arg(enabled), true),
-  COALESCE(sqlc.arg(scan_frequency), 'manual'),
-  sqlc.arg(priority_override),
-  sqlc.arg(max_estimated_cost_override)
+  sqlc.arg(last_run_at)
 )
-RETURNING id, camera_group_id, prompt_id, enabled, scan_frequency, priority_override, max_estimated_cost_override, created_at, updated_at;
+RETURNING id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at;
 
 -- name: UpdatePromptBinding :one
 UPDATE prompt_bindings
 SET
   enabled = COALESCE(sqlc.arg(enabled), enabled),
-  scan_frequency = COALESCE(sqlc.arg(scan_frequency), scan_frequency),
-  priority_override = COALESCE(sqlc.arg(priority_override), priority_override),
-  max_estimated_cost_override = COALESCE(sqlc.arg(max_estimated_cost_override), max_estimated_cost_override)
+  last_run_at = COALESCE(sqlc.arg(last_run_at), last_run_at)
 WHERE id = sqlc.arg(id)
-RETURNING id, camera_group_id, prompt_id, enabled, scan_frequency, priority_override, max_estimated_cost_override, created_at, updated_at;
+RETURNING id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at;
+
+-- name: MarkPromptBindingRan :one
+UPDATE prompt_bindings
+SET last_run_at = now()
+WHERE id = sqlc.arg(id)
+RETURNING id, camera_group_id, prompt_id, enabled, last_run_at, created_at, updated_at;
 
 -- name: DeletePromptBinding :exec
 DELETE FROM prompt_bindings

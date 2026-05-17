@@ -1,21 +1,5 @@
 components:
   schemas:
-    ScanFrequency:
-      type: string
-      enum:
-        - manual
-        - hourly
-        - daily
-        - continuous
-
-    Priority:
-      type: string
-      enum:
-        - low
-        - normal
-        - high
-        - emergency
-
     PromptBinding:
       type: object
       required:
@@ -26,25 +10,22 @@ components:
       properties:
         id:
           type: string
-          example: binding-main-entrances-after-hours
+          example: binding-main-entrances-ice
         cameraGroupId:
           type: string
           example: group-main-entrances
         promptId:
           type: string
-          example: prompt-after-hours-person-detection
+          example: prompt-ice-near-entrances
         enabled:
           type: boolean
           example: true
-        scanFrequency:
-          $ref: "#/components/schemas/ScanFrequency"
-        priorityOverride:
-          $ref: "#/components/schemas/Priority"
-        maxEstimatedCostOverride:
-          type: number
-          format: double
+          description: When true, this prompt/camera-group pair participates in the global continuous scan cycle and can also be run manually.
+        lastRunAt:
+          type: string
+          format: date-time
           nullable: true
-          example: 2.5
+          description: Last time this prompt binding was executed by a manual or scheduled operation.
         createdAt:
           type: string
           format: date-time
@@ -62,27 +43,16 @@ components:
         enabled:
           type: boolean
           default: true
-        scanFrequency:
-          $ref: "#/components/schemas/ScanFrequency"
-        priorityOverride:
-          $ref: "#/components/schemas/Priority"
-        maxEstimatedCostOverride:
-          type: number
-          format: double
-          nullable: true
+          description: When true, the binding participates in global continuous scan cycles.
 
     UpdatePromptBindingRequest:
       type: object
       properties:
         enabled:
           type: boolean
-        scanFrequency:
-          $ref: "#/components/schemas/ScanFrequency"
-        priorityOverride:
-          $ref: "#/components/schemas/Priority"
-        maxEstimatedCostOverride:
-          type: number
-          format: double
+        lastRunAt:
+          type: string
+          format: date-time
           nullable: true
 
     PromptBindingListResponse:
