@@ -8,6 +8,7 @@ const state = {
   operations: [],
   selectedPromptId: null,
   selectedGroupId: null,
+  selectedOperationId: 'latest',
   promptGroupFilter: '',
   promptCameraFilter: '',
   imageUrls: new Map(),
@@ -105,6 +106,10 @@ function normalizeOperation(o) {
     createdAt: o.createdAt ?? o.created_at,
     startedAt: o.startedAt ?? o.started_at,
     completedAt: o.completedAt ?? o.completed_at,
+    firstPassStatus: o.firstPassStatus ?? o.first_pass_status,
+    secondPassStatus: o.secondPassStatus ?? o.second_pass_status,
+    firstPassResultCount: o.firstPassResultCount ?? o.first_pass_result_count ?? 0,
+    secondPassResultCount: o.secondPassResultCount ?? o.second_pass_result_count ?? 0,
   };
 }
 
@@ -168,6 +173,17 @@ function getSelectedPrompt() { return state.prompts.find(p => p.id === state.sel
 function getPromptById(id) { return state.prompts.find(p => p.id === id) || null; }
 function getModalPrompt() { const el = $('promptId'); return el?.value ? getPromptById(el.value) : null; }
 function getSelectedGroup() { return state.groups.find(g => g.id === state.selectedGroupId) || null; }
+function getOperationById(id) { return state.operations.find(o => o.id === id) || null; }
+function resultPassSlug() { return state.showingFirstPass ? 'first-pass' : 'second-pass'; }
+function resultPassLabel() { return state.showingFirstPass ? 'first pass/intermediate' : 'second pass/global'; }
+function matchingResultOperations(promptId, groupId) {
+  return state.operations
+    .filter(o => o.promptId === promptId && o.cameraGroupId === groupId)
+    .filter(o => state.showingFirstPass
+      ? Number(o.firstPassResultCount ?? o.first_pass_result_count ?? 0) > 0 || String(o.firstPassStatus ?? o.first_pass_status ?? '').toLowerCase() === 'completed'
+      : Number(o.secondPassResultCount ?? o.second_pass_result_count ?? 0) > 0 || String(o.secondPassStatus ?? o.second_pass_status ?? '').toLowerCase() === 'completed')
+    .sort((a, b) => new Date(b.completedAt || b.createdAt || 0) - new Date(a.completedAt || a.createdAt || 0));
+}
 function getPromptBindings(promptId) { return state.bindings.filter(b => b.promptId === promptId && b.enabled !== false); }
 function getBinding(promptId, groupId) { return state.bindings.find(b => b.promptId === promptId && b.cameraGroupId === groupId && b.enabled !== false) || null; }
 function getRunningOperations(promptId) {
@@ -269,6 +285,7 @@ function renderPrompts() {
     row.onclick = async (event) => {
       if (event.target.closest('.edit-prompt-btn')) return;
       state.selectedPromptId = row.dataset.promptId;
+      state.selectedOperationId = 'latest';
       renderPrompts();
       await loadResults();
     };
@@ -276,6 +293,7 @@ function renderPrompts() {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
       state.selectedPromptId = row.dataset.promptId;
+      state.selectedOperationId = 'latest';
       renderPrompts();
       await loadResults();
     };
@@ -295,6 +313,26 @@ function renderGroupSelects() {
   const options = state.groups.map(g => `<option value="${esc(g.id)}">${esc(g.name)} · ${g.cameraIds.length} cams</option>`).join('');
   $('resultGroupSelect').innerHTML = options || '<option value="">No camera groups</option>';
   if (state.selectedGroupId && [...$('resultGroupSelect').options].some(o => o.value === state.selectedGroupId)) $('resultGroupSelect').value = state.selectedGroupId;
+  renderResultPassSelect();
+}
+
+function renderResultPassSelect() {
+  const select = $('resultPassSelect');
+  if (!select) return;
+  const prompt = getSelectedPrompt();
+  const group = getSelectedGroup();
+  const previous = prompt && group ? matchingResultOperations(prompt.id, group.id) : [];
+  const currentValue = state.selectedOperationId || 'latest';
+  select.innerHTML = [
+    '<option value="latest">Most recent pass</option>',
+    ...previous.map(o => {
+      const passCount = state.showingFirstPass ? o.firstPassResultCount : o.secondPassResultCount;
+      const trigger = o.trigger ? ` · ${o.trigger}` : '';
+      return `<option value="${esc(o.id)}">${esc(nowish(o.completedAt || o.createdAt))}${trigger} · ${esc(passCount)} results</option>`;
+    })
+  ].join('');
+  select.value = [...select.options].some(o => o.value === currentValue) ? currentValue : 'latest';
+  state.selectedOperationId = select.value;
 }
 
 async function openPromptModal(prompt = null) {
@@ -483,14 +521,22 @@ function renderModalScheduleList() {
   });
 }
 
+function apiAssetUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path;
+  if (path.startsWith(state.base + '/')) return path;
+  return state.base + (path.startsWith('/') ? path : `/${path}`);
+}
+
 async function imageObjectUrl(frameUrl) {
   if (!frameUrl) return null;
-  if (state.imageUrls.has(frameUrl)) return state.imageUrls.get(frameUrl);
-  const response = await fetch(frameUrl.startsWith('http') ? frameUrl : frameUrl, { headers: authHeader() });
+  const requestUrl = apiAssetUrl(frameUrl);
+  if (state.imageUrls.has(requestUrl)) return state.imageUrls.get(requestUrl);
+  const response = await fetch(requestUrl, { headers: authHeader() });
   if (!response.ok) return null;
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
-  state.imageUrls.set(frameUrl, url);
+  state.imageUrls.set(requestUrl, url);
   return url;
 }
 
@@ -511,16 +557,21 @@ function normalizeResult(r) {
 async function loadResults() {
   const prompt = getSelectedPrompt();
   const group = getSelectedGroup();
+  renderResultPassSelect();
   $('resultContext').textContent = prompt && group
-    ? `${prompt.name} · ${group.name} · ${state.showingFirstPass ? 'first pass/intermediate' : 'second pass/global'} results`
+    ? `${prompt.name} · ${group.name} · ${resultPassLabel()} results${state.selectedOperationId === 'latest' ? ' · most recent pass' : ` · pass ${state.selectedOperationId}`}`
     : 'Select a prompt and camera group.';
   if (!prompt || !group) {
     $('resultList').innerHTML = '<div class="empty">Select a prompt and camera group to see results.</div>';
     return;
   }
-  const pass = state.showingFirstPass ? 'first' : 'second';
+  $('resultList').innerHTML = '<div class="empty"><span class="spinner"></span> Loading results...</div>';
+  const pass = resultPassSlug();
+  const path = state.selectedOperationId && state.selectedOperationId !== 'latest'
+    ? `/operations/${encodeURIComponent(state.selectedOperationId)}/${pass}-results?include=true`
+    : `/prompt-results/latest/${pass}?promptId=${encodeURIComponent(prompt.id)}&cameraGroupId=${encodeURIComponent(group.id)}&include=true`;
   try {
-    const data = await api(`/prompt-results/latest/${pass}?promptId=${encodeURIComponent(prompt.id)}&cameraGroupId=${encodeURIComponent(group.id)}`);
+    const data = await api(path);
     const results = (data.results || []).map(normalizeResult);
     await renderResults(results);
   } catch (err) {
@@ -639,10 +690,12 @@ function wireEvents() {
   $('promptGroupFilter').onchange = () => { state.promptGroupFilter = $('promptGroupFilter').value; renderPrompts(); };
   $('promptCameraFilter').oninput = () => { state.promptCameraFilter = $('promptCameraFilter').value; renderPrompts(); };
   $('clearPromptFiltersBtn').onclick = () => { state.promptGroupFilter = ''; state.promptCameraFilter = ''; renderPromptFilters(); renderPrompts(); };
-  $('resultGroupSelect').onchange = async () => { state.selectedGroupId = $('resultGroupSelect').value; await loadResults(); };
+  $('resultGroupSelect').onchange = async () => { state.selectedGroupId = $('resultGroupSelect').value; state.selectedOperationId = 'latest'; await loadResults(); };
+  $('resultPassSelect').onchange = async () => { state.selectedOperationId = $('resultPassSelect').value || 'latest'; await loadResults(); };
   $('refreshResultsBtn').onclick = () => guard(loadResults);
   $('showFirstPassBtn').onclick = () => guard(async () => {
     state.showingFirstPass = !state.showingFirstPass;
+    state.selectedOperationId = 'latest';
     $('showFirstPassBtn').textContent = state.showingFirstPass ? 'Show Second Pass' : 'Show First Pass';
     await loadResults();
   });
