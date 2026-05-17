@@ -21,6 +21,11 @@ import CreateSavedPromptRequest from './model/CreateSavedPromptRequest';
 import EstimateOperation200Response from './model/EstimateOperation200Response';
 import EstimateOperationRequest from './model/EstimateOperationRequest';
 import GetGeminiCallerSettings200Response from './model/GetGeminiCallerSettings200Response';
+import GetProxiedCameraFrameUrl200Response from './model/GetProxiedCameraFrameUrl200Response';
+import GetProxiedCameraSnapshot200Response from './model/GetProxiedCameraSnapshot200Response';
+import GetProxiedCameraSnapshot200ResponseFrame from './model/GetProxiedCameraSnapshot200ResponseFrame';
+import GetProxiedCameraStream200Response from './model/GetProxiedCameraStream200Response';
+import GetProxiedCameraSystemStatus200Response from './model/GetProxiedCameraSystemStatus200Response';
 import GetUsageLimitSettings200Response from './model/GetUsageLimitSettings200Response';
 import GetUsageSummary200Response from './model/GetUsageSummary200Response';
 import ListCameraGroupPromptBindings200Response from './model/ListCameraGroupPromptBindings200Response';
@@ -40,6 +45,10 @@ import ListOperations200Response from './model/ListOperations200Response';
 import ListOperations200ResponseOperationsInner from './model/ListOperations200ResponseOperationsInner';
 import ListOperatorQueueItems200Response from './model/ListOperatorQueueItems200Response';
 import ListOperatorQueueItems200ResponseItemsInner from './model/ListOperatorQueueItems200ResponseItemsInner';
+import ListProxiedIntegratorCameraGroups200Response from './model/ListProxiedIntegratorCameraGroups200Response';
+import ListProxiedIntegratorCameraGroups200ResponseGroupsInner from './model/ListProxiedIntegratorCameraGroups200ResponseGroupsInner';
+import ListProxiedIntegratorCameras200Response from './model/ListProxiedIntegratorCameras200Response';
+import ListProxiedIntegratorCameras200ResponseCamerasInner from './model/ListProxiedIntegratorCameras200ResponseCamerasInner';
 import ListSavedPrompts200Response from './model/ListSavedPrompts200Response';
 import ListSavedPrompts200ResponsePromptsInner from './model/ListSavedPrompts200ResponsePromptsInner';
 import ReplaceCameraGroupCamerasRequest from './model/ReplaceCameraGroupCamerasRequest';
@@ -50,6 +59,7 @@ import UpdateOperatorQueueItemRequest from './model/UpdateOperatorQueueItemReque
 import UpdateSavedPromptRequest from './model/UpdateSavedPromptRequest';
 import UpdateUsageLimitSettingsRequest from './model/UpdateUsageLimitSettingsRequest';
 import CameraGroupsApi from './api/CameraGroupsApi';
+import CameraSystemProxyApi from './api/CameraSystemProxyApi';
 import OperationsApi from './api/OperationsApi';
 import OperatorQueueApi from './api/OperatorQueueApi';
 import PromptBindingsApi from './api/PromptBindingsApi';
@@ -143,6 +153,36 @@ export {
      * @property {module:model/GetGeminiCallerSettings200Response}
      */
     GetGeminiCallerSettings200Response,
+
+    /**
+     * The GetProxiedCameraFrameUrl200Response model constructor.
+     * @property {module:model/GetProxiedCameraFrameUrl200Response}
+     */
+    GetProxiedCameraFrameUrl200Response,
+
+    /**
+     * The GetProxiedCameraSnapshot200Response model constructor.
+     * @property {module:model/GetProxiedCameraSnapshot200Response}
+     */
+    GetProxiedCameraSnapshot200Response,
+
+    /**
+     * The GetProxiedCameraSnapshot200ResponseFrame model constructor.
+     * @property {module:model/GetProxiedCameraSnapshot200ResponseFrame}
+     */
+    GetProxiedCameraSnapshot200ResponseFrame,
+
+    /**
+     * The GetProxiedCameraStream200Response model constructor.
+     * @property {module:model/GetProxiedCameraStream200Response}
+     */
+    GetProxiedCameraStream200Response,
+
+    /**
+     * The GetProxiedCameraSystemStatus200Response model constructor.
+     * @property {module:model/GetProxiedCameraSystemStatus200Response}
+     */
+    GetProxiedCameraSystemStatus200Response,
 
     /**
      * The GetUsageLimitSettings200Response model constructor.
@@ -259,6 +299,30 @@ export {
     ListOperatorQueueItems200ResponseItemsInner,
 
     /**
+     * The ListProxiedIntegratorCameraGroups200Response model constructor.
+     * @property {module:model/ListProxiedIntegratorCameraGroups200Response}
+     */
+    ListProxiedIntegratorCameraGroups200Response,
+
+    /**
+     * The ListProxiedIntegratorCameraGroups200ResponseGroupsInner model constructor.
+     * @property {module:model/ListProxiedIntegratorCameraGroups200ResponseGroupsInner}
+     */
+    ListProxiedIntegratorCameraGroups200ResponseGroupsInner,
+
+    /**
+     * The ListProxiedIntegratorCameras200Response model constructor.
+     * @property {module:model/ListProxiedIntegratorCameras200Response}
+     */
+    ListProxiedIntegratorCameras200Response,
+
+    /**
+     * The ListProxiedIntegratorCameras200ResponseCamerasInner model constructor.
+     * @property {module:model/ListProxiedIntegratorCameras200ResponseCamerasInner}
+     */
+    ListProxiedIntegratorCameras200ResponseCamerasInner,
+
+    /**
      * The ListSavedPrompts200Response model constructor.
      * @property {module:model/ListSavedPrompts200Response}
      */
@@ -317,6 +381,12 @@ export {
     * @property {module:api/CameraGroupsApi}
     */
     CameraGroupsApi,
+
+    /**
+    * The CameraSystemProxyApi service constructor.
+    * @property {module:api/CameraSystemProxyApi}
+    */
+    CameraSystemProxyApi,
 
     /**
     * The OperationsApi service constructor.

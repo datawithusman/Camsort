@@ -126,6 +126,7 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *CameraSystemIntegratorApi.CamerasApi* | [**getIntegratorCamera**](docs/CamerasApi.md#getIntegratorCamera) | **GET** /cameras/{cameraId} | Get camera details from the camera system
 *CameraSystemIntegratorApi.CamerasApi* | [**listIntegratorCameras**](docs/CamerasApi.md#listIntegratorCameras) | **GET** /cameras | List cameras from the camera system
+*CameraSystemIntegratorApi.SnapshotsApi* | [**getCameraFrameImage**](docs/SnapshotsApi.md#getCameraFrameImage) | **GET** /cameras/{cameraId}/frames/{frameId}/image | Get camera frame image bytes
 *CameraSystemIntegratorApi.SnapshotsApi* | [**getCameraFrameUrl**](docs/SnapshotsApi.md#getCameraFrameUrl) | **GET** /cameras/{cameraId}/frames/{frameId}/url | Get camera frame URL
 *CameraSystemIntegratorApi.SnapshotsApi* | [**getCameraSnapshot**](docs/SnapshotsApi.md#getCameraSnapshot) | **GET** /cameras/{cameraId}/snapshot | Get camera snapshot frame metadata
 *CameraSystemIntegratorApi.SourceCameraGroupsApi* | [**getIntegratorCameraGroup**](docs/SourceCameraGroupsApi.md#getIntegratorCameraGroup) | **GET** /camera-groups/{groupId} | Get source camera group details

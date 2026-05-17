@@ -102,6 +102,16 @@ Class | Method | HTTP request | Description
 *CameraGroupsApi* | [**list_camera_groups**](docs/CameraGroupsApi.md#list_camera_groups) | **GET** /camera-groups | List CamBot camera groups
 *CameraGroupsApi* | [**replace_camera_group_cameras**](docs/CameraGroupsApi.md#replace_camera_group_cameras) | **PUT** /camera-groups/{groupId}/cameras | Replace cameras assigned to a CamBot camera group
 *CameraGroupsApi* | [**update_camera_group**](docs/CameraGroupsApi.md#update_camera_group) | **PUT** /camera-groups/{groupId} | Update a CamBot camera group
+*CameraSystemProxyApi* | [**get_proxied_camera_frame_image**](docs/CameraSystemProxyApi.md#get_proxied_camera_frame_image) | **GET** /camera-system/cameras/{cameraId}/frames/{frameId}/image | Proxy camera frame image bytes
+*CameraSystemProxyApi* | [**get_proxied_camera_frame_url**](docs/CameraSystemProxyApi.md#get_proxied_camera_frame_url) | **GET** /camera-system/cameras/{cameraId}/frames/{frameId}/url | Proxy camera frame URL
+*CameraSystemProxyApi* | [**get_proxied_camera_snapshot**](docs/CameraSystemProxyApi.md#get_proxied_camera_snapshot) | **GET** /camera-system/cameras/{cameraId}/snapshot | Proxy camera snapshot metadata
+*CameraSystemProxyApi* | [**get_proxied_camera_stream**](docs/CameraSystemProxyApi.md#get_proxied_camera_stream) | **GET** /camera-system/cameras/{cameraId}/stream | Proxy camera stream descriptor
+*CameraSystemProxyApi* | [**get_proxied_camera_system_status**](docs/CameraSystemProxyApi.md#get_proxied_camera_system_status) | **GET** /camera-system/status | Proxy camera system status
+*CameraSystemProxyApi* | [**get_proxied_integrator_camera**](docs/CameraSystemProxyApi.md#get_proxied_integrator_camera) | **GET** /camera-system/cameras/{cameraId} | Proxy source camera details
+*CameraSystemProxyApi* | [**get_proxied_integrator_camera_group**](docs/CameraSystemProxyApi.md#get_proxied_integrator_camera_group) | **GET** /camera-system/source-camera-groups/{groupId} | Proxy source camera group details
+*CameraSystemProxyApi* | [**list_proxied_integrator_camera_group_cameras**](docs/CameraSystemProxyApi.md#list_proxied_integrator_camera_group_cameras) | **GET** /camera-system/source-camera-groups/{groupId}/cameras | Proxy source cameras in a group
+*CameraSystemProxyApi* | [**list_proxied_integrator_camera_groups**](docs/CameraSystemProxyApi.md#list_proxied_integrator_camera_groups) | **GET** /camera-system/source-camera-groups | Proxy source camera group list
+*CameraSystemProxyApi* | [**list_proxied_integrator_cameras**](docs/CameraSystemProxyApi.md#list_proxied_integrator_cameras) | **GET** /camera-system/cameras | Proxy source camera list
 *OperationsApi* | [**create_operation**](docs/OperationsApi.md#create_operation) | **POST** /operations | Create a prompt scan operation
 *OperationsApi* | [**estimate_operation**](docs/OperationsApi.md#estimate_operation) | **POST** /operations/estimate | Estimate prompt scan usage and cost
 *OperationsApi* | [**get_operation**](docs/OperationsApi.md#get_operation) | **GET** /operations/{operationId} | Get a prompt scan operation
@@ -120,6 +130,7 @@ Class | Method | HTTP request | Description
 *SavedPromptsApi* | [**create_saved_prompt**](docs/SavedPromptsApi.md#create_saved_prompt) | **POST** /saved-prompts | Create a saved prompt
 *SavedPromptsApi* | [**delete_saved_prompt**](docs/SavedPromptsApi.md#delete_saved_prompt) | **DELETE** /saved-prompts/{promptId} | Delete a saved prompt
 *SavedPromptsApi* | [**get_saved_prompt**](docs/SavedPromptsApi.md#get_saved_prompt) | **GET** /saved-prompts/{promptId} | Get a saved prompt
+*SavedPromptsApi* | [**list_saved_prompt_camera_groups**](docs/SavedPromptsApi.md#list_saved_prompt_camera_groups) | **GET** /saved-prompts/{promptId}/camera-groups | List camera groups used by a saved prompt
 *SavedPromptsApi* | [**list_saved_prompts**](docs/SavedPromptsApi.md#list_saved_prompts) | **GET** /saved-prompts | List saved prompts
 *SavedPromptsApi* | [**update_saved_prompt**](docs/SavedPromptsApi.md#update_saved_prompt) | **PUT** /saved-prompts/{promptId} | Update a saved prompt
 *SettingsApi* | [**get_gemini_caller_settings**](docs/SettingsApi.md#get_gemini_caller_settings) | **GET** /settings/gemini | Get Gemini caller settings
@@ -139,6 +150,11 @@ Class | Method | HTTP request | Description
  - [EstimateOperation200Response](docs/EstimateOperation200Response.md)
  - [EstimateOperationRequest](docs/EstimateOperationRequest.md)
  - [GetGeminiCallerSettings200Response](docs/GetGeminiCallerSettings200Response.md)
+ - [GetProxiedCameraFrameUrl200Response](docs/GetProxiedCameraFrameUrl200Response.md)
+ - [GetProxiedCameraSnapshot200Response](docs/GetProxiedCameraSnapshot200Response.md)
+ - [GetProxiedCameraSnapshot200ResponseFrame](docs/GetProxiedCameraSnapshot200ResponseFrame.md)
+ - [GetProxiedCameraStream200Response](docs/GetProxiedCameraStream200Response.md)
+ - [GetProxiedCameraSystemStatus200Response](docs/GetProxiedCameraSystemStatus200Response.md)
  - [GetUsageLimitSettings200Response](docs/GetUsageLimitSettings200Response.md)
  - [GetUsageSummary200Response](docs/GetUsageSummary200Response.md)
  - [ListCameraGroupPromptBindings200Response](docs/ListCameraGroupPromptBindings200Response.md)
@@ -158,6 +174,10 @@ Class | Method | HTTP request | Description
  - [ListOperations200ResponseOperationsInner](docs/ListOperations200ResponseOperationsInner.md)
  - [ListOperatorQueueItems200Response](docs/ListOperatorQueueItems200Response.md)
  - [ListOperatorQueueItems200ResponseItemsInner](docs/ListOperatorQueueItems200ResponseItemsInner.md)
+ - [ListProxiedIntegratorCameraGroups200Response](docs/ListProxiedIntegratorCameraGroups200Response.md)
+ - [ListProxiedIntegratorCameraGroups200ResponseGroupsInner](docs/ListProxiedIntegratorCameraGroups200ResponseGroupsInner.md)
+ - [ListProxiedIntegratorCameras200Response](docs/ListProxiedIntegratorCameras200Response.md)
+ - [ListProxiedIntegratorCameras200ResponseCamerasInner](docs/ListProxiedIntegratorCameras200ResponseCamerasInner.md)
  - [ListSavedPrompts200Response](docs/ListSavedPrompts200Response.md)
  - [ListSavedPrompts200ResponsePromptsInner](docs/ListSavedPrompts200ResponsePromptsInner.md)
  - [ReplaceCameraGroupCamerasRequest](docs/ReplaceCameraGroupCamerasRequest.md)

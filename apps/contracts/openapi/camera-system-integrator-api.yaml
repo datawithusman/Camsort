@@ -140,6 +140,44 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /cameras/{cameraId}/frames/{frameId}/image:
+    get:
+      tags:
+      - Snapshots
+      summary: Get camera frame image bytes
+      description: Returns the raw image bytes for a previously returned camera frame.
+      operationId: getCameraFrameImage
+      parameters:
+      - $ref: '#/components/parameters/CameraId'
+      - $ref: '#/components/parameters/FrameId'
+      responses:
+        '200':
+          description: Frame image bytes returned
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /cameras/{cameraId}/stream:
     get:
       tags:

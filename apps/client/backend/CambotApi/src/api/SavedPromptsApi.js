@@ -14,6 +14,7 @@
 
 import ApiClient from "../ApiClient";
 import CreateSavedPromptRequest from '../model/CreateSavedPromptRequest';
+import ListCameraGroups200Response from '../model/ListCameraGroups200Response';
 import ListSavedPrompts200Response from '../model/ListSavedPrompts200Response';
 import ListSavedPrompts200ResponsePromptsInner from '../model/ListSavedPrompts200ResponsePromptsInner';
 import UpdateSavedPromptRequest from '../model/UpdateSavedPromptRequest';
@@ -169,6 +170,60 @@ export default class SavedPromptsApi {
      */
     getSavedPrompt(promptId) {
       return this.getSavedPromptWithHttpInfo(promptId)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List camera groups used by a saved prompt
+     * Returns the camera groups that are currently bound to the saved prompt. By default disabled prompt bindings are excluded.
+     * @param {String} promptId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [includeDisabled = false)] When true, include camera groups where the prompt binding exists but is disabled.
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListCameraGroups200Response} and HTTP response
+     */
+    listSavedPromptCameraGroupsWithHttpInfo(promptId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'promptId' is set
+      if (promptId === undefined || promptId === null) {
+        throw new Error("Missing the required parameter 'promptId' when calling listSavedPromptCameraGroups");
+      }
+
+      let pathParams = {
+        'promptId': promptId
+      };
+      let queryParams = {
+        'includeDisabled': opts['includeDisabled']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListCameraGroups200Response;
+      return this.apiClient.callApi(
+        '/saved-prompts/{promptId}/camera-groups', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List camera groups used by a saved prompt
+     * Returns the camera groups that are currently bound to the saved prompt. By default disabled prompt bindings are excluded.
+     * @param {String} promptId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.includeDisabled When true, include camera groups where the prompt binding exists but is disabled. (default to false)
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListCameraGroups200Response}
+     */
+    listSavedPromptCameraGroups(promptId, opts) {
+      return this.listSavedPromptCameraGroupsWithHttpInfo(promptId, opts)
         .then(function(response_and_data) {
           return response_and_data.data;
         });

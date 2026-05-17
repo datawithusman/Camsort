@@ -31,3 +31,6 @@
 .loading-pill{background:#0b3b66;color:#bae6fd;}
 .spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:999px;display:inline-block;margin-right:8px;vertical-align:-2px;animation:cambot-spin .8s linear infinite;}
 @keyframes cambot-spin{to{transform:rotate(360deg)}}
+
+.button-row select.compact-select{margin:0;}
+.result-card[data-frame-url=""] .image-slot{border-style:dashed;}

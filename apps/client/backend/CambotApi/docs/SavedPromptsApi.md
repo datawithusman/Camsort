@@ -7,6 +7,7 @@ Method | HTTP request | Description
 [**createSavedPrompt**](SavedPromptsApi.md#createSavedPrompt) | **POST** /saved-prompts | Create a saved prompt
 [**deleteSavedPrompt**](SavedPromptsApi.md#deleteSavedPrompt) | **DELETE** /saved-prompts/{promptId} | Delete a saved prompt
 [**getSavedPrompt**](SavedPromptsApi.md#getSavedPrompt) | **GET** /saved-prompts/{promptId} | Get a saved prompt
+[**listSavedPromptCameraGroups**](SavedPromptsApi.md#listSavedPromptCameraGroups) | **GET** /saved-prompts/{promptId}/camera-groups | List camera groups used by a saved prompt
 [**listSavedPrompts**](SavedPromptsApi.md#listSavedPrompts) | **GET** /saved-prompts | List saved prompts
 [**updateSavedPrompt**](SavedPromptsApi.md#updateSavedPrompt) | **PUT** /saved-prompts/{promptId} | Update a saved prompt
 
@@ -142,6 +143,59 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**ListSavedPrompts200ResponsePromptsInner**](ListSavedPrompts200ResponsePromptsInner.md)
+
+### Authorization
+
+[basicAuth](../README.md#basicAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+
+## listSavedPromptCameraGroups
+
+> ListCameraGroups200Response listSavedPromptCameraGroups(promptId, opts)
+
+List camera groups used by a saved prompt
+
+Returns the camera groups that are currently bound to the saved prompt. By default disabled prompt bindings are excluded.
+
+### Example
+
+```javascript
+import CambotApi from 'cambot-api';
+let defaultClient = CambotApi.ApiClient.instance;
+// Configure HTTP basic authorization: basicAuth
+let basicAuth = defaultClient.authentications['basicAuth'];
+basicAuth.username = 'YOUR USERNAME';
+basicAuth.password = 'YOUR PASSWORD';
+
+let apiInstance = new CambotApi.SavedPromptsApi();
+let promptId = "promptId_example"; // String | 
+let opts = {
+  'includeDisabled': false // Boolean | When true, include camera groups where the prompt binding exists but is disabled.
+};
+apiInstance.listSavedPromptCameraGroups(promptId, opts).then((data) => {
+  console.log('API called successfully. Returned data: ' + data);
+}, (error) => {
+  console.error(error);
+});
+
+```
+
+### Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **promptId** | **String**|  | 
+ **includeDisabled** | **Boolean**| When true, include camera groups where the prompt binding exists but is disabled. | [optional] [default to false]
+
+### Return type
+
+[**ListCameraGroups200Response**](ListCameraGroups200Response.md)
 
 ### Authorization
 

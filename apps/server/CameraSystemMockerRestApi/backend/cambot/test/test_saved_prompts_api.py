@@ -47,6 +47,13 @@ class TestSavedPromptsApi(unittest.TestCase):
         """
         pass
 
+    def test_list_saved_prompt_camera_groups(self) -> None:
+        """Test case for list_saved_prompt_camera_groups
+
+        List camera groups used by a saved prompt
+        """
+        pass
+
     def test_list_saved_prompts(self) -> None:
         """Test case for list_saved_prompts
 

@@ -48,6 +48,16 @@
   }
 
   describe('SnapshotsApi', function() {
+    describe('getCameraFrameImage', function() {
+      it('should call getCameraFrameImage successfully', function(done) {
+        //uncomment below and update the code to test getCameraFrameImage
+        //instance.getCameraFrameImage(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
     describe('getCameraFrameUrl', function() {
       it('should call getCameraFrameUrl successfully', function(done) {
         //uncomment below and update the code to test getCameraFrameUrl

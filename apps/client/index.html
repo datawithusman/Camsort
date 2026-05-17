@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>CamBot</title>
-  <link rel="stylesheet" href="styles.css?v=prompt-results-history-1">
+  <link rel="stylesheet" href="styles.css?v=prompt-results-fixed-1">
 </head>
 <body>
   <main id="app">
@@ -58,11 +58,11 @@
         <div class="widget-header">
           <div>
             <h2>Prompt Result Viewer</h2>
-            <p class="muted">Shows the most recent pass by default. Use the pass dropdown to inspect older runs.</p>
+            <p class="muted">Latest second-pass/global camera list for the selected prompt and camera group.</p>
           </div>
           <div class="button-row">
             <select id="resultGroupSelect" class="compact-select"></select>
-            <select id="resultPassSelect" class="compact-select" title="Choose most recent or previous pass"></select>
+            <select id="resultPassSelect" class="compact-select"><option value="latest">Most recent pass</option></select>
             <button id="refreshResultsBtn" class="secondary">Refresh Results</button>
             <button id="showFirstPassBtn" class="ghost">Show First Pass</button>
           </div>
@@ -143,6 +143,6 @@
       </section>
     </div>
   </main>
-  <script src="main.js?v=prompt-results-history-1"></script>
+  <script src="main.js?v=prompt-results-fixed-1"></script>
 </body>
 </html>

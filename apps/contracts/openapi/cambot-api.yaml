@@ -20,6 +20,7 @@ tags:
   - name: Operator Queue
   - name: Settings
   - name: Usage
+  - name: Camera System Proxy
 
 paths:
   /camera-groups:
@@ -209,6 +210,29 @@ paths:
       responses:
         "204":
           description: Saved prompt deleted
+
+  /saved-prompts/{promptId}/camera-groups:
+    get:
+      tags: [Saved Prompts]
+      summary: List camera groups used by a saved prompt
+      description: Returns the camera groups that are currently bound to the saved prompt. By default disabled prompt bindings are excluded.
+      operationId: listSavedPromptCameraGroups
+      parameters:
+        - $ref: "#/components/parameters/PromptId"
+        - name: includeDisabled
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, include camera groups where the prompt binding exists but is disabled.
+      responses:
+        "200":
+          description: Camera groups used by the saved prompt returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroupListResponse"
 
   /camera-groups/{groupId}/prompt-bindings:
     get:
@@ -606,6 +630,176 @@ paths:
               schema:
                 $ref: "./schemas/cambot/usage.yaml#/components/schemas/UsageSummary"
 
+  /camera-system/status:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera system status
+      operationId: getProxiedCameraSystemStatus
+      responses:
+        "200":
+          description: Camera system status returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/system-status.yaml#/components/schemas/SystemStatus"
+
+  /camera-system/cameras:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera list
+      operationId: listProxiedIntegratorCameras
+      parameters:
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cameras returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
+
+  /camera-system/cameras/{cameraId}:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera details
+      operationId: getProxiedIntegratorCamera
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Camera returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/Camera"
+
+  /camera-system/cameras/{cameraId}/snapshot:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera snapshot metadata
+      operationId: getProxiedCameraSnapshot
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Snapshot frame metadata returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraSnapshot"
+
+  /camera-system/cameras/{cameraId}/frames/{frameId}/url:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera frame URL
+      operationId: getProxiedCameraFrameUrl
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+        - $ref: "#/components/parameters/FrameId"
+      responses:
+        "200":
+          description: Frame URL returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraFrameUrlResponse"
+
+  /camera-system/cameras/{cameraId}/frames/{frameId}/image:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera frame image bytes
+      operationId: getProxiedCameraFrameImage
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+        - $ref: "#/components/parameters/FrameId"
+      responses:
+        "200":
+          description: Frame image bytes returned
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /camera-system/cameras/{cameraId}/stream:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera stream descriptor
+      operationId: getProxiedCameraStream
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Stream descriptor returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/stream.yaml#/components/schemas/CameraStream"
+
+  /camera-system/source-camera-groups:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera group list
+      operationId: listProxiedIntegratorCameraGroups
+      responses:
+        "200":
+          description: Source camera groups returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroupListResponse"
+
+  /camera-system/source-camera-groups/{groupId}:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera group details
+      operationId: getProxiedIntegratorCameraGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Source camera group returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroup"
+
+  /camera-system/source-camera-groups/{groupId}/cameras:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source cameras in a group
+      operationId: listProxiedIntegratorCameraGroupCameras
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Cameras returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
+
 components:
   securitySchemes:
     basicAuth:
@@ -623,6 +817,21 @@ components:
 
     PromptId:
       name: promptId
+      in: path
+      required: true
+      schema:
+        type: string
+
+
+    CameraId:
+      name: cameraId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    FrameId:
+      name: frameId
       in: path
       required: true
       schema:

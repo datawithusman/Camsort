@@ -4,6 +4,7 @@
 .travis.yml
 README.md
 docs/CameraGroupsApi.md
+docs/CameraSystemProxyApi.md
 docs/CreateCameraGroupPromptBindingRequest.md
 docs/CreateCameraGroupRequest.md
 docs/CreateOperationRequest.md
@@ -12,6 +13,11 @@ docs/CreateSavedPromptRequest.md
 docs/EstimateOperation200Response.md
 docs/EstimateOperationRequest.md
 docs/GetGeminiCallerSettings200Response.md
+docs/GetProxiedCameraFrameUrl200Response.md
+docs/GetProxiedCameraSnapshot200Response.md
+docs/GetProxiedCameraSnapshot200ResponseFrame.md
+docs/GetProxiedCameraStream200Response.md
+docs/GetProxiedCameraSystemStatus200Response.md
 docs/GetUsageLimitSettings200Response.md
 docs/GetUsageSummary200Response.md
 docs/ListCameraGroupPromptBindings200Response.md
@@ -31,6 +37,10 @@ docs/ListOperations200Response.md
 docs/ListOperations200ResponseOperationsInner.md
 docs/ListOperatorQueueItems200Response.md
 docs/ListOperatorQueueItems200ResponseItemsInner.md
+docs/ListProxiedIntegratorCameraGroups200Response.md
+docs/ListProxiedIntegratorCameraGroups200ResponseGroupsInner.md
+docs/ListProxiedIntegratorCameras200Response.md
+docs/ListProxiedIntegratorCameras200ResponseCamerasInner.md
 docs/ListSavedPrompts200Response.md
 docs/ListSavedPrompts200ResponsePromptsInner.md
 docs/OperationsApi.md
@@ -51,6 +61,7 @@ mocha.opts
 package.json
 src/ApiClient.js
 src/api/CameraGroupsApi.js
+src/api/CameraSystemProxyApi.js
 src/api/OperationsApi.js
 src/api/OperatorQueueApi.js
 src/api/PromptBindingsApi.js
@@ -66,6 +77,11 @@ src/model/CreateSavedPromptRequest.js
 src/model/EstimateOperation200Response.js
 src/model/EstimateOperationRequest.js
 src/model/GetGeminiCallerSettings200Response.js
+src/model/GetProxiedCameraFrameUrl200Response.js
+src/model/GetProxiedCameraSnapshot200Response.js
+src/model/GetProxiedCameraSnapshot200ResponseFrame.js
+src/model/GetProxiedCameraStream200Response.js
+src/model/GetProxiedCameraSystemStatus200Response.js
 src/model/GetUsageLimitSettings200Response.js
 src/model/GetUsageSummary200Response.js
 src/model/ListCameraGroupPromptBindings200Response.js
@@ -85,6 +101,10 @@ src/model/ListOperations200Response.js
 src/model/ListOperations200ResponseOperationsInner.js
 src/model/ListOperatorQueueItems200Response.js
 src/model/ListOperatorQueueItems200ResponseItemsInner.js
+src/model/ListProxiedIntegratorCameraGroups200Response.js
+src/model/ListProxiedIntegratorCameraGroups200ResponseGroupsInner.js
+src/model/ListProxiedIntegratorCameras200Response.js
+src/model/ListProxiedIntegratorCameras200ResponseCamerasInner.js
 src/model/ListSavedPrompts200Response.js
 src/model/ListSavedPrompts200ResponsePromptsInner.js
 src/model/ReplaceCameraGroupCamerasRequest.js
@@ -95,6 +115,7 @@ src/model/UpdateOperatorQueueItemRequest.js
 src/model/UpdateSavedPromptRequest.js
 src/model/UpdateUsageLimitSettingsRequest.js
 test/api/CameraGroupsApi.spec.js
+test/api/CameraSystemProxyApi.spec.js
 test/api/OperationsApi.spec.js
 test/api/OperatorQueueApi.spec.js
 test/api/PromptBindingsApi.spec.js
@@ -109,6 +130,11 @@ test/model/CreateSavedPromptRequest.spec.js
 test/model/EstimateOperation200Response.spec.js
 test/model/EstimateOperationRequest.spec.js
 test/model/GetGeminiCallerSettings200Response.spec.js
+test/model/GetProxiedCameraFrameUrl200Response.spec.js
+test/model/GetProxiedCameraSnapshot200Response.spec.js
+test/model/GetProxiedCameraSnapshot200ResponseFrame.spec.js
+test/model/GetProxiedCameraStream200Response.spec.js
+test/model/GetProxiedCameraSystemStatus200Response.spec.js
 test/model/GetUsageLimitSettings200Response.spec.js
 test/model/GetUsageSummary200Response.spec.js
 test/model/ListCameraGroupPromptBindings200Response.spec.js
@@ -128,6 +154,10 @@ test/model/ListOperations200Response.spec.js
 test/model/ListOperations200ResponseOperationsInner.spec.js
 test/model/ListOperatorQueueItems200Response.spec.js
 test/model/ListOperatorQueueItems200ResponseItemsInner.spec.js
+test/model/ListProxiedIntegratorCameraGroups200Response.spec.js
+test/model/ListProxiedIntegratorCameraGroups200ResponseGroupsInner.spec.js
+test/model/ListProxiedIntegratorCameras200Response.spec.js
+test/model/ListProxiedIntegratorCameras200ResponseCamerasInner.spec.js
 test/model/ListSavedPrompts200Response.spec.js
 test/model/ListSavedPrompts200ResponsePromptsInner.spec.js
 test/model/ReplaceCameraGroupCamerasRequest.spec.js

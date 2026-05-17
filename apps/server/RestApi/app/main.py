@@ -156,6 +156,19 @@ def get_prompt(prompt_id: str):
     r=one("SELECT * FROM saved_prompts WHERE id=:id", {"id":prompt_id})
     if not r: nf("Saved prompt", prompt_id)
     return r
+@app.get("/saved-prompts/{prompt_id}/camera-groups")
+def prompt_camera_groups(prompt_id: str, include_disabled: bool = Query(default=False, alias="includeDisabled")):
+    get_prompt(prompt_id)
+    groups = many("""
+SELECT cg.*
+FROM camera_groups cg
+JOIN prompt_bindings pb ON pb.camera_group_id = cg.id
+WHERE pb.prompt_id = :prompt_id
+  AND (:include_disabled OR pb.enabled = true)
+ORDER BY cg.created_at DESC
+""", {"prompt_id": prompt_id, "include_disabled": include_disabled})
+    return {"groups": groups}
+
 @app.put("/saved-prompts/{prompt_id}")
 def update_prompt(prompt_id: str, p: JsonObject):
     r=one("UPDATE saved_prompts SET name=COALESCE(:name,name), description=COALESCE(:description,description), prompt_text=COALESCE(:prompt_text,prompt_text), enabled=COALESCE(:enabled,enabled), updated_at=now() WHERE id=:id RETURNING *", {"id":prompt_id,"name":p.get("name"),"description":p.get("description"),"prompt_text":p.get("promptText"),"enabled":p.get("enabled")}, True)

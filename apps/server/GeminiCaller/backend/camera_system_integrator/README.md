@@ -97,6 +97,7 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *CamerasApi* | [**get_integrator_camera**](docs/CamerasApi.md#get_integrator_camera) | **GET** /cameras/{cameraId} | Get camera details from the camera system
 *CamerasApi* | [**list_integrator_cameras**](docs/CamerasApi.md#list_integrator_cameras) | **GET** /cameras | List cameras from the camera system
+*SnapshotsApi* | [**get_camera_frame_image**](docs/SnapshotsApi.md#get_camera_frame_image) | **GET** /cameras/{cameraId}/frames/{frameId}/image | Get camera frame image bytes
 *SnapshotsApi* | [**get_camera_frame_url**](docs/SnapshotsApi.md#get_camera_frame_url) | **GET** /cameras/{cameraId}/frames/{frameId}/url | Get camera frame URL
 *SnapshotsApi* | [**get_camera_snapshot**](docs/SnapshotsApi.md#get_camera_snapshot) | **GET** /cameras/{cameraId}/snapshot | Get camera snapshot frame metadata
 *SourceCameraGroupsApi* | [**get_integrator_camera_group**](docs/SourceCameraGroupsApi.md#get_integrator_camera_group) | **GET** /camera-groups/{groupId} | Get source camera group details

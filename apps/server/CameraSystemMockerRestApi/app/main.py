@@ -11,19 +11,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from urllib.parse import quote
 
-from app.dtos.camera_system import (
-    CameraFrameMetadataDto,
-    CameraFrameUrlResponseDto,
-    CameraSnapshotDto,
-    CameraStreamDto,
-    CameraSystemCameraDto,
-    CameraSystemCameraListDto,
-    CameraSystemGroupDto,
-    CameraSystemGroupListDto,
-    CameraSystemStatusDto,
-)
-
-
 app = FastAPI(title="CamBot Camera System Mocker REST API")
 
 
@@ -310,30 +297,32 @@ def get_state() -> tuple[dict[str, JsonObject], dict[str, JsonObject]]:
     return camera_map, group_map
 
 
-def camera_to_dto(camera: JsonObject) -> CameraSystemCameraDto:
-    return CameraSystemCameraDto(
-        id=camera["id"],
-        name=camera["name"],
-        description=camera.get("description"),
-        location=camera.get("location"),
-        group_ids=camera.get("groupIds", []),
-        status=camera.get("status", "unknown"),
-        stream_available=False,
-        snapshot_available=True,
-        vendor_metadata=camera.get("vendorMetadata", {}),
-    )
+def camera_response(camera: JsonObject) -> JsonObject:
+    """Return the JSON shape defined by camera-system-integrator-api.yaml."""
+    return {
+        "id": camera["id"],
+        "name": camera["name"],
+        "description": camera.get("description"),
+        "location": camera.get("location"),
+        "groupIds": camera.get("groupIds", []),
+        "status": camera.get("status", "unknown"),
+        "streamAvailable": False,
+        "snapshotAvailable": True,
+        "vendorMetadata": camera.get("vendorMetadata", {}),
+    }
 
 
-def group_to_dto(group: JsonObject) -> CameraSystemGroupDto:
-    return CameraSystemGroupDto(
-        id=group["id"],
-        name=group["name"],
-        description=group.get("description"),
-        parent_group_id=group.get("parentGroupId"),
-        camera_ids=group.get("cameraIds", []),
-        child_group_ids=group.get("childGroupIds", []),
-        vendor_metadata=group.get("vendorMetadata", {}),
-    )
+def group_response(group: JsonObject) -> JsonObject:
+    """Return the JSON shape defined by camera-system-integrator-api.yaml."""
+    return {
+        "id": group["id"],
+        "name": group["name"],
+        "description": group.get("description"),
+        "parentGroupId": group.get("parentGroupId"),
+        "cameraIds": group.get("cameraIds", []),
+        "childGroupIds": group.get("childGroupIds", []),
+        "vendorMetadata": group.get("vendorMetadata", {}),
+    }
 
 
 def list_image_files(camera: JsonObject) -> list[Path]:
@@ -422,13 +411,13 @@ def system_status() -> JsonObject:
 
     status = "healthy" if camera_map else "degraded"
 
-    return CameraSystemStatusDto(
-        status=status,
-        checked_at=utc_now_iso(),
-        camera_count=len(camera_map),
-        online_camera_count=online_count,
-        message="Camera system mocker is running.",
-    ).to_json()
+    return {
+        "status": status,
+        "checkedAt": utc_now_iso(),
+        "cameraCount": len(camera_map),
+        "onlineCameraCount": online_count,
+        "message": "Camera system mocker is running.",
+    }
 
 
 @app.get("/cameras")
@@ -458,15 +447,13 @@ def list_cameras(
             or query in str(camera.get("location") or "").lower()
         ]
 
-    return CameraSystemCameraListDto(
-        cameras=[camera_to_dto(camera) for camera in cameras]
-    ).to_json()
+    return {"cameras": [camera_response(camera) for camera in cameras]}
 
 
 @app.get("/cameras/{camera_id}")
 def get_camera(camera_id: str) -> JsonObject:
     camera = get_camera_or_404(camera_id)
-    return camera_to_dto(camera).to_json()
+    return camera_response(camera)
 
 
 def frame_id_for(camera_id: str, sequence_number: int, frame_index: int) -> str:
@@ -565,20 +552,20 @@ def get_snapshot(camera_id: str) -> JsonObject:
     snapshot_id = f"snapshot-{quote(camera_id, safe='')}-{sequence_number:08d}"
     captured_at = utc_now_iso()
 
-    return CameraSnapshotDto(
-        snapshot_id=snapshot_id,
-        camera_id=camera_id,
-        frame=CameraFrameMetadataDto(
-            frame_id=frame_id,
-            sequence_number=sequence_number,
-            captured_at=captured_at,
-            url=frame_url_for(camera_id, frame_id),
-            mime_type=content_type_for(path),
-            width=None,
-            height=None,
-            expires_at=None,
-        ),
-    ).to_json()
+    return {
+        "snapshotId": snapshot_id,
+        "cameraId": camera_id,
+        "frame": {
+            "frameId": frame_id,
+            "sequenceNumber": sequence_number,
+            "capturedAt": captured_at,
+            "url": frame_url_for(camera_id, frame_id),
+            "mimeType": content_type_for(path),
+            "width": None,
+            "height": None,
+            "expiresAt": None,
+        },
+    }
 
 
 @app.get("/cameras/{camera_id}/frames/{frame_id}/url")
@@ -589,13 +576,13 @@ def get_frame_url(camera_id: str, frame_id: str) -> JsonObject:
 
     path = get_frame_path_or_404(camera_id, frame_id)
 
-    return CameraFrameUrlResponseDto(
-        camera_id=camera_id,
-        frame_id=frame_id,
-        url=frame_url_for(camera_id, frame_id),
-        mime_type=content_type_for(path),
-        expires_at=None,
-    ).to_json()
+    return {
+        "cameraId": camera_id,
+        "frameId": frame_id,
+        "url": frame_url_for(camera_id, frame_id),
+        "mimeType": content_type_for(path),
+        "expiresAt": None,
+    }
 
 
 @app.get("/cameras/{camera_id}/frames/{frame_id}/image")
@@ -617,12 +604,12 @@ def get_frame_image(camera_id: str, frame_id: str) -> FileResponse:
 def get_camera_stream(camera_id: str) -> JsonObject:
     get_camera_or_404(camera_id)
 
-    return CameraStreamDto(
-        camera_id=camera_id,
-        stream_type="unknown",
-        stream_url="",
-        expires_at=None,
-    ).to_json()
+    return {
+        "cameraId": camera_id,
+        "streamType": "unknown",
+        "streamUrl": "",
+        "expiresAt": None,
+    }
 
 
 @app.get("/cameras/{camera_id}/stream.mjpeg")
@@ -634,15 +621,13 @@ def get_mjpeg_stream(camera_id: str) -> JsonObject:
 def list_camera_groups() -> JsonObject:
     _, group_map = get_state()
 
-    return CameraSystemGroupListDto(
-        groups=[group_to_dto(group) for group in group_map.values()]
-    ).to_json()
+    return {"groups": [group_response(group) for group in group_map.values()]}
 
 
 @app.get("/camera-groups/{group_id}")
 def get_camera_group(group_id: str) -> JsonObject:
     group = get_group_or_404(group_id)
-    return group_to_dto(group).to_json()
+    return group_response(group)
 
 
 @app.get("/camera-groups/{group_id}/cameras")
@@ -660,9 +645,9 @@ def list_cameras_for_group(group_id: str) -> JsonObject:
         )
 
     cameras = [
-        camera_to_dto(camera_map[camera_id])
+        camera_response(camera_map[camera_id])
         for camera_id in group["cameraIds"]
         if camera_id in camera_map
     ]
 
-    return CameraSystemCameraListDto(cameras=cameras).to_json()
+    return {"cameras": cameras}
