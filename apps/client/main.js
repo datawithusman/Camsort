@@ -12,6 +12,7 @@ const state = {
   promptCameraFilter: '',
   imageUrls: new Map(),
   showingFirstPass: false,
+  loadingActions: new Set(),
 };
 
 const $ = (id) => document.getElementById(id);
@@ -314,7 +315,40 @@ async function openPromptModal(prompt = null) {
   setTimeout(() => $('promptName').focus(), 0);
 }
 
-function closePromptModal() { $('promptModal').hidden = true; }
+function closePromptModal() { $('promptModal').hidden = true; setModalStatus(''); state.loadingActions.clear(); }
+
+function actionKey(kind, groupId = '') {
+  const promptId = $('promptId')?.value || state.selectedPromptId || 'none';
+  return `${kind}:${promptId}:${groupId}`;
+}
+function isActionLoading(kind, groupId = '') { return state.loadingActions.has(actionKey(kind, groupId)); }
+function anyScheduleActionLoading() { return Array.from(state.loadingActions).some(k => k.startsWith('schedule:') || k.startsWith('removeSchedule:') || k.startsWith('runScan:')); }
+function setModalStatus(message = '', tone = 'info') {
+  const el = $('modalStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.className = `modal-status ${message ? tone : ''}`;
+  el.hidden = !message;
+}
+async function withLoadingAction(kind, groupId, message, fn) {
+  const key = actionKey(kind, groupId);
+  state.loadingActions.add(key);
+  setModalStatus(message, 'loading');
+  renderModalScheduleList();
+  try {
+    const result = await fn();
+    setModalStatus('Done.', 'success');
+    setTimeout(() => { if (!anyScheduleActionLoading()) setModalStatus(''); }, 1100);
+    return result;
+  } catch (err) {
+    setModalStatus(err.message || String(err), 'error');
+    throw err;
+  } finally {
+    state.loadingActions.delete(key);
+    renderModalScheduleList();
+  }
+}
+
 
 async function savePrompt() {
   const id = $('promptId').value.trim();
@@ -355,16 +389,17 @@ async function runSingleScanForGroup(groupId) {
   const group = state.groups.find(g => g.id === groupId);
   if (!prompt) throw new Error('Select or save a prompt first.');
   if (!group) throw new Error('Select a camera group first.');
-  const operation = await api('/operations', {
-    method: 'POST',
-    body: JSON.stringify({ promptId: prompt.id, cameraGroupId: group.id, trigger: 'manual' }),
+  await withLoadingAction('runScan', group.id, `Queueing single scan for ${group.name}...`, async () => {
+    const operation = await api('/operations', {
+      method: 'POST',
+      body: JSON.stringify({ promptId: prompt.id, cameraGroupId: group.id, trigger: 'manual' }),
+    });
+    state.selectedGroupId = group.id;
+    $('resultGroupSelect').value = group.id;
+    await loadOperations();
+    renderPrompts();
+    setModalStatus(`Queued single scan for ${group.name}: ${operation?.id || 'operation created'}`, 'success');
   });
-  state.selectedGroupId = group.id;
-  $('resultGroupSelect').value = group.id;
-  await loadOperations();
-  renderPrompts();
-  renderModalScheduleList();
-  alert(`Queued single scan for ${group.name}: ${operation?.id || 'operation created'}`);
 }
 
 async function enableContinuousForGroup(groupId) {
@@ -372,13 +407,14 @@ async function enableContinuousForGroup(groupId) {
   const group = state.groups.find(g => g.id === groupId);
   if (!prompt) throw new Error('Select or save a prompt first.');
   if (!group) throw new Error('Select a camera group first.');
-  await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings`, {
-    method: 'POST',
-    body: JSON.stringify({ promptId: prompt.id, enabled: true }),
+  await withLoadingAction('schedule', group.id, `Scheduling ${prompt.name || prompt.id} on ${group.name}...`, async () => {
+    await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings`, {
+      method: 'POST',
+      body: JSON.stringify({ promptId: prompt.id, enabled: true }),
+    });
+    await loadBindings();
+    renderPrompts();
   });
-  await loadBindings();
-  renderPrompts();
-  renderModalScheduleList();
 }
 
 async function disableContinuousForGroup(groupId) {
@@ -386,10 +422,11 @@ async function disableContinuousForGroup(groupId) {
   const group = state.groups.find(g => g.id === groupId);
   const binding = prompt && group ? getBinding(prompt.id, group.id) : null;
   if (!binding || !group) return;
-  await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings/${encodeURIComponent(binding.id)}`, { method: 'DELETE' });
-  await loadBindings();
-  renderPrompts();
-  renderModalScheduleList();
+  await withLoadingAction('removeSchedule', group.id, `Removing background schedule for ${group.name}...`, async () => {
+    await api(`/camera-groups/${encodeURIComponent(group.id)}/prompt-bindings/${encodeURIComponent(binding.id)}`, { method: 'DELETE' });
+    await loadBindings();
+    renderPrompts();
+  });
 }
 
 function renderModalScheduleList() {
@@ -408,8 +445,12 @@ function renderModalScheduleList() {
   list.innerHTML = state.groups.map(group => {
     const binding = getBinding(prompt.id, group.id);
     const running = state.operations.some(o => o.promptId === prompt.id && o.cameraGroupId === group.id && ['queued','running','first_pass_running','second_pass_running'].includes(String(o.status).toLowerCase()));
+    const scheduling = isActionLoading('schedule', group.id);
+    const removing = isActionLoading('removeSchedule', group.id);
+    const queueing = isActionLoading('runScan', group.id);
+    const busy = scheduling || removing || queueing;
     return `
-      <article class="schedule-row" data-schedule-group-id="${esc(group.id)}">
+      <article class="schedule-row ${busy ? 'busy' : ''}" data-schedule-group-id="${esc(group.id)}" aria-busy="${busy ? 'true' : 'false'}">
         <div>
           <strong>${esc(group.name)}</strong>
           <p class="muted small">${esc(group.cameraIds.length)} cameras${group.description ? ` · ${esc(group.description)}` : ''}</p>
@@ -417,13 +458,14 @@ function renderModalScheduleList() {
         <div class="schedule-status">
           ${binding ? '<span class="pill ok">Scheduled</span>' : '<span class="pill soft">Not scheduled</span>'}
           ${running ? '<span class="pill warn">Scanning</span>' : '<span class="pill soft">Idle</span>'}
+          ${busy ? '<span class="pill loading-pill">Working...</span>' : ''}
           ${binding?.lastRunAt ? `<span class="pill soft">Last run ${esc(nowish(binding.lastRunAt))}</span>` : ''}
         </div>
-        <div class="button-row schedule-actions">
-          <button class="run-group-btn" data-run-group-id="${esc(group.id)}">Run Single Scan</button>
+        <div class="schedule-actions">
           ${binding
-            ? `<button class="remove-schedule-btn secondary" data-remove-schedule-group-id="${esc(group.id)}">Remove Schedule</button>`
-            : `<button class="schedule-group-btn secondary" data-schedule-group-id="${esc(group.id)}">Schedule Background</button>`
+            ? `<button class="remove-schedule-btn danger" data-remove-schedule-group-id="${esc(group.id)}" ${busy ? 'disabled' : ''}>${removing ? '<span class="spinner"></span> Removing...' : 'Remove Schedule'}</button>`
+            : `<button class="run-group-btn primary-action" data-run-group-id="${esc(group.id)}" ${busy ? 'disabled' : ''}>${queueing ? '<span class="spinner"></span> Queueing...' : 'Run Single Scan'}</button>
+               <button class="schedule-group-btn secondary-action" data-schedule-group-id="${esc(group.id)}" ${busy ? 'disabled' : ''}>${scheduling ? '<span class="spinner"></span> Scheduling...' : 'Schedule Background'}</button>`
           }
         </div>
       </article>

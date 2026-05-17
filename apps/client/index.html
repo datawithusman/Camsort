@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>CamBot</title>
-  <link rel="stylesheet" href="styles.css?v=prompt-modal-stable-2">
+  <link rel="stylesheet" href="styles.css?v=prompt-loading-schedules-1">
 </head>
 <body>
   <main id="app">
@@ -136,11 +136,12 @@
         <div class="modal-section run-section">
           <h3>Run or Schedule by Camera Group</h3>
           <p class="muted small">Each camera group has its own background schedule binding. Removing a schedule only removes that specific prompt + group binding.</p>
+          <div id="modalStatus" class="modal-status" hidden></div>
           <div id="modalScheduleList" class="schedule-list"></div>
         </div>
       </section>
     </div>
   </main>
-  <script src="main.js?v=prompt-modal-stable-2"></script>
+  <script src="main.js?v=prompt-loading-schedules-1"></script>
 </body>
 </html>
