@@ -78,20 +78,8 @@
       //expect(instance).to.be();
     });
 
-    it('should have the property scanFrequency (base name: "scanFrequency")', function() {
-      // uncomment below and update the code to test the property scanFrequency
-      //var instance = new CambotApi.ListCameraGroupPromptBindings200ResponseBindingsInner();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property priorityOverride (base name: "priorityOverride")', function() {
-      // uncomment below and update the code to test the property priorityOverride
-      //var instance = new CambotApi.ListCameraGroupPromptBindings200ResponseBindingsInner();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property maxEstimatedCostOverride (base name: "maxEstimatedCostOverride")', function() {
-      // uncomment below and update the code to test the property maxEstimatedCostOverride
+    it('should have the property lastRunAt (base name: "lastRunAt")', function() {
+      // uncomment below and update the code to test the property lastRunAt
       //var instance = new CambotApi.ListCameraGroupPromptBindings200ResponseBindingsInner();
       //expect(instance).to.be();
     });

@@ -164,6 +164,8 @@ async function loadBindings() {
 }
 
 function getSelectedPrompt() { return state.prompts.find(p => p.id === state.selectedPromptId) || null; }
+function getPromptById(id) { return state.prompts.find(p => p.id === id) || null; }
+function getModalPrompt() { const el = $('promptId'); return el?.value ? getPromptById(el.value) : null; }
 function getSelectedGroup() { return state.groups.find(g => g.id === state.selectedGroupId) || null; }
 function getPromptBindings(promptId) { return state.bindings.filter(b => b.promptId === promptId && b.enabled !== false); }
 function getBinding(promptId, groupId) { return state.bindings.find(b => b.promptId === promptId && b.cameraGroupId === groupId && b.enabled !== false) || null; }
@@ -328,6 +330,10 @@ async function savePrompt() {
     : await api('/saved-prompts', { method: 'POST', body: JSON.stringify(payload) });
   await loadPrompts();
   state.selectedPromptId = saved?.id || id || state.prompts.find(p => p.name === payload.name)?.id || state.selectedPromptId;
+  $('promptId').value = state.selectedPromptId || '';
+  $('promptModalTitle').textContent = 'Edit Prompt';
+  $('modalSubtitle').textContent = 'Edit the prompt and manage each camera group schedule separately.';
+  $('deletePromptBtn').hidden = false;
   await loadBindings();
   renderPrompts();
   renderModalScheduleList();
@@ -345,7 +351,7 @@ async function deletePrompt() {
 }
 
 async function runSingleScanForGroup(groupId) {
-  const prompt = getSelectedPrompt();
+  const prompt = getModalPrompt() || getSelectedPrompt();
   const group = state.groups.find(g => g.id === groupId);
   if (!prompt) throw new Error('Select or save a prompt first.');
   if (!group) throw new Error('Select a camera group first.');
@@ -362,7 +368,7 @@ async function runSingleScanForGroup(groupId) {
 }
 
 async function enableContinuousForGroup(groupId) {
-  const prompt = getSelectedPrompt();
+  const prompt = getModalPrompt() || getSelectedPrompt();
   const group = state.groups.find(g => g.id === groupId);
   if (!prompt) throw new Error('Select or save a prompt first.');
   if (!group) throw new Error('Select a camera group first.');
@@ -376,7 +382,7 @@ async function enableContinuousForGroup(groupId) {
 }
 
 async function disableContinuousForGroup(groupId) {
-  const prompt = getSelectedPrompt();
+  const prompt = getModalPrompt() || getSelectedPrompt();
   const group = state.groups.find(g => g.id === groupId);
   const binding = prompt && group ? getBinding(prompt.id, group.id) : null;
   if (!binding || !group) return;
@@ -387,7 +393,7 @@ async function disableContinuousForGroup(groupId) {
 }
 
 function renderModalScheduleList() {
-  const prompt = getSelectedPrompt();
+  const prompt = getModalPrompt();
   const list = $('modalScheduleList');
   if (!$('promptModal') || $('promptModal').hidden) return;
   if (!prompt) {
@@ -575,6 +581,8 @@ async function guard(fn) {
   try { await fn(); }
   catch (err) { alert(err.message || String(err)); }
 }
+
+function on(id, event, handler) { const el = $(id); if (el) el.addEventListener(event, handler); }
 
 function wireEvents() {
   $('loginBtn').onclick = () => guard(login);

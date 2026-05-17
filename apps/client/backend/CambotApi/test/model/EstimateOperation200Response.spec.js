@@ -72,8 +72,8 @@
       //expect(instance).to.be();
     });
 
-    it('should have the property estimatedPromptCount (base name: "estimatedPromptCount")', function() {
-      // uncomment below and update the code to test the property estimatedPromptCount
+    it('should have the property estimatedGeminiCalls (base name: "estimatedGeminiCalls")', function() {
+      // uncomment below and update the code to test the property estimatedGeminiCalls
       //var instance = new CambotApi.EstimateOperation200Response();
       //expect(instance).to.be();
     });

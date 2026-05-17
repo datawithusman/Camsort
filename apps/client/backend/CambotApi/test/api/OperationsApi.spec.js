@@ -68,6 +68,66 @@
         done();
       });
     });
+    describe('getOperation', function() {
+      it('should call getOperation successfully', function(done) {
+        //uncomment below and update the code to test getOperation
+        //instance.getOperation(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
+    describe('listLatestFirstPassResults', function() {
+      it('should call listLatestFirstPassResults successfully', function(done) {
+        //uncomment below and update the code to test listLatestFirstPassResults
+        //instance.listLatestFirstPassResults(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
+    describe('listLatestSecondPassResults', function() {
+      it('should call listLatestSecondPassResults successfully', function(done) {
+        //uncomment below and update the code to test listLatestSecondPassResults
+        //instance.listLatestSecondPassResults(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
+    describe('listOperationFirstPassResults', function() {
+      it('should call listOperationFirstPassResults successfully', function(done) {
+        //uncomment below and update the code to test listOperationFirstPassResults
+        //instance.listOperationFirstPassResults(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
+    describe('listOperationSecondPassResults', function() {
+      it('should call listOperationSecondPassResults successfully', function(done) {
+        //uncomment below and update the code to test listOperationSecondPassResults
+        //instance.listOperationSecondPassResults(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
+    describe('listOperations', function() {
+      it('should call listOperations successfully', function(done) {
+        //uncomment below and update the code to test listOperations
+        //instance.listOperations(function(error) {
+        //  if (error) throw error;
+        //expect().to.be();
+        //});
+        done();
+      });
+    });
   });
 
 }));

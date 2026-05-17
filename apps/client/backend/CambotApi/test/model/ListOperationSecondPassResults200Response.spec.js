@@ -28,7 +28,7 @@
   var instance;
 
   beforeEach(function() {
-    instance = new CambotApi.EstimateOperationRequestTarget();
+    instance = new CambotApi.ListOperationSecondPassResults200Response();
   });
 
   var getProperty = function(object, getter, property) {
@@ -47,28 +47,16 @@
       object[property] = value;
   }
 
-  describe('EstimateOperationRequestTarget', function() {
-    it('should create an instance of EstimateOperationRequestTarget', function() {
-      // uncomment below and update the code to test EstimateOperationRequestTarget
-      //var instance = new CambotApi.EstimateOperationRequestTarget();
-      //expect(instance).to.be.a(CambotApi.EstimateOperationRequestTarget);
+  describe('ListOperationSecondPassResults200Response', function() {
+    it('should create an instance of ListOperationSecondPassResults200Response', function() {
+      // uncomment below and update the code to test ListOperationSecondPassResults200Response
+      //var instance = new CambotApi.ListOperationSecondPassResults200Response();
+      //expect(instance).to.be.a(CambotApi.ListOperationSecondPassResults200Response);
     });
 
-    it('should have the property type (base name: "type")', function() {
-      // uncomment below and update the code to test the property type
-      //var instance = new CambotApi.EstimateOperationRequestTarget();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property cameraId (base name: "cameraId")', function() {
-      // uncomment below and update the code to test the property cameraId
-      //var instance = new CambotApi.EstimateOperationRequestTarget();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property cameraGroupId (base name: "cameraGroupId")', function() {
-      // uncomment below and update the code to test the property cameraGroupId
-      //var instance = new CambotApi.EstimateOperationRequestTarget();
+    it('should have the property results (base name: "results")', function() {
+      // uncomment below and update the code to test the property results
+      //var instance = new CambotApi.ListOperationSecondPassResults200Response();
       //expect(instance).to.be();
     });
 
