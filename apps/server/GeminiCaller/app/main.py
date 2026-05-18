@@ -47,6 +47,49 @@ def malformed_json_retry_delay_seconds() -> float:
         return 1.0
 
 
+def gemini_http_retry_max_attempts() -> int:
+    raw = env_first(
+        "GEMINI_HTTP_RETRY_MAX_ATTEMPTS",
+        "CAM_BOT_GEMINI_HTTP_RETRY_MAX_ATTEMPTS",
+        default="5",
+    )
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 5
+
+
+def gemini_regular_retry_delay_seconds() -> float:
+    """
+    Use the same delay cadence as normal Gemini calls.
+
+    The app setting is gemini_call_delay_ms / geminiCallDelayMs. If that cannot be
+    read for any reason, default to 2 seconds, which matches the original worker
+    default between camera calls.
+    """
+    try:
+        s = settings()
+        raw = s.get("geminiCallDelayMs") if isinstance(s, dict) else None
+        if raw is not None:
+            return max(0.0, float(raw) / 1000.0)
+    except Exception as e:
+        print(f"could not read geminiCallDelayMs for retry delay: {e}", flush=True)
+
+    raw_env = env_first(
+        "GEMINI_CALL_DELAY_MS",
+        "CAM_BOT_DEFAULT_GEMINI_CALL_DELAY_MS",
+        default="2000",
+    )
+    try:
+        return max(0.0, float(raw_env) / 1000.0)
+    except ValueError:
+        return 2.0
+
+
+def is_retryable_gemini_status(status_code: int) -> bool:
+    return status_code in {429, 500, 502, 503, 504}
+
+
 def db_url() -> str:
     u = os.getenv("DATABASE_URL")
     if not u:
@@ -206,15 +249,43 @@ def gemini_generate(payload: JsonObject, context_label: str = "Gemini") -> Any:
         "X-goog-api-key": key,
     }
 
-    attempts = malformed_json_max_attempts()
-    retry_delay = malformed_json_retry_delay_seconds()
+    malformed_attempts = malformed_json_max_attempts()
+    http_attempts = gemini_http_retry_max_attempts()
+    malformed_retry_delay = malformed_json_retry_delay_seconds()
+    http_retry_delay = gemini_regular_retry_delay_seconds()
     last_text_out = ""
     last_error: Exception | None = None
 
-    for attempt in range(1, attempts + 1):
-        r = requests.post(url, headers=headers, json=payload, timeout=gemini_timeout_seconds())
+    for malformed_attempt in range(1, malformed_attempts + 1):
+        last_response_text = ""
+
+        for http_attempt in range(1, http_attempts + 1):
+            r = requests.post(url, headers=headers, json=payload, timeout=gemini_timeout_seconds())
+            last_response_text = r.text[:1000]
+
+            if r.status_code < 400:
+                break
+
+            if is_retryable_gemini_status(r.status_code):
+                print(
+                    f"{context_label} Gemini HTTP {r.status_code} retryable "
+                    f"attempt {http_attempt}/{http_attempts}: {last_response_text}",
+                    flush=True,
+                )
+                if http_attempt < http_attempts and http_retry_delay:
+                    time.sleep(http_retry_delay)
+                continue
+
+            raise RuntimeError(f"Gemini HTTP {r.status_code}: {last_response_text}")
+        else:
+            raise RuntimeError(
+                f"Gemini HTTP retryable error after {http_attempts} attempt(s): {last_response_text}"
+            )
+
         if r.status_code >= 400:
-            raise RuntimeError(f"Gemini HTTP {r.status_code}: {r.text[:1000]}")
+            raise RuntimeError(
+                f"Gemini HTTP retryable error after {http_attempts} attempt(s): {last_response_text}"
+            )
 
         data = r.json()
         text_out = extract_gemini_text(data)
@@ -225,16 +296,17 @@ def gemini_generate(payload: JsonObject, context_label: str = "Gemini") -> Any:
         except json.JSONDecodeError as e:
             last_error = e
             print(
-                f"{context_label} malformed JSON attempt {attempt}/{attempts}: {e}",
+                f"{context_label} malformed JSON attempt "
+                f"{malformed_attempt}/{malformed_attempts}: {e}",
                 flush=True,
             )
-            if attempt < attempts and retry_delay:
-                time.sleep(retry_delay)
+            if malformed_attempt < malformed_attempts and malformed_retry_delay:
+                time.sleep(malformed_retry_delay)
 
     raise MalformedGeminiJsonError(
-        f"{context_label} returned malformed JSON after {attempts} attempt(s): {last_error}",
+        f"{context_label} returned malformed JSON after {malformed_attempts} attempt(s): {last_error}",
         raw_text=last_text_out,
-        attempts=attempts,
+        attempts=malformed_attempts,
     )
 
 
