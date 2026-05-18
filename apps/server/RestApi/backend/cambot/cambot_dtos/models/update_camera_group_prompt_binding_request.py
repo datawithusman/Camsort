@@ -17,8 +17,9 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,30 +28,8 @@ class UpdateCameraGroupPromptBindingRequest(BaseModel):
     UpdateCameraGroupPromptBindingRequest
     """ # noqa: E501
     enabled: Optional[StrictBool] = None
-    scan_frequency: Optional[StrictStr] = Field(default=None, alias="scanFrequency")
-    priority_override: Optional[StrictStr] = Field(default=None, alias="priorityOverride")
-    max_estimated_cost_override: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxEstimatedCostOverride")
-    __properties: ClassVar[List[str]] = ["enabled", "scanFrequency", "priorityOverride", "maxEstimatedCostOverride"]
-
-    @field_validator('scan_frequency')
-    def scan_frequency_validate_enum(cls, value):
-        """Validates the enum"""
-        if value is None:
-            return value
-
-        if value not in set(['manual', 'hourly', 'daily', 'continuous']):
-            raise ValueError("must be one of enum values ('manual', 'hourly', 'daily', 'continuous')")
-        return value
-
-    @field_validator('priority_override')
-    def priority_override_validate_enum(cls, value):
-        """Validates the enum"""
-        if value is None:
-            return value
-
-        if value not in set(['low', 'normal', 'high', 'emergency']):
-            raise ValueError("must be one of enum values ('low', 'normal', 'high', 'emergency')")
-        return value
+    last_run_at: Optional[datetime] = Field(default=None, alias="lastRunAt")
+    __properties: ClassVar[List[str]] = ["enabled", "lastRunAt"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -104,9 +83,7 @@ class UpdateCameraGroupPromptBindingRequest(BaseModel):
 
         _obj = cls.model_validate({
             "enabled": obj.get("enabled"),
-            "scanFrequency": obj.get("scanFrequency"),
-            "priorityOverride": obj.get("priorityOverride"),
-            "maxEstimatedCostOverride": obj.get("maxEstimatedCostOverride")
+            "lastRunAt": obj.get("lastRunAt")
         })
         return _obj
 

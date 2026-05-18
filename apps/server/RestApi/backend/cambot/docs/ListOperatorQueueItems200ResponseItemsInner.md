@@ -6,13 +6,19 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **str** |  | 
-**operation_id** | **str** |  | [optional] 
+**second_pass_result_id** | **str** |  | 
+**operation_id** | **str** |  | 
 **camera_id** | **str** |  | 
-**camera_group_id** | **str** |  | 
-**saved_prompt_id** | **str** |  | [optional] 
-**action** | [**ListOperatorQueueItems200ResponseItemsInnerAction**](ListOperatorQueueItems200ResponseItemsInnerAction.md) |  | 
-**score** | [**ListOperatorQueueItems200ResponseItemsInnerScore**](ListOperatorQueueItems200ResponseItemsInnerScore.md) |  | 
+**camera_group_id** | **str** |  | [optional] 
+**prompt_id** | **str** |  | [optional] 
+**frame_ref_id** | **str** |  | 
+**frame_url** | **str** |  | 
+**prompt_score** | **float** | Final global prompt score from the second pass. | 
+**operator_priority_score** | **float** |  | 
+**operator_action** | **str** |  | 
+**reason** | **str** |  | 
 **status** | **str** |  | 
+**operator_note** | **str** |  | [optional] 
 **created_at** | **datetime** |  | [optional] 
 **updated_at** | **datetime** |  | [optional] 
 

@@ -20,6 +20,7 @@ tags:
   - name: Operator Queue
   - name: Settings
   - name: Usage
+  - name: Camera System Proxy
 
 paths:
   /camera-groups:
@@ -139,12 +140,6 @@ paths:
       tags: [Saved Prompts]
       summary: List saved prompts
       operationId: listSavedPrompts
-      parameters:
-        - name: promptType
-          in: query
-          required: false
-          schema:
-            $ref: "./schemas/cambot/saved-prompt.yaml#/components/schemas/PromptType"
       responses:
         "200":
           description: Saved prompts returned
@@ -215,6 +210,29 @@ paths:
       responses:
         "204":
           description: Saved prompt deleted
+
+  /saved-prompts/{promptId}/camera-groups:
+    get:
+      tags: [Saved Prompts]
+      summary: List camera groups used by a saved prompt
+      description: Returns the camera groups that are currently bound to the saved prompt. By default disabled prompt bindings are excluded.
+      operationId: listSavedPromptCameraGroups
+      parameters:
+        - $ref: "#/components/parameters/PromptId"
+        - name: includeDisabled
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: When true, include camera groups where the prompt binding exists but is disabled.
+      responses:
+        "200":
+          description: Camera groups used by the saved prompt returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/camera-group.yaml#/components/schemas/CameraGroupListResponse"
 
   /camera-groups/{groupId}/prompt-bindings:
     get:
@@ -287,7 +305,7 @@ paths:
   /operations/estimate:
     post:
       tags: [Operations]
-      summary: Estimate operation usage and cost
+      summary: Estimate prompt scan usage and cost
       operationId: estimateOperation
       requestBody:
         required: true
@@ -304,9 +322,37 @@ paths:
                 $ref: "./schemas/cambot/operation.yaml#/components/schemas/OperationEstimate"
 
   /operations:
+    get:
+      tags: [Operations]
+      summary: List prompt scan operations
+      operationId: listOperations
+      parameters:
+        - name: promptId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: cameraGroupId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "./schemas/cambot/operation.yaml#/components/schemas/OperationStatus"
+      responses:
+        "200":
+          description: Operations returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/OperationListResponse"
+
     post:
       tags: [Operations]
-      summary: Start an AI operation
+      summary: Create a prompt scan operation
       operationId: createOperation
       requestBody:
         required: true
@@ -321,6 +367,131 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/cambot/operation.yaml#/components/schemas/Operation"
+
+  /operations/{operationId}:
+    get:
+      tags: [Operations]
+      summary: Get a prompt scan operation
+      operationId: getOperation
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Operation returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/Operation"
+
+  /operations/{operationId}/first-pass-results:
+    get:
+      tags: [Operations]
+      summary: List first-pass image results for an operation
+      operationId: listOperationFirstPassResults
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: First-pass results returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/FirstPassResultListResponse"
+
+  /operations/{operationId}/second-pass-results:
+    get:
+      tags: [Operations]
+      summary: List second-pass global prompt results for an operation
+      operationId: listOperationSecondPassResults
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Second-pass results returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/SecondPassResultListResponse"
+
+  /prompt-results/latest/first-pass:
+    get:
+      tags: [Operations]
+      summary: List latest first-pass results for a prompt and camera group
+      operationId: listLatestFirstPassResults
+      parameters:
+        - name: promptId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cameraGroupId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Latest first-pass results returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/LatestFirstPassResultListResponse"
+
+  /prompt-results/latest/second-pass:
+    get:
+      tags: [Operations]
+      summary: List latest second-pass global results for a prompt and camera group
+      operationId: listLatestSecondPassResults
+      parameters:
+        - name: promptId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cameraGroupId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Latest second-pass results returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operation.yaml#/components/schemas/LatestSecondPassResultListResponse"
 
   /operator-queue:
     get:
@@ -340,6 +511,24 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/cambot/operator-queue.yaml#/components/schemas/OperatorQueueListResponse"
+
+    post:
+      tags: [Operator Queue]
+      summary: Create an operator queue item from a second-pass result
+      operationId: createOperatorQueueItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "./schemas/cambot/operator-queue.yaml#/components/schemas/CreateOperatorQueueItemRequest"
+      responses:
+        "201":
+          description: Queue item created
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/cambot/operator-queue.yaml#/components/schemas/OperatorQueueItem"
 
   /operator-queue/{queueItemId}:
     put:
@@ -441,6 +630,176 @@ paths:
               schema:
                 $ref: "./schemas/cambot/usage.yaml#/components/schemas/UsageSummary"
 
+  /camera-system/status:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera system status
+      operationId: getProxiedCameraSystemStatus
+      responses:
+        "200":
+          description: Camera system status returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/system-status.yaml#/components/schemas/SystemStatus"
+
+  /camera-system/cameras:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera list
+      operationId: listProxiedIntegratorCameras
+      parameters:
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cameras returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
+
+  /camera-system/cameras/{cameraId}:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera details
+      operationId: getProxiedIntegratorCamera
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Camera returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/Camera"
+
+  /camera-system/cameras/{cameraId}/snapshot:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera snapshot metadata
+      operationId: getProxiedCameraSnapshot
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Snapshot frame metadata returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraSnapshot"
+
+  /camera-system/cameras/{cameraId}/frames/{frameId}/url:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera frame URL
+      operationId: getProxiedCameraFrameUrl
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+        - $ref: "#/components/parameters/FrameId"
+      responses:
+        "200":
+          description: Frame URL returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/snapshot.yaml#/components/schemas/CameraFrameUrlResponse"
+
+  /camera-system/cameras/{cameraId}/frames/{frameId}/image:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera frame image bytes
+      operationId: getProxiedCameraFrameImage
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+        - $ref: "#/components/parameters/FrameId"
+      responses:
+        "200":
+          description: Frame image bytes returned
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /camera-system/cameras/{cameraId}/stream:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy camera stream descriptor
+      operationId: getProxiedCameraStream
+      parameters:
+        - $ref: "#/components/parameters/CameraId"
+      responses:
+        "200":
+          description: Stream descriptor returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/stream.yaml#/components/schemas/CameraStream"
+
+  /camera-system/source-camera-groups:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera group list
+      operationId: listProxiedIntegratorCameraGroups
+      responses:
+        "200":
+          description: Source camera groups returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroupListResponse"
+
+  /camera-system/source-camera-groups/{groupId}:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source camera group details
+      operationId: getProxiedIntegratorCameraGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Source camera group returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera-group.yaml#/components/schemas/CameraSystemGroup"
+
+  /camera-system/source-camera-groups/{groupId}/cameras:
+    get:
+      tags: [Camera System Proxy]
+      summary: Proxy source cameras in a group
+      operationId: listProxiedIntegratorCameraGroupCameras
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "200":
+          description: Cameras returned
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/camera-system-integrator/camera.yaml#/components/schemas/CameraListResponse"
+
 components:
   securitySchemes:
     basicAuth:
@@ -458,6 +817,21 @@ components:
 
     PromptId:
       name: promptId
+      in: path
+      required: true
+      schema:
+        type: string
+
+
+    CameraId:
+      name: cameraId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    FrameId:
+      name: frameId
       in: path
       required: true
       schema:

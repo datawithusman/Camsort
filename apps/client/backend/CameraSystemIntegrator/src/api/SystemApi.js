@@ -14,6 +14,7 @@
 
 import ApiClient from "../ApiClient";
 import GetCameraSystemStatus200Response from '../model/GetCameraSystemStatus200Response';
+import InlineObject from '../model/InlineObject';
 
 /**
 * System service.

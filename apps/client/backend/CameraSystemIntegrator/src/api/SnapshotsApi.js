@@ -13,7 +13,9 @@
 
 
 import ApiClient from "../ApiClient";
+import GetCameraFrameUrl200Response from '../model/GetCameraFrameUrl200Response';
 import GetCameraSnapshot200Response from '../model/GetCameraSnapshot200Response';
+import InlineObject from '../model/InlineObject';
 
 /**
 * Snapshots service.
@@ -36,7 +38,118 @@ export default class SnapshotsApi {
 
 
     /**
-     * Get latest camera snapshot
+     * Get camera frame image bytes
+     * Returns the raw image bytes for a previously returned camera frame.
+     * @param {String} cameraId 
+     * @param {String} frameId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link File} and HTTP response
+     */
+    getCameraFrameImageWithHttpInfo(cameraId, frameId) {
+      let postBody = null;
+      // verify the required parameter 'cameraId' is set
+      if (cameraId === undefined || cameraId === null) {
+        throw new Error("Missing the required parameter 'cameraId' when calling getCameraFrameImage");
+      }
+      // verify the required parameter 'frameId' is set
+      if (frameId === undefined || frameId === null) {
+        throw new Error("Missing the required parameter 'frameId' when calling getCameraFrameImage");
+      }
+
+      let pathParams = {
+        'cameraId': cameraId,
+        'frameId': frameId
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['image/jpeg', 'image/png', 'image/webp', 'application/octet-stream', 'application/json'];
+      let returnType = File;
+      return this.apiClient.callApi(
+        '/cameras/{cameraId}/frames/{frameId}/image', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Get camera frame image bytes
+     * Returns the raw image bytes for a previously returned camera frame.
+     * @param {String} cameraId 
+     * @param {String} frameId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link File}
+     */
+    getCameraFrameImage(cameraId, frameId) {
+      return this.getCameraFrameImageWithHttpInfo(cameraId, frameId)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * Get camera frame URL
+     * Returns a URL link for a previously returned camera frame. The adapter may return an internal API URL, a CDN URL, or a signed vendor URL depending on the backing camera system.
+     * @param {String} cameraId 
+     * @param {String} frameId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/GetCameraFrameUrl200Response} and HTTP response
+     */
+    getCameraFrameUrlWithHttpInfo(cameraId, frameId) {
+      let postBody = null;
+      // verify the required parameter 'cameraId' is set
+      if (cameraId === undefined || cameraId === null) {
+        throw new Error("Missing the required parameter 'cameraId' when calling getCameraFrameUrl");
+      }
+      // verify the required parameter 'frameId' is set
+      if (frameId === undefined || frameId === null) {
+        throw new Error("Missing the required parameter 'frameId' when calling getCameraFrameUrl");
+      }
+
+      let pathParams = {
+        'cameraId': cameraId,
+        'frameId': frameId
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = GetCameraFrameUrl200Response;
+      return this.apiClient.callApi(
+        '/cameras/{cameraId}/frames/{frameId}/url', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Get camera frame URL
+     * Returns a URL link for a previously returned camera frame. The adapter may return an internal API URL, a CDN URL, or a signed vendor URL depending on the backing camera system.
+     * @param {String} cameraId 
+     * @param {String} frameId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/GetCameraFrameUrl200Response}
+     */
+    getCameraFrameUrl(cameraId, frameId) {
+      return this.getCameraFrameUrlWithHttpInfo(cameraId, frameId)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * Get camera snapshot frame metadata
+     * Returns metadata for the current or next available camera frame, including a URL that can be used to retrieve/view the frame. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
      * @param {String} cameraId 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/GetCameraSnapshot200Response} and HTTP response
      */
@@ -69,7 +182,8 @@ export default class SnapshotsApi {
     }
 
     /**
-     * Get latest camera snapshot
+     * Get camera snapshot frame metadata
+     * Returns metadata for the current or next available camera frame, including a URL that can be used to retrieve/view the frame. Historical snapshot lookup is intentionally not supported. Each call may advance a mock camera to the next available frame.
      * @param {String} cameraId 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/GetCameraSnapshot200Response}
      */

@@ -35,22 +35,15 @@ class TestCreateOperationRequest(unittest.TestCase):
         model = CreateOperationRequest()
         if include_optional:
             return CreateOperationRequest(
-                operation_type = 'find',
-                target = cambot_dtos.models.estimate_operation_request_target.estimateOperation_request_target(
-                    type = 'camera', 
-                    camera_id = '', 
-                    camera_group_id = '', ),
-                saved_prompt_id = '',
-                temporary_prompt_text = '',
-                max_estimated_cost = 1.337
+                prompt_id = '',
+                camera_group_id = '',
+                trigger = 'manual',
+                prompt_binding_id = ''
             )
         else:
             return CreateOperationRequest(
-                operation_type = 'find',
-                target = cambot_dtos.models.estimate_operation_request_target.estimateOperation_request_target(
-                    type = 'camera', 
-                    camera_id = '', 
-                    camera_group_id = '', ),
+                prompt_id = '',
+                camera_group_id = '',
         )
         """
 

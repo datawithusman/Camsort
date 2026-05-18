@@ -1,66 +1,46 @@
 components:
   schemas:
-    OperationType:
+    OperationTrigger:
       type: string
       enum:
-        - find
-        - sort
-        - scan
-        - summarize
-        - monitor
+        - manual
+        - scheduled
 
     OperationStatus:
+      type: string
+      enum:
+        - queued
+        - running
+        - completed
+        - failed
+        - cancelled
+
+    OperationPassStatus:
       type: string
       enum:
         - pending
         - running
         - completed
         - failed
-        - cancelled
-
-    OperationTargetType:
-      type: string
-      enum:
-        - camera
-        - camera-group
-        - facility
-
-    OperationTarget:
-      type: object
-      required:
-        - type
-      properties:
-        type:
-          $ref: "#/components/schemas/OperationTargetType"
-        cameraId:
-          type: string
-          nullable: true
-        cameraGroupId:
-          type: string
-          nullable: true
+        - skipped
 
     OperationEstimateRequest:
       type: object
       required:
-        - operationType
-        - target
+        - promptId
+        - cameraGroupId
       properties:
-        operationType:
-          $ref: "#/components/schemas/OperationType"
-        target:
-          $ref: "#/components/schemas/OperationTarget"
-        savedPromptId:
+        promptId:
           type: string
-          nullable: true
-        temporaryPromptText:
+        cameraGroupId:
           type: string
-          nullable: true
 
     OperationEstimate:
       type: object
       required:
         - allowed
         - estimatedCameraCount
+        - estimatedGeminiCalls
         - estimatedCost
       properties:
         allowed:
@@ -70,7 +50,7 @@ components:
           nullable: true
         estimatedCameraCount:
           type: integer
-        estimatedPromptCount:
+        estimatedGeminiCalls:
           type: integer
         estimatedTokenCount:
           type: integer
@@ -81,53 +61,383 @@ components:
     CreateOperationRequest:
       type: object
       required:
-        - operationType
-        - target
+        - promptId
+        - cameraGroupId
       properties:
-        operationType:
-          $ref: "#/components/schemas/OperationType"
-        target:
-          $ref: "#/components/schemas/OperationTarget"
-        savedPromptId:
+        promptId:
+          type: string
+        cameraGroupId:
+          type: string
+        trigger:
+          $ref: "#/components/schemas/OperationTrigger"
+        promptBindingId:
           type: string
           nullable: true
-        temporaryPromptText:
-          type: string
-          nullable: true
-        maxEstimatedCost:
-          type: number
-          format: double
-          nullable: true
+          description: Set for operations created from the global continuous scan cycle.
 
     Operation:
       type: object
       required:
         - id
-        - operationType
+        - promptId
+        - cameraGroupId
+        - trigger
         - status
-        - target
+        - firstPassStatus
+        - secondPassStatus
+        - totalCameras
+        - processedCameras
+        - firstPassResultCount
+        - secondPassResultCount
+        - matchedCameras
       properties:
         id:
           type: string
           example: operation-001
-        operationType:
-          $ref: "#/components/schemas/OperationType"
+        promptId:
+          type: string
+        cameraGroupId:
+          type: string
+        promptBindingId:
+          type: string
+          nullable: true
+        trigger:
+          $ref: "#/components/schemas/OperationTrigger"
         status:
           $ref: "#/components/schemas/OperationStatus"
-        target:
-          $ref: "#/components/schemas/OperationTarget"
-        savedPromptId:
+        firstPassStatus:
+          $ref: "#/components/schemas/OperationPassStatus"
+        secondPassStatus:
+          $ref: "#/components/schemas/OperationPassStatus"
+        totalCameras:
+          type: integer
+          example: 50
+        processedCameras:
+          type: integer
+          example: 12
+        firstPassResultCount:
+          type: integer
+          example: 12
+        secondPassResultCount:
+          type: integer
+          example: 12
+        matchedCameras:
+          type: integer
+          example: 3
+        estimatedGeminiCalls:
+          type: integer
+          nullable: true
+        estimatedTokenCount:
+          type: integer
+          nullable: true
+        estimatedCost:
+          type: number
+          format: double
+          nullable: true
+        actualGeminiCalls:
+          type: integer
+          nullable: true
+        actualCost:
+          type: number
+          format: double
+          nullable: true
+        errorMessage:
           type: string
           nullable: true
-        temporaryPromptText:
-          type: string
-          nullable: true
-        estimate:
-          $ref: "#/components/schemas/OperationEstimate"
         createdAt:
           type: string
           format: date-time
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
         completedAt:
           type: string
           format: date-time
           nullable: true
+
+    OperationListResponse:
+      type: object
+      required:
+        - operations
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Operation"
+
+    FirstPassResult:
+      type: object
+      required:
+        - id
+        - operationId
+        - cameraId
+        - frameRefId
+        - frameUrl
+        - include
+        - firstPassPromptScore
+        - operatorPriorityScore
+        - operatorAction
+        - reason
+      properties:
+        id:
+          type: string
+          example: first-pass-result-001
+        operationId:
+          type: string
+        cameraId:
+          type: string
+          example: cam01
+        cameraGroupId:
+          type: string
+          nullable: true
+        promptId:
+          type: string
+          nullable: true
+        frameRefId:
+          type: string
+          example: frame-ref-abc
+        frameUrl:
+          type: string
+          example: /camera-system/cameras/cam01/frames/frame-cam01-00000001-idx-000000/image
+        include:
+          type: boolean
+          description: True when the first-pass result should be considered by the second pass.
+        firstPassPromptScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: Per-snapshot score from the first image pass. This is not the final global prompt score.
+        operatorPriorityScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        operatorAction:
+          type: string
+          example: Review this camera.
+        reason:
+          type: string
+          example: The snapshot appears to partially match the operator prompt.
+        rawModelJson:
+          type: object
+          nullable: true
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    LatestFirstPassResult:
+      type: object
+      required:
+        - promptId
+        - cameraGroupId
+        - cameraId
+        - operationId
+        - firstPassResultId
+        - frameRefId
+        - frameUrl
+        - include
+        - firstPassPromptScore
+        - operatorPriorityScore
+        - operatorAction
+        - reason
+      properties:
+        promptId:
+          type: string
+        cameraGroupId:
+          type: string
+        cameraId:
+          type: string
+        operationId:
+          type: string
+        firstPassResultId:
+          type: string
+        frameRefId:
+          type: string
+        frameUrl:
+          type: string
+        include:
+          type: boolean
+        firstPassPromptScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        operatorPriorityScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        operatorAction:
+          type: string
+        reason:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    SecondPassResult:
+      type: object
+      required:
+        - id
+        - operationId
+        - cameraId
+        - firstPassResultId
+        - frameRefId
+        - frameUrl
+        - include
+        - promptScore
+        - operatorPriorityScore
+        - operatorAction
+        - reason
+      properties:
+        id:
+          type: string
+          example: second-pass-result-001
+        operationId:
+          type: string
+        cameraId:
+          type: string
+          example: cam01
+        cameraGroupId:
+          type: string
+          nullable: true
+        promptId:
+          type: string
+          nullable: true
+        firstPassResultId:
+          type: string
+        frameRefId:
+          type: string
+        frameUrl:
+          type: string
+        include:
+          type: boolean
+          description: True when this result should appear in the final prompt result camera list.
+        globalRank:
+          type: integer
+          nullable: true
+          description: Rank assigned by the second pass. Lower values are higher priority.
+        promptScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: Final global score used for sorting/finding results for this prompt operation.
+        operatorPriorityScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: Final urgency score used by the operator action queue.
+        operatorAction:
+          type: string
+          example: Inspect this camera first.
+        reason:
+          type: string
+          example: This camera is the strongest match after comparing all first-pass results.
+        rawModelJson:
+          type: object
+          nullable: true
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    LatestSecondPassResult:
+      type: object
+      required:
+        - promptId
+        - cameraGroupId
+        - cameraId
+        - operationId
+        - secondPassResultId
+        - firstPassResultId
+        - frameRefId
+        - frameUrl
+        - include
+        - promptScore
+        - operatorPriorityScore
+        - operatorAction
+        - reason
+      properties:
+        promptId:
+          type: string
+        cameraGroupId:
+          type: string
+        cameraId:
+          type: string
+        operationId:
+          type: string
+        secondPassResultId:
+          type: string
+        firstPassResultId:
+          type: string
+        frameRefId:
+          type: string
+        frameUrl:
+          type: string
+        include:
+          type: boolean
+        globalRank:
+          type: integer
+          nullable: true
+        promptScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        operatorPriorityScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        operatorAction:
+          type: string
+        reason:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    FirstPassResultListResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/FirstPassResult"
+
+    LatestFirstPassResultListResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/LatestFirstPassResult"
+
+    SecondPassResultListResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SecondPassResult"
+
+    LatestSecondPassResultListResponse:
+      type: object
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/LatestSecondPassResult"

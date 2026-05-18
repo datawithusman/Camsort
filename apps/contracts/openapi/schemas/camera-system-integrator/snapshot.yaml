@@ -3,19 +3,48 @@ components:
     CameraSnapshot:
       type: object
       required:
-        - cameraId
-        - capturedAt
-        - imageUrl
+      - snapshotId
+      - cameraId
+      - frame
       properties:
+        snapshotId:
+          type: string
+          description: Opaque id for this snapshot request. This is not necessarily
+            the source frame id.
+          example: snap-camera-main-entrance-01-000001
         cameraId:
           type: string
           example: camera-main-entrance-01
+        frame:
+          $ref: '#/components/schemas/CameraFrameMetadata'
+    CameraFrameMetadata:
+      type: object
+      required:
+      - frameId
+      - sequenceNumber
+      - capturedAt
+      - url
+      - mimeType
+      properties:
+        frameId:
+          type: string
+          description: Opaque id for the frame returned by the camera system adapter.
+          example: frame-camera-main-entrance-01-000001
+        sequenceNumber:
+          type: integer
+          description: Monotonic per-camera frame sequence assigned by the adapter.
+            Useful for ordering/debugging, not for historical lookup unless the adapter
+            explicitly supports that.
+          example: 1
         capturedAt:
           type: string
           format: date-time
-        imageUrl:
+        url:
           type: string
-          example: /camera-system/cameras/camera-main-entrance-01/snapshot.jpg
+          format: uri-reference
+          description: URL link for the frame image. This may be an internal API URL,
+            a CDN URL, or a signed vendor URL.
+          example: /camera-system/cameras/camera-main-entrance-01/frames/frame-camera-main-entrance-01-000001/image
         mimeType:
           type: string
           example: image/jpeg
@@ -25,3 +54,35 @@ components:
         height:
           type: integer
           example: 720
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the frame URL expires, if the adapter returns signed or
+            temporary URLs.
+          nullable: true
+    CameraFrameUrlResponse:
+      type: object
+      required:
+      - cameraId
+      - frameId
+      - url
+      properties:
+        cameraId:
+          type: string
+          example: camera-main-entrance-01
+        frameId:
+          type: string
+          example: frame-camera-main-entrance-01-000001
+        url:
+          type: string
+          format: uri-reference
+          description: URL link for the frame image. This may be an internal API URL,
+            a CDN URL, or a signed vendor URL.
+          example: /camera-system/cameras/camera-main-entrance-01/frames/frame-camera-main-entrance-01-000001/image
+        mimeType:
+          type: string
+          example: image/jpeg
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true

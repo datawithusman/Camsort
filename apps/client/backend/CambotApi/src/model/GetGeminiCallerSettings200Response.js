@@ -53,14 +53,26 @@ class GetGeminiCallerSettings200Response {
             if (data.hasOwnProperty('modelName')) {
                 obj['modelName'] = ApiClient.convertToType(data['modelName'], 'String');
             }
-            if (data.hasOwnProperty('maxRequestsPerMinute')) {
-                obj['maxRequestsPerMinute'] = ApiClient.convertToType(data['maxRequestsPerMinute'], 'Number');
+            if (data.hasOwnProperty('continuousScanEnabled')) {
+                obj['continuousScanEnabled'] = ApiClient.convertToType(data['continuousScanEnabled'], 'Boolean');
+            }
+            if (data.hasOwnProperty('continuousScanIntervalSeconds')) {
+                obj['continuousScanIntervalSeconds'] = ApiClient.convertToType(data['continuousScanIntervalSeconds'], 'Number');
+            }
+            if (data.hasOwnProperty('lastContinuousScanAt')) {
+                obj['lastContinuousScanAt'] = ApiClient.convertToType(data['lastContinuousScanAt'], 'Date');
+            }
+            if (data.hasOwnProperty('nextContinuousScanAt')) {
+                obj['nextContinuousScanAt'] = ApiClient.convertToType(data['nextContinuousScanAt'], 'Date');
+            }
+            if (data.hasOwnProperty('geminiCallDelayMs')) {
+                obj['geminiCallDelayMs'] = ApiClient.convertToType(data['geminiCallDelayMs'], 'Number');
+            }
+            if (data.hasOwnProperty('maxConcurrentGeminiCalls')) {
+                obj['maxConcurrentGeminiCalls'] = ApiClient.convertToType(data['maxConcurrentGeminiCalls'], 'Number');
             }
             if (data.hasOwnProperty('maxTokensPerRequest')) {
                 obj['maxTokensPerRequest'] = ApiClient.convertToType(data['maxTokensPerRequest'], 'Number');
-            }
-            if (data.hasOwnProperty('maxCostPerOperation')) {
-                obj['maxCostPerOperation'] = ApiClient.convertToType(data['maxCostPerOperation'], 'Number');
             }
             if (data.hasOwnProperty('maxCostPerDay')) {
                 obj['maxCostPerDay'] = ApiClient.convertToType(data['maxCostPerDay'], 'Number');
@@ -70,6 +82,9 @@ class GetGeminiCallerSettings200Response {
             }
             if (data.hasOwnProperty('allowEmergencyOverride')) {
                 obj['allowEmergencyOverride'] = ApiClient.convertToType(data['allowEmergencyOverride'], 'Boolean');
+            }
+            if (data.hasOwnProperty('updatedAt')) {
+                obj['updatedAt'] = ApiClient.convertToType(data['updatedAt'], 'Date');
             }
         }
         return obj;
@@ -105,19 +120,44 @@ GetGeminiCallerSettings200Response.prototype['enabled'] = undefined;
 GetGeminiCallerSettings200Response.prototype['modelName'] = undefined;
 
 /**
- * @member {Number} maxRequestsPerMinute
+ * Enables the global continuous scan cycle. When enabled, all enabled prompt bindings are scanned every continuousScanIntervalSeconds.
+ * @member {Boolean} continuousScanEnabled
  */
-GetGeminiCallerSettings200Response.prototype['maxRequestsPerMinute'] = undefined;
+GetGeminiCallerSettings200Response.prototype['continuousScanEnabled'] = undefined;
+
+/**
+ * Global interval between continuous scan cycles. Each cycle runs all enabled prompt bindings.
+ * @member {Number} continuousScanIntervalSeconds
+ */
+GetGeminiCallerSettings200Response.prototype['continuousScanIntervalSeconds'] = undefined;
+
+/**
+ * Last time a global continuous scan cycle was started or completed.
+ * @member {Date} lastContinuousScanAt
+ */
+GetGeminiCallerSettings200Response.prototype['lastContinuousScanAt'] = undefined;
+
+/**
+ * Next time the worker should start a global continuous scan cycle.
+ * @member {Date} nextContinuousScanAt
+ */
+GetGeminiCallerSettings200Response.prototype['nextContinuousScanAt'] = undefined;
+
+/**
+ * Global delay between individual Gemini calls used by the background scan worker for rate limiting.
+ * @member {Number} geminiCallDelayMs
+ */
+GetGeminiCallerSettings200Response.prototype['geminiCallDelayMs'] = undefined;
+
+/**
+ * @member {Number} maxConcurrentGeminiCalls
+ */
+GetGeminiCallerSettings200Response.prototype['maxConcurrentGeminiCalls'] = undefined;
 
 /**
  * @member {Number} maxTokensPerRequest
  */
 GetGeminiCallerSettings200Response.prototype['maxTokensPerRequest'] = undefined;
-
-/**
- * @member {Number} maxCostPerOperation
- */
-GetGeminiCallerSettings200Response.prototype['maxCostPerOperation'] = undefined;
 
 /**
  * @member {Number} maxCostPerDay
@@ -133,6 +173,11 @@ GetGeminiCallerSettings200Response.prototype['maxCostPerMonth'] = undefined;
  * @member {Boolean} allowEmergencyOverride
  */
 GetGeminiCallerSettings200Response.prototype['allowEmergencyOverride'] = undefined;
+
+/**
+ * @member {Date} updatedAt
+ */
+GetGeminiCallerSettings200Response.prototype['updatedAt'] = undefined;
 
 
 

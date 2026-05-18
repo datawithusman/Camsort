@@ -3,6 +3,10 @@ FROM docker.io/nginx:alpine
 COPY index.html /usr/share/nginx/html/index.html
 COPY main.js /usr/share/nginx/html/main.js
 COPY styles.css /usr/share/nginx/html/styles.css
-COPY dtos /usr/share/nginx/html/dtos
+COPY repositories /usr/share/nginx/html/repositories
+COPY config /usr/share/nginx/html/config
+COPY update-client-env.sh /docker-entrypoint.d/40-update-client-env.sh
+
+RUN chmod +x /docker-entrypoint.d/40-update-client-env.sh
 
 EXPOSE 80

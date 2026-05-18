@@ -38,20 +38,19 @@ class TestListOperatorQueueItems200Response(unittest.TestCase):
                 items = [
                     cambot_dtos.models.list_operator_queue_items_200_response_items_inner.listOperatorQueueItems_200_response_items_inner(
                         id = '', 
+                        second_pass_result_id = '', 
                         operation_id = '', 
                         camera_id = '', 
                         camera_group_id = '', 
-                        saved_prompt_id = '', 
-                        action = cambot_dtos.models.list_operator_queue_items_200_response_items_inner_action.listOperatorQueueItems_200_response_items_inner_action(
-                            title = 'Review restricted entrance', 
-                            description = 'A person appears to be standing near the restricted entrance.', 
-                            recommended_action = 'Dispatch operator to verify the entrance area.', ), 
-                        score = cambot_dtos.models.list_operator_queue_items_200_response_items_inner_score.listOperatorQueueItems_200_response_items_inner_score(
-                            confidence = 0, 
-                            urgency = 0, 
-                            risk = 0, 
-                            overall = 0, ), 
-                        status = 'pending', 
+                        prompt_id = '', 
+                        frame_ref_id = '', 
+                        frame_url = '', 
+                        prompt_score = 0, 
+                        operator_priority_score = 0, 
+                        operator_action = '', 
+                        reason = '', 
+                        status = 'queued', 
+                        operator_note = '', 
                         created_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), 
                         updated_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), )
                     ]
@@ -61,20 +60,19 @@ class TestListOperatorQueueItems200Response(unittest.TestCase):
                 items = [
                     cambot_dtos.models.list_operator_queue_items_200_response_items_inner.listOperatorQueueItems_200_response_items_inner(
                         id = '', 
+                        second_pass_result_id = '', 
                         operation_id = '', 
                         camera_id = '', 
                         camera_group_id = '', 
-                        saved_prompt_id = '', 
-                        action = cambot_dtos.models.list_operator_queue_items_200_response_items_inner_action.listOperatorQueueItems_200_response_items_inner_action(
-                            title = 'Review restricted entrance', 
-                            description = 'A person appears to be standing near the restricted entrance.', 
-                            recommended_action = 'Dispatch operator to verify the entrance area.', ), 
-                        score = cambot_dtos.models.list_operator_queue_items_200_response_items_inner_score.listOperatorQueueItems_200_response_items_inner_score(
-                            confidence = 0, 
-                            urgency = 0, 
-                            risk = 0, 
-                            overall = 0, ), 
-                        status = 'pending', 
+                        prompt_id = '', 
+                        frame_ref_id = '', 
+                        frame_url = '', 
+                        prompt_score = 0, 
+                        operator_priority_score = 0, 
+                        operator_action = '', 
+                        reason = '', 
+                        status = 'queued', 
+                        operator_note = '', 
                         created_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), 
                         updated_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), )
                     ],

@@ -60,6 +60,12 @@
       //expect(instance).to.be();
     });
 
+    it('should have the property secondPassResultId (base name: "secondPassResultId")', function() {
+      // uncomment below and update the code to test the property secondPassResultId
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
+      //expect(instance).to.be();
+    });
+
     it('should have the property operationId (base name: "operationId")', function() {
       // uncomment below and update the code to test the property operationId
       //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
@@ -78,26 +84,56 @@
       //expect(instance).to.be();
     });
 
-    it('should have the property savedPromptId (base name: "savedPromptId")', function() {
-      // uncomment below and update the code to test the property savedPromptId
+    it('should have the property promptId (base name: "promptId")', function() {
+      // uncomment below and update the code to test the property promptId
       //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
       //expect(instance).to.be();
     });
 
-    it('should have the property action (base name: "action")', function() {
-      // uncomment below and update the code to test the property action
+    it('should have the property frameRefId (base name: "frameRefId")', function() {
+      // uncomment below and update the code to test the property frameRefId
       //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
       //expect(instance).to.be();
     });
 
-    it('should have the property score (base name: "score")', function() {
-      // uncomment below and update the code to test the property score
+    it('should have the property frameUrl (base name: "frameUrl")', function() {
+      // uncomment below and update the code to test the property frameUrl
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property promptScore (base name: "promptScore")', function() {
+      // uncomment below and update the code to test the property promptScore
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property operatorPriorityScore (base name: "operatorPriorityScore")', function() {
+      // uncomment below and update the code to test the property operatorPriorityScore
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property operatorAction (base name: "operatorAction")', function() {
+      // uncomment below and update the code to test the property operatorAction
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property reason (base name: "reason")', function() {
+      // uncomment below and update the code to test the property reason
       //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
       //expect(instance).to.be();
     });
 
     it('should have the property status (base name: "status")', function() {
       // uncomment below and update the code to test the property status
+      //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
+      //expect(instance).to.be();
+    });
+
+    it('should have the property operatorNote (base name: "operatorNote")', function() {
+      // uncomment below and update the code to test the property operatorNote
       //var instance = new CambotApi.ListOperatorQueueItems200ResponseItemsInner();
       //expect(instance).to.be();
     });

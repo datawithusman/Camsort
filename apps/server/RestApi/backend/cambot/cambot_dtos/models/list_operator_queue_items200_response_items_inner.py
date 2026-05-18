@@ -19,9 +19,8 @@ import json
 
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional
-from cambot_dtos.models.list_operator_queue_items200_response_items_inner_action import ListOperatorQueueItems200ResponseItemsInnerAction
-from cambot_dtos.models.list_operator_queue_items200_response_items_inner_score import ListOperatorQueueItems200ResponseItemsInnerScore
+from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing_extensions import Annotated
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -30,22 +29,28 @@ class ListOperatorQueueItems200ResponseItemsInner(BaseModel):
     ListOperatorQueueItems200ResponseItemsInner
     """ # noqa: E501
     id: StrictStr
-    operation_id: Optional[StrictStr] = Field(default=None, alias="operationId")
+    second_pass_result_id: StrictStr = Field(alias="secondPassResultId")
+    operation_id: StrictStr = Field(alias="operationId")
     camera_id: StrictStr = Field(alias="cameraId")
-    camera_group_id: StrictStr = Field(alias="cameraGroupId")
-    saved_prompt_id: Optional[StrictStr] = Field(default=None, alias="savedPromptId")
-    action: ListOperatorQueueItems200ResponseItemsInnerAction
-    score: ListOperatorQueueItems200ResponseItemsInnerScore
+    camera_group_id: Optional[StrictStr] = Field(default=None, alias="cameraGroupId")
+    prompt_id: Optional[StrictStr] = Field(default=None, alias="promptId")
+    frame_ref_id: StrictStr = Field(alias="frameRefId")
+    frame_url: StrictStr = Field(alias="frameUrl")
+    prompt_score: Union[Annotated[float, Field(le=100, strict=True, ge=0)], Annotated[int, Field(le=100, strict=True, ge=0)]] = Field(description="Final global prompt score from the second pass.", alias="promptScore")
+    operator_priority_score: Union[Annotated[float, Field(le=100, strict=True, ge=0)], Annotated[int, Field(le=100, strict=True, ge=0)]] = Field(alias="operatorPriorityScore")
+    operator_action: StrictStr = Field(alias="operatorAction")
+    reason: StrictStr
     status: StrictStr
+    operator_note: Optional[StrictStr] = Field(default=None, alias="operatorNote")
     created_at: Optional[datetime] = Field(default=None, alias="createdAt")
     updated_at: Optional[datetime] = Field(default=None, alias="updatedAt")
-    __properties: ClassVar[List[str]] = ["id", "operationId", "cameraId", "cameraGroupId", "savedPromptId", "action", "score", "status", "createdAt", "updatedAt"]
+    __properties: ClassVar[List[str]] = ["id", "secondPassResultId", "operationId", "cameraId", "cameraGroupId", "promptId", "frameRefId", "frameUrl", "promptScore", "operatorPriorityScore", "operatorAction", "reason", "status", "operatorNote", "createdAt", "updatedAt"]
 
     @field_validator('status')
     def status_validate_enum(cls, value):
         """Validates the enum"""
-        if value not in set(['pending', 'acknowledged', 'dismissed', 'completed']):
-            raise ValueError("must be one of enum values ('pending', 'acknowledged', 'dismissed', 'completed')")
+        if value not in set(['queued', 'acknowledged', 'dismissed', 'completed']):
+            raise ValueError("must be one of enum values ('queued', 'acknowledged', 'dismissed', 'completed')")
         return value
 
     model_config = ConfigDict(
@@ -87,12 +92,6 @@ class ListOperatorQueueItems200ResponseItemsInner(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of action
-        if self.action:
-            _dict['action'] = self.action.to_dict()
-        # override the default output from pydantic by calling `to_dict()` of score
-        if self.score:
-            _dict['score'] = self.score.to_dict()
         return _dict
 
     @classmethod
@@ -106,13 +105,19 @@ class ListOperatorQueueItems200ResponseItemsInner(BaseModel):
 
         _obj = cls.model_validate({
             "id": obj.get("id"),
+            "secondPassResultId": obj.get("secondPassResultId"),
             "operationId": obj.get("operationId"),
             "cameraId": obj.get("cameraId"),
             "cameraGroupId": obj.get("cameraGroupId"),
-            "savedPromptId": obj.get("savedPromptId"),
-            "action": ListOperatorQueueItems200ResponseItemsInnerAction.from_dict(obj["action"]) if obj.get("action") is not None else None,
-            "score": ListOperatorQueueItems200ResponseItemsInnerScore.from_dict(obj["score"]) if obj.get("score") is not None else None,
+            "promptId": obj.get("promptId"),
+            "frameRefId": obj.get("frameRefId"),
+            "frameUrl": obj.get("frameUrl"),
+            "promptScore": obj.get("promptScore"),
+            "operatorPriorityScore": obj.get("operatorPriorityScore"),
+            "operatorAction": obj.get("operatorAction"),
+            "reason": obj.get("reason"),
             "status": obj.get("status"),
+            "operatorNote": obj.get("operatorNote"),
             "createdAt": obj.get("createdAt"),
             "updatedAt": obj.get("updatedAt")
         })

@@ -2,6 +2,7 @@
 
 # import apis into api package
 from cambot_dtos.api.camera_groups_api import CameraGroupsApi
+from cambot_dtos.api.camera_system_proxy_api import CameraSystemProxyApi
 from cambot_dtos.api.operations_api import OperationsApi
 from cambot_dtos.api.operator_queue_api import OperatorQueueApi
 from cambot_dtos.api.prompt_bindings_api import PromptBindingsApi

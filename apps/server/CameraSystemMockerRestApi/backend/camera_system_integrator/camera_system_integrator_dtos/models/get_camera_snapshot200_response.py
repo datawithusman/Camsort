@@ -17,9 +17,9 @@ import pprint
 import re  # noqa: F401
 import json
 
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
-from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
+from typing import Any, ClassVar, Dict, List
+from camera_system_integrator_dtos.models.get_camera_snapshot200_response_frame import GetCameraSnapshot200ResponseFrame
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,13 +27,10 @@ class GetCameraSnapshot200Response(BaseModel):
     """
     GetCameraSnapshot200Response
     """ # noqa: E501
+    snapshot_id: StrictStr = Field(description="Opaque id for this snapshot request. This is not necessarily the source frame id.", alias="snapshotId")
     camera_id: StrictStr = Field(alias="cameraId")
-    captured_at: datetime = Field(alias="capturedAt")
-    image_url: StrictStr = Field(alias="imageUrl")
-    mime_type: Optional[StrictStr] = Field(default=None, alias="mimeType")
-    width: Optional[StrictInt] = None
-    height: Optional[StrictInt] = None
-    __properties: ClassVar[List[str]] = ["cameraId", "capturedAt", "imageUrl", "mimeType", "width", "height"]
+    frame: GetCameraSnapshot200ResponseFrame
+    __properties: ClassVar[List[str]] = ["snapshotId", "cameraId", "frame"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -74,6 +71,9 @@ class GetCameraSnapshot200Response(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
+        # override the default output from pydantic by calling `to_dict()` of frame
+        if self.frame:
+            _dict['frame'] = self.frame.to_dict()
         return _dict
 
     @classmethod
@@ -86,12 +86,9 @@ class GetCameraSnapshot200Response(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
+            "snapshotId": obj.get("snapshotId"),
             "cameraId": obj.get("cameraId"),
-            "capturedAt": obj.get("capturedAt"),
-            "imageUrl": obj.get("imageUrl"),
-            "mimeType": obj.get("mimeType"),
-            "width": obj.get("width"),
-            "height": obj.get("height")
+            "frame": GetCameraSnapshot200ResponseFrame.from_dict(obj["frame"]) if obj.get("frame") is not None else None
         })
         return _obj
 

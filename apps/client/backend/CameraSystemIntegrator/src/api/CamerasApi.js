@@ -13,6 +13,7 @@
 
 
 import ApiClient from "../ApiClient";
+import InlineObject from '../model/InlineObject';
 import ListIntegratorCameras200Response from '../model/ListIntegratorCameras200Response';
 import ListIntegratorCameras200ResponseCamerasInner from '../model/ListIntegratorCameras200ResponseCamerasInner';
 

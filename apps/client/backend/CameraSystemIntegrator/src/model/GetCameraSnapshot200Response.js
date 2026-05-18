@@ -12,6 +12,7 @@
  */
 
 import ApiClient from '../ApiClient';
+import GetCameraSnapshot200ResponseFrame from './GetCameraSnapshot200ResponseFrame';
 
 /**
  * The GetCameraSnapshot200Response model module.
@@ -22,13 +23,13 @@ class GetCameraSnapshot200Response {
     /**
      * Constructs a new <code>GetCameraSnapshot200Response</code>.
      * @alias module:model/GetCameraSnapshot200Response
+     * @param snapshotId {String} Opaque id for this snapshot request. This is not necessarily the source frame id.
      * @param cameraId {String} 
-     * @param capturedAt {Date} 
-     * @param imageUrl {String} 
+     * @param frame {module:model/GetCameraSnapshot200ResponseFrame} 
      */
-    constructor(cameraId, capturedAt, imageUrl) { 
+    constructor(snapshotId, cameraId, frame) { 
         
-        GetCameraSnapshot200Response.initialize(this, cameraId, capturedAt, imageUrl);
+        GetCameraSnapshot200Response.initialize(this, snapshotId, cameraId, frame);
     }
 
     /**
@@ -36,10 +37,10 @@ class GetCameraSnapshot200Response {
      * This method is used by the constructors of any subclasses, in order to implement multiple inheritance (mix-ins).
      * Only for internal use.
      */
-    static initialize(obj, cameraId, capturedAt, imageUrl) { 
+    static initialize(obj, snapshotId, cameraId, frame) { 
+        obj['snapshotId'] = snapshotId;
         obj['cameraId'] = cameraId;
-        obj['capturedAt'] = capturedAt;
-        obj['imageUrl'] = imageUrl;
+        obj['frame'] = frame;
     }
 
     /**
@@ -53,23 +54,14 @@ class GetCameraSnapshot200Response {
         if (data) {
             obj = obj || new GetCameraSnapshot200Response();
 
+            if (data.hasOwnProperty('snapshotId')) {
+                obj['snapshotId'] = ApiClient.convertToType(data['snapshotId'], 'String');
+            }
             if (data.hasOwnProperty('cameraId')) {
                 obj['cameraId'] = ApiClient.convertToType(data['cameraId'], 'String');
             }
-            if (data.hasOwnProperty('capturedAt')) {
-                obj['capturedAt'] = ApiClient.convertToType(data['capturedAt'], 'Date');
-            }
-            if (data.hasOwnProperty('imageUrl')) {
-                obj['imageUrl'] = ApiClient.convertToType(data['imageUrl'], 'String');
-            }
-            if (data.hasOwnProperty('mimeType')) {
-                obj['mimeType'] = ApiClient.convertToType(data['mimeType'], 'String');
-            }
-            if (data.hasOwnProperty('width')) {
-                obj['width'] = ApiClient.convertToType(data['width'], 'Number');
-            }
-            if (data.hasOwnProperty('height')) {
-                obj['height'] = ApiClient.convertToType(data['height'], 'Number');
+            if (data.hasOwnProperty('frame')) {
+                obj['frame'] = GetCameraSnapshot200ResponseFrame.constructFromObject(data['frame']);
             }
         }
         return obj;
@@ -88,16 +80,16 @@ class GetCameraSnapshot200Response {
             }
         }
         // ensure the json data is a string
+        if (data['snapshotId'] && !(typeof data['snapshotId'] === 'string' || data['snapshotId'] instanceof String)) {
+            throw new Error("Expected the field `snapshotId` to be a primitive type in the JSON string but got " + data['snapshotId']);
+        }
+        // ensure the json data is a string
         if (data['cameraId'] && !(typeof data['cameraId'] === 'string' || data['cameraId'] instanceof String)) {
             throw new Error("Expected the field `cameraId` to be a primitive type in the JSON string but got " + data['cameraId']);
         }
-        // ensure the json data is a string
-        if (data['imageUrl'] && !(typeof data['imageUrl'] === 'string' || data['imageUrl'] instanceof String)) {
-            throw new Error("Expected the field `imageUrl` to be a primitive type in the JSON string but got " + data['imageUrl']);
-        }
-        // ensure the json data is a string
-        if (data['mimeType'] && !(typeof data['mimeType'] === 'string' || data['mimeType'] instanceof String)) {
-            throw new Error("Expected the field `mimeType` to be a primitive type in the JSON string but got " + data['mimeType']);
+        // validate the optional field `frame`
+        if (data['frame']) { // data not null
+          GetCameraSnapshot200ResponseFrame.validateJSON(data['frame']);
         }
 
         return true;
@@ -106,7 +98,13 @@ class GetCameraSnapshot200Response {
 
 }
 
-GetCameraSnapshot200Response.RequiredProperties = ["cameraId", "capturedAt", "imageUrl"];
+GetCameraSnapshot200Response.RequiredProperties = ["snapshotId", "cameraId", "frame"];
+
+/**
+ * Opaque id for this snapshot request. This is not necessarily the source frame id.
+ * @member {String} snapshotId
+ */
+GetCameraSnapshot200Response.prototype['snapshotId'] = undefined;
 
 /**
  * @member {String} cameraId
@@ -114,29 +112,9 @@ GetCameraSnapshot200Response.RequiredProperties = ["cameraId", "capturedAt", "im
 GetCameraSnapshot200Response.prototype['cameraId'] = undefined;
 
 /**
- * @member {Date} capturedAt
+ * @member {module:model/GetCameraSnapshot200ResponseFrame} frame
  */
-GetCameraSnapshot200Response.prototype['capturedAt'] = undefined;
-
-/**
- * @member {String} imageUrl
- */
-GetCameraSnapshot200Response.prototype['imageUrl'] = undefined;
-
-/**
- * @member {String} mimeType
- */
-GetCameraSnapshot200Response.prototype['mimeType'] = undefined;
-
-/**
- * @member {Number} width
- */
-GetCameraSnapshot200Response.prototype['width'] = undefined;
-
-/**
- * @member {Number} height
- */
-GetCameraSnapshot200Response.prototype['height'] = undefined;
+GetCameraSnapshot200Response.prototype['frame'] = undefined;
 
 
 

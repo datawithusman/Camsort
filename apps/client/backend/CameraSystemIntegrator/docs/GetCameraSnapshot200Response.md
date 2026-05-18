@@ -4,11 +4,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**snapshotId** | **String** | Opaque id for this snapshot request. This is not necessarily the source frame id. | 
 **cameraId** | **String** |  | 
-**capturedAt** | **Date** |  | 
-**imageUrl** | **String** |  | 
-**mimeType** | **String** |  | [optional] 
-**width** | **Number** |  | [optional] 
-**height** | **Number** |  | [optional] 
+**frame** | [**GetCameraSnapshot200ResponseFrame**](GetCameraSnapshot200ResponseFrame.md) |  | 
 
 

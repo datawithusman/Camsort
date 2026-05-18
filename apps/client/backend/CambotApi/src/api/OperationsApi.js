@@ -13,10 +13,15 @@
 
 
 import ApiClient from "../ApiClient";
-import CreateOperation201Response from '../model/CreateOperation201Response';
 import CreateOperationRequest from '../model/CreateOperationRequest';
 import EstimateOperation200Response from '../model/EstimateOperation200Response';
 import EstimateOperationRequest from '../model/EstimateOperationRequest';
+import ListLatestFirstPassResults200Response from '../model/ListLatestFirstPassResults200Response';
+import ListLatestSecondPassResults200Response from '../model/ListLatestSecondPassResults200Response';
+import ListOperationFirstPassResults200Response from '../model/ListOperationFirstPassResults200Response';
+import ListOperationSecondPassResults200Response from '../model/ListOperationSecondPassResults200Response';
+import ListOperations200Response from '../model/ListOperations200Response';
+import ListOperations200ResponseOperationsInner from '../model/ListOperations200ResponseOperationsInner';
 
 /**
 * Operations service.
@@ -39,9 +44,9 @@ export default class OperationsApi {
 
 
     /**
-     * Start an AI operation
+     * Create a prompt scan operation
      * @param {module:model/CreateOperationRequest} createOperationRequest 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/CreateOperation201Response} and HTTP response
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperations200ResponseOperationsInner} and HTTP response
      */
     createOperationWithHttpInfo(createOperationRequest) {
       let postBody = createOperationRequest;
@@ -62,7 +67,7 @@ export default class OperationsApi {
       let authNames = ['basicAuth'];
       let contentTypes = ['application/json'];
       let accepts = ['application/json'];
-      let returnType = CreateOperation201Response;
+      let returnType = ListOperations200ResponseOperationsInner;
       return this.apiClient.callApi(
         '/operations', 'POST',
         pathParams, queryParams, headerParams, formParams, postBody,
@@ -71,9 +76,9 @@ export default class OperationsApi {
     }
 
     /**
-     * Start an AI operation
+     * Create a prompt scan operation
      * @param {module:model/CreateOperationRequest} createOperationRequest 
-     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/CreateOperation201Response}
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperations200ResponseOperationsInner}
      */
     createOperation(createOperationRequest) {
       return this.createOperationWithHttpInfo(createOperationRequest)
@@ -84,7 +89,7 @@ export default class OperationsApi {
 
 
     /**
-     * Estimate operation usage and cost
+     * Estimate prompt scan usage and cost
      * @param {module:model/EstimateOperationRequest} estimateOperationRequest 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/EstimateOperation200Response} and HTTP response
      */
@@ -116,12 +121,331 @@ export default class OperationsApi {
     }
 
     /**
-     * Estimate operation usage and cost
+     * Estimate prompt scan usage and cost
      * @param {module:model/EstimateOperationRequest} estimateOperationRequest 
      * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/EstimateOperation200Response}
      */
     estimateOperation(estimateOperationRequest) {
       return this.estimateOperationWithHttpInfo(estimateOperationRequest)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * Get a prompt scan operation
+     * @param {String} operationId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperations200ResponseOperationsInner} and HTTP response
+     */
+    getOperationWithHttpInfo(operationId) {
+      let postBody = null;
+      // verify the required parameter 'operationId' is set
+      if (operationId === undefined || operationId === null) {
+        throw new Error("Missing the required parameter 'operationId' when calling getOperation");
+      }
+
+      let pathParams = {
+        'operationId': operationId
+      };
+      let queryParams = {
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListOperations200ResponseOperationsInner;
+      return this.apiClient.callApi(
+        '/operations/{operationId}', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * Get a prompt scan operation
+     * @param {String} operationId 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperations200ResponseOperationsInner}
+     */
+    getOperation(operationId) {
+      return this.getOperationWithHttpInfo(operationId)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List latest first-pass results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [include] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListLatestFirstPassResults200Response} and HTTP response
+     */
+    listLatestFirstPassResultsWithHttpInfo(promptId, cameraGroupId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'promptId' is set
+      if (promptId === undefined || promptId === null) {
+        throw new Error("Missing the required parameter 'promptId' when calling listLatestFirstPassResults");
+      }
+      // verify the required parameter 'cameraGroupId' is set
+      if (cameraGroupId === undefined || cameraGroupId === null) {
+        throw new Error("Missing the required parameter 'cameraGroupId' when calling listLatestFirstPassResults");
+      }
+
+      let pathParams = {
+      };
+      let queryParams = {
+        'promptId': promptId,
+        'cameraGroupId': cameraGroupId,
+        'include': opts['include']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListLatestFirstPassResults200Response;
+      return this.apiClient.callApi(
+        '/prompt-results/latest/first-pass', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List latest first-pass results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.include 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListLatestFirstPassResults200Response}
+     */
+    listLatestFirstPassResults(promptId, cameraGroupId, opts) {
+      return this.listLatestFirstPassResultsWithHttpInfo(promptId, cameraGroupId, opts)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List latest second-pass global results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [include] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListLatestSecondPassResults200Response} and HTTP response
+     */
+    listLatestSecondPassResultsWithHttpInfo(promptId, cameraGroupId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'promptId' is set
+      if (promptId === undefined || promptId === null) {
+        throw new Error("Missing the required parameter 'promptId' when calling listLatestSecondPassResults");
+      }
+      // verify the required parameter 'cameraGroupId' is set
+      if (cameraGroupId === undefined || cameraGroupId === null) {
+        throw new Error("Missing the required parameter 'cameraGroupId' when calling listLatestSecondPassResults");
+      }
+
+      let pathParams = {
+      };
+      let queryParams = {
+        'promptId': promptId,
+        'cameraGroupId': cameraGroupId,
+        'include': opts['include']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListLatestSecondPassResults200Response;
+      return this.apiClient.callApi(
+        '/prompt-results/latest/second-pass', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List latest second-pass global results for a prompt and camera group
+     * @param {String} promptId 
+     * @param {String} cameraGroupId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.include 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListLatestSecondPassResults200Response}
+     */
+    listLatestSecondPassResults(promptId, cameraGroupId, opts) {
+      return this.listLatestSecondPassResultsWithHttpInfo(promptId, cameraGroupId, opts)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List first-pass image results for an operation
+     * @param {String} operationId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [include] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperationFirstPassResults200Response} and HTTP response
+     */
+    listOperationFirstPassResultsWithHttpInfo(operationId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'operationId' is set
+      if (operationId === undefined || operationId === null) {
+        throw new Error("Missing the required parameter 'operationId' when calling listOperationFirstPassResults");
+      }
+
+      let pathParams = {
+        'operationId': operationId
+      };
+      let queryParams = {
+        'include': opts['include']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListOperationFirstPassResults200Response;
+      return this.apiClient.callApi(
+        '/operations/{operationId}/first-pass-results', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List first-pass image results for an operation
+     * @param {String} operationId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.include 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperationFirstPassResults200Response}
+     */
+    listOperationFirstPassResults(operationId, opts) {
+      return this.listOperationFirstPassResultsWithHttpInfo(operationId, opts)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List second-pass global prompt results for an operation
+     * @param {String} operationId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} [include] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperationSecondPassResults200Response} and HTTP response
+     */
+    listOperationSecondPassResultsWithHttpInfo(operationId, opts) {
+      opts = opts || {};
+      let postBody = null;
+      // verify the required parameter 'operationId' is set
+      if (operationId === undefined || operationId === null) {
+        throw new Error("Missing the required parameter 'operationId' when calling listOperationSecondPassResults");
+      }
+
+      let pathParams = {
+        'operationId': operationId
+      };
+      let queryParams = {
+        'include': opts['include']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListOperationSecondPassResults200Response;
+      return this.apiClient.callApi(
+        '/operations/{operationId}/second-pass-results', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List second-pass global prompt results for an operation
+     * @param {String} operationId 
+     * @param {Object} opts Optional parameters
+     * @param {Boolean} opts.include 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperationSecondPassResults200Response}
+     */
+    listOperationSecondPassResults(operationId, opts) {
+      return this.listOperationSecondPassResultsWithHttpInfo(operationId, opts)
+        .then(function(response_and_data) {
+          return response_and_data.data;
+        });
+    }
+
+
+    /**
+     * List prompt scan operations
+     * @param {Object} opts Optional parameters
+     * @param {String} [promptId] 
+     * @param {String} [cameraGroupId] 
+     * @param {module:model/String} [status] 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with an object containing data of type {@link module:model/ListOperations200Response} and HTTP response
+     */
+    listOperationsWithHttpInfo(opts) {
+      opts = opts || {};
+      let postBody = null;
+
+      let pathParams = {
+      };
+      let queryParams = {
+        'promptId': opts['promptId'],
+        'cameraGroupId': opts['cameraGroupId'],
+        'status': opts['status']
+      };
+      let headerParams = {
+      };
+      let formParams = {
+      };
+
+      let authNames = ['basicAuth'];
+      let contentTypes = [];
+      let accepts = ['application/json'];
+      let returnType = ListOperations200Response;
+      return this.apiClient.callApi(
+        '/operations', 'GET',
+        pathParams, queryParams, headerParams, formParams, postBody,
+        authNames, contentTypes, accepts, returnType, null
+      );
+    }
+
+    /**
+     * List prompt scan operations
+     * @param {Object} opts Optional parameters
+     * @param {String} opts.promptId 
+     * @param {String} opts.cameraGroupId 
+     * @param {module:model/String} opts.status 
+     * @return {Promise} a {@link https://www.promisejs.org/|Promise}, with data of type {@link module:model/ListOperations200Response}
+     */
+    listOperations(opts) {
+      return this.listOperationsWithHttpInfo(opts)
         .then(function(response_and_data) {
           return response_and_data.data;
         });

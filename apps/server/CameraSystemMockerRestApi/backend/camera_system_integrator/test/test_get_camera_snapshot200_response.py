@@ -35,18 +35,31 @@ class TestGetCameraSnapshot200Response(unittest.TestCase):
         model = GetCameraSnapshot200Response()
         if include_optional:
             return GetCameraSnapshot200Response(
+                snapshot_id = 'snap-camera-main-entrance-01-000001',
                 camera_id = 'camera-main-entrance-01',
-                captured_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
-                image_url = '/camera-system/cameras/camera-main-entrance-01/snapshot.jpg',
-                mime_type = 'image/jpeg',
-                width = 1280,
-                height = 720
+                frame = camera_system_integrator_dtos.models.get_camera_snapshot_200_response_frame.getCameraSnapshot_200_response_frame(
+                    frame_id = 'frame-camera-main-entrance-01-000001', 
+                    sequence_number = 1, 
+                    captured_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), 
+                    url = '/camera-system/cameras/camera-main-entrance-01/frames/frame-camera-main-entrance-01-000001/image', 
+                    mime_type = 'image/jpeg', 
+                    width = 1280, 
+                    height = 720, 
+                    expires_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), )
             )
         else:
             return GetCameraSnapshot200Response(
+                snapshot_id = 'snap-camera-main-entrance-01-000001',
                 camera_id = 'camera-main-entrance-01',
-                captured_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
-                image_url = '/camera-system/cameras/camera-main-entrance-01/snapshot.jpg',
+                frame = camera_system_integrator_dtos.models.get_camera_snapshot_200_response_frame.getCameraSnapshot_200_response_frame(
+                    frame_id = 'frame-camera-main-entrance-01-000001', 
+                    sequence_number = 1, 
+                    captured_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), 
+                    url = '/camera-system/cameras/camera-main-entrance-01/frames/frame-camera-main-entrance-01-000001/image', 
+                    mime_type = 'image/jpeg', 
+                    width = 1280, 
+                    height = 720, 
+                    expires_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'), ),
         )
         """
 

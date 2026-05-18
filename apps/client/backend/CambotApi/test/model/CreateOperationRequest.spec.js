@@ -54,32 +54,26 @@
       //expect(instance).to.be.a(CambotApi.CreateOperationRequest);
     });
 
-    it('should have the property operationType (base name: "operationType")', function() {
-      // uncomment below and update the code to test the property operationType
+    it('should have the property promptId (base name: "promptId")', function() {
+      // uncomment below and update the code to test the property promptId
       //var instance = new CambotApi.CreateOperationRequest();
       //expect(instance).to.be();
     });
 
-    it('should have the property target (base name: "target")', function() {
-      // uncomment below and update the code to test the property target
+    it('should have the property cameraGroupId (base name: "cameraGroupId")', function() {
+      // uncomment below and update the code to test the property cameraGroupId
       //var instance = new CambotApi.CreateOperationRequest();
       //expect(instance).to.be();
     });
 
-    it('should have the property savedPromptId (base name: "savedPromptId")', function() {
-      // uncomment below and update the code to test the property savedPromptId
+    it('should have the property trigger (base name: "trigger")', function() {
+      // uncomment below and update the code to test the property trigger
       //var instance = new CambotApi.CreateOperationRequest();
       //expect(instance).to.be();
     });
 
-    it('should have the property temporaryPromptText (base name: "temporaryPromptText")', function() {
-      // uncomment below and update the code to test the property temporaryPromptText
-      //var instance = new CambotApi.CreateOperationRequest();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property maxEstimatedCost (base name: "maxEstimatedCost")', function() {
-      // uncomment below and update the code to test the property maxEstimatedCost
+    it('should have the property promptBindingId (base name: "promptBindingId")', function() {
+      // uncomment below and update the code to test the property promptBindingId
       //var instance = new CambotApi.CreateOperationRequest();
       //expect(instance).to.be();
     });

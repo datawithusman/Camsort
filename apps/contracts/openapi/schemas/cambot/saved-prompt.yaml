@@ -1,50 +1,26 @@
 components:
   schemas:
-    PromptType:
-      type: string
-      enum:
-        - sorting
-        - finding
-        - monitoring
-        - summarization
-
-    Priority:
-      type: string
-      enum:
-        - low
-        - normal
-        - high
-        - emergency
-
     SavedPrompt:
       type: object
       required:
         - id
         - name
-        - promptType
         - promptText
         - enabled
       properties:
         id:
           type: string
-          example: prompt-after-hours-person-detection
+          example: prompt-ice-near-entrances
         name:
           type: string
-          example: After-hours person detection
-        promptType:
-          $ref: "#/components/schemas/PromptType"
+          example: Ice near entrances
         description:
           type: string
-          example: Find cameras where a person appears near a restricted entrance after hours.
+          nullable: true
+          example: Checks entrance snapshots for ice, snow, slick surfaces, or blocked paths.
         promptText:
           type: string
-          example: Look for a person standing near a restricted entrance after normal operating hours.
-        defaultPriority:
-          $ref: "#/components/schemas/Priority"
-        defaultMaxEstimatedCost:
-          type: number
-          format: double
-          example: 5.0
+          example: Inspect this camera snapshot for ice, snow, slick surfaces, blocked entrances, or other conditions that require staff action. Return structured JSON only.
         enabled:
           type: boolean
           example: true
@@ -59,22 +35,15 @@ components:
       type: object
       required:
         - name
-        - promptType
         - promptText
       properties:
         name:
           type: string
-        promptType:
-          $ref: "#/components/schemas/PromptType"
         description:
           type: string
+          nullable: true
         promptText:
           type: string
-        defaultPriority:
-          $ref: "#/components/schemas/Priority"
-        defaultMaxEstimatedCost:
-          type: number
-          format: double
         enabled:
           type: boolean
           default: true
@@ -84,17 +53,11 @@ components:
       properties:
         name:
           type: string
-        promptType:
-          $ref: "#/components/schemas/PromptType"
         description:
           type: string
+          nullable: true
         promptText:
           type: string
-        defaultPriority:
-          $ref: "#/components/schemas/Priority"
-        defaultMaxEstimatedCost:
-          type: number
-          format: double
         enabled:
           type: boolean
 

@@ -54,38 +54,20 @@
       //expect(instance).to.be.a(CameraSystemIntegratorApi.GetCameraSnapshot200Response);
     });
 
+    it('should have the property snapshotId (base name: "snapshotId")', function() {
+      // uncomment below and update the code to test the property snapshotId
+      //var instance = new CameraSystemIntegratorApi.GetCameraSnapshot200Response();
+      //expect(instance).to.be();
+    });
+
     it('should have the property cameraId (base name: "cameraId")', function() {
       // uncomment below and update the code to test the property cameraId
       //var instance = new CameraSystemIntegratorApi.GetCameraSnapshot200Response();
       //expect(instance).to.be();
     });
 
-    it('should have the property capturedAt (base name: "capturedAt")', function() {
-      // uncomment below and update the code to test the property capturedAt
-      //var instance = new CameraSystemIntegratorApi.GetCameraSnapshot200Response();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property imageUrl (base name: "imageUrl")', function() {
-      // uncomment below and update the code to test the property imageUrl
-      //var instance = new CameraSystemIntegratorApi.GetCameraSnapshot200Response();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property mimeType (base name: "mimeType")', function() {
-      // uncomment below and update the code to test the property mimeType
-      //var instance = new CameraSystemIntegratorApi.GetCameraSnapshot200Response();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property width (base name: "width")', function() {
-      // uncomment below and update the code to test the property width
-      //var instance = new CameraSystemIntegratorApi.GetCameraSnapshot200Response();
-      //expect(instance).to.be();
-    });
-
-    it('should have the property height (base name: "height")', function() {
-      // uncomment below and update the code to test the property height
+    it('should have the property frame (base name: "frame")', function() {
+      // uncomment below and update the code to test the property frame
       //var instance = new CameraSystemIntegratorApi.GetCameraSnapshot200Response();
       //expect(instance).to.be();
     });

@@ -83,6 +83,10 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Source camera group returned |  -  |
+**400** | Bad request |  -  |
+**401** | Unauthorized |  -  |
+**404** | Requested camera, group, or resource was not found |  -  |
+**500** | Camera system adapter error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -160,6 +164,10 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Cameras returned |  -  |
+**400** | Bad request |  -  |
+**401** | Unauthorized |  -  |
+**404** | Requested camera, group, or resource was not found |  -  |
+**500** | Camera system adapter error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -233,6 +241,8 @@ This endpoint does not need any parameter.
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Source camera groups returned |  -  |
+**401** | Unauthorized |  -  |
+**500** | Camera system adapter error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **allowed** | **bool** |  | 
 **restriction_reason** | **str** |  | [optional] 
 **estimated_camera_count** | **int** |  | 
-**estimated_prompt_count** | **int** |  | [optional] 
+**estimated_gemini_calls** | **int** |  | 
 **estimated_token_count** | **int** |  | [optional] 
 **estimated_cost** | **float** |  | 
 

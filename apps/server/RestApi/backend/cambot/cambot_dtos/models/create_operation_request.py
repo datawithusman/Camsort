@@ -17,9 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional, Union
-from cambot_dtos.models.estimate_operation_request_target import EstimateOperationRequestTarget
+from pydantic import BaseModel, ConfigDict, Field, StrictStr, field_validator
+from typing import Any, ClassVar, Dict, List, Optional
 from typing import Optional, Set
 from typing_extensions import Self
 
@@ -27,18 +26,20 @@ class CreateOperationRequest(BaseModel):
     """
     CreateOperationRequest
     """ # noqa: E501
-    operation_type: StrictStr = Field(alias="operationType")
-    target: EstimateOperationRequestTarget
-    saved_prompt_id: Optional[StrictStr] = Field(default=None, alias="savedPromptId")
-    temporary_prompt_text: Optional[StrictStr] = Field(default=None, alias="temporaryPromptText")
-    max_estimated_cost: Optional[Union[StrictFloat, StrictInt]] = Field(default=None, alias="maxEstimatedCost")
-    __properties: ClassVar[List[str]] = ["operationType", "target", "savedPromptId", "temporaryPromptText", "maxEstimatedCost"]
+    prompt_id: StrictStr = Field(alias="promptId")
+    camera_group_id: StrictStr = Field(alias="cameraGroupId")
+    trigger: Optional[StrictStr] = None
+    prompt_binding_id: Optional[StrictStr] = Field(default=None, description="Set for operations created from the global continuous scan cycle.", alias="promptBindingId")
+    __properties: ClassVar[List[str]] = ["promptId", "cameraGroupId", "trigger", "promptBindingId"]
 
-    @field_validator('operation_type')
-    def operation_type_validate_enum(cls, value):
+    @field_validator('trigger')
+    def trigger_validate_enum(cls, value):
         """Validates the enum"""
-        if value not in set(['find', 'sort', 'scan', 'summarize', 'monitor']):
-            raise ValueError("must be one of enum values ('find', 'sort', 'scan', 'summarize', 'monitor')")
+        if value is None:
+            return value
+
+        if value not in set(['manual', 'scheduled']):
+            raise ValueError("must be one of enum values ('manual', 'scheduled')")
         return value
 
     model_config = ConfigDict(
@@ -80,9 +81,6 @@ class CreateOperationRequest(BaseModel):
             exclude=excluded_fields,
             exclude_none=True,
         )
-        # override the default output from pydantic by calling `to_dict()` of target
-        if self.target:
-            _dict['target'] = self.target.to_dict()
         return _dict
 
     @classmethod
@@ -95,11 +93,10 @@ class CreateOperationRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "operationType": obj.get("operationType"),
-            "target": EstimateOperationRequestTarget.from_dict(obj["target"]) if obj.get("target") is not None else None,
-            "savedPromptId": obj.get("savedPromptId"),
-            "temporaryPromptText": obj.get("temporaryPromptText"),
-            "maxEstimatedCost": obj.get("maxEstimatedCost")
+            "promptId": obj.get("promptId"),
+            "cameraGroupId": obj.get("cameraGroupId"),
+            "trigger": obj.get("trigger"),
+            "promptBindingId": obj.get("promptBindingId")
         })
         return _obj
 

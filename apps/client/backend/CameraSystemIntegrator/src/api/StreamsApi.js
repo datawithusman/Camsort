@@ -14,6 +14,7 @@
 
 import ApiClient from "../ApiClient";
 import GetCameraStream200Response from '../model/GetCameraStream200Response';
+import InlineObject from '../model/InlineObject';
 
 /**
 * Streams service.

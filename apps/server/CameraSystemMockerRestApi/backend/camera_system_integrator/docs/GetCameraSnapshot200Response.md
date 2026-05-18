@@ -5,12 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**snapshot_id** | **str** | Opaque id for this snapshot request. This is not necessarily the source frame id. | 
 **camera_id** | **str** |  | 
-**captured_at** | **datetime** |  | 
-**image_url** | **str** |  | 
-**mime_type** | **str** |  | [optional] 
-**width** | **int** |  | [optional] 
-**height** | **int** |  | [optional] 
+**frame** | [**GetCameraSnapshot200ResponseFrame**](GetCameraSnapshot200ResponseFrame.md) |  | 
 
 ## Example
 

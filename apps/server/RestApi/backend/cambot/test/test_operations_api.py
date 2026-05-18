@@ -29,14 +29,56 @@ class TestOperationsApi(unittest.TestCase):
     def test_create_operation(self) -> None:
         """Test case for create_operation
 
-        Start an AI operation
+        Create a prompt scan operation
         """
         pass
 
     def test_estimate_operation(self) -> None:
         """Test case for estimate_operation
 
-        Estimate operation usage and cost
+        Estimate prompt scan usage and cost
+        """
+        pass
+
+    def test_get_operation(self) -> None:
+        """Test case for get_operation
+
+        Get a prompt scan operation
+        """
+        pass
+
+    def test_list_latest_first_pass_results(self) -> None:
+        """Test case for list_latest_first_pass_results
+
+        List latest first-pass results for a prompt and camera group
+        """
+        pass
+
+    def test_list_latest_second_pass_results(self) -> None:
+        """Test case for list_latest_second_pass_results
+
+        List latest second-pass global results for a prompt and camera group
+        """
+        pass
+
+    def test_list_operation_first_pass_results(self) -> None:
+        """Test case for list_operation_first_pass_results
+
+        List first-pass image results for an operation
+        """
+        pass
+
+    def test_list_operation_second_pass_results(self) -> None:
+        """Test case for list_operation_second_pass_results
+
+        List second-pass global prompt results for an operation
+        """
+        pass
+
+    def test_list_operations(self) -> None:
+        """Test case for list_operations
+
+        List prompt scan operations
         """
         pass
 

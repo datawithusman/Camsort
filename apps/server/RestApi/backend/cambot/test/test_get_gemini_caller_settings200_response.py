@@ -37,12 +37,17 @@ class TestGetGeminiCallerSettings200Response(unittest.TestCase):
             return GetGeminiCallerSettings200Response(
                 enabled = True,
                 model_name = 'gemini-1.5-flash',
-                max_requests_per_minute = 30,
+                continuous_scan_enabled = True,
+                continuous_scan_interval_seconds = 900,
+                last_continuous_scan_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
+                next_continuous_scan_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f'),
+                gemini_call_delay_ms = 2000,
+                max_concurrent_gemini_calls = 1,
                 max_tokens_per_request = 8192,
-                max_cost_per_operation = 2.5,
                 max_cost_per_day = 25.0,
                 max_cost_per_month = 300.0,
-                allow_emergency_override = True
+                allow_emergency_override = True,
+                updated_at = datetime.datetime.strptime('2013-10-20 19:20:30.00', '%Y-%m-%d %H:%M:%S.%f')
             )
         else:
             return GetGeminiCallerSettings200Response(

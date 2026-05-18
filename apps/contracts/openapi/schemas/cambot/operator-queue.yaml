@@ -3,85 +3,79 @@ components:
     OperatorQueueStatus:
       type: string
       enum:
-        - pending
+        - queued
         - acknowledged
         - dismissed
         - completed
-
-    ActionScore:
-      type: object
-      properties:
-        confidence:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        urgency:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        risk:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-        overall:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 1
-
-    OperatorAction:
-      type: object
-      required:
-        - title
-        - description
-      properties:
-        title:
-          type: string
-          example: Review restricted entrance
-        description:
-          type: string
-          example: A person appears to be standing near the restricted entrance.
-        recommendedAction:
-          type: string
-          example: Dispatch operator to verify the entrance area.
 
     OperatorQueueItem:
       type: object
       required:
         - id
+        - secondPassResultId
+        - operationId
         - cameraId
-        - cameraGroupId
-        - action
-        - score
+        - frameRefId
+        - frameUrl
+        - promptScore
+        - operatorPriorityScore
+        - operatorAction
+        - reason
         - status
       properties:
         id:
           type: string
+        secondPassResultId:
+          type: string
         operationId:
           type: string
-          nullable: true
         cameraId:
           type: string
         cameraGroupId:
           type: string
-        savedPromptId:
+          nullable: true
+        promptId:
           type: string
           nullable: true
-        action:
-          $ref: "#/components/schemas/OperatorAction"
-        score:
-          $ref: "#/components/schemas/ActionScore"
+        frameRefId:
+          type: string
+        frameUrl:
+          type: string
+        promptScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: Final global prompt score from the second pass.
+        operatorPriorityScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        operatorAction:
+          type: string
+        reason:
+          type: string
         status:
           $ref: "#/components/schemas/OperatorQueueStatus"
+        operatorNote:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+
+    CreateOperatorQueueItemRequest:
+      type: object
+      required:
+        - secondPassResultId
+      properties:
+        secondPassResultId:
+          type: string
+          description: Creates a queue item from a stored second-pass/global prompt result.
 
     UpdateOperatorQueueItemRequest:
       type: object

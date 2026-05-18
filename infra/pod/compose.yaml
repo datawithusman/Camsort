@@ -33,7 +33,8 @@ services:
     env_file:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
-      CAMBOT_ENV: "${ENVIRONMENT:-dev}"
+      - DATABASE_URL=postgresql://cambot:cambot@postgres:5432/cambot
+      - CAMERA_SYSTEM_BASE_URL=http://camera-system-mocker-rest-api:8080
     depends_on:
       - postgres
     restart: unless-stopped
@@ -46,16 +47,13 @@ services:
     env_file:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
-      GEMINI_URL: "${CAM_BOT_DEFAULT_GEMINI_URL:-}"
-      GEMINI_API_KEY: "${CAM_BOT_DEFAULT_GEMINI_API_KEY:-}"
-      GEMINI_MODEL: "${CAM_BOT_DEFAULT_GEMINI_MODEL:-}"
-      GEMINI_BATCH_SIZE: "${CAM_BOT_DEFAULT_GEMINI_BATCH_SIZE:-5}"
-      GEMINI_JPEG_QUALITY: "${CAM_BOT_DEFAULT_GEMINI_JPEG_QUALITY:-70}"
-      SORT_INTERVAL_SECONDS: "${CAM_BOT_DEFAULT_BACKGROUND_WORKER_INTERVAL_S:-30}"
-      MAX_GEMINI_CALLS_PER_DAY: "${CAM_BOT_DEFAULT_MAX_GEMINI_CALLS_PER_DAY:-100}"
-      ESCALATION_THRESHOLD: "${CAM_BOT_DEFAULT_ESCALATION_THRESHOLD:-0.60}"
-      CAMERA_SYSTEM_BASE_URL: "http://camera-system-mocker-rest-api:8080"
-      REST_API_BASE_URL: "http://rest-api:8080"
+      - GEMINI_API_URL=${CAM_BOT_DEFAULT_GEMINI_URL}
+      - GEMINI_API_KEY=${CAM_BOT_DEFAULT_GEMINI_API_KEY}
+      - CAM_BOT_DEFAULT_GEMINI_API_KEY_QUERY_PARAM=key
+      - CAM_BOT_DEFAULT_GEMINI_API_TIMEOUT_SECONDS=60
+      - CAM_BOT_DEFAULT_GEMINI_USE_RESPONSE_SCHEMA=true
+      - CAM_BOT_DEFAULT_BACKGROUND_WORKER_INTERVAL_S=5
+      - DATABASE_URL=postgresql://cambot:cambot@postgres:5432/cambot
     depends_on:
       - rest-api
       - camera-system-mocker-rest-api
@@ -69,17 +67,27 @@ services:
     container_name: cambot-camera-system-mocker-rest-api
     env_file:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
+    environment:
+      - CAMERA_MOCKER_DATA_ROOT=/data/camera-mocker
+      - CAMERA_MOCKER_CONFIG=/data/camera-mocker/defaultCameras.json
+      - CAMERA_MOCKER_PUBLIC_BASE_PATH=/camera-system
+      - CAMERA_MOCKER_CAMERA_N_COUNT="20"
+    volumes:
+      - ../../secrets/${ENVIRONMENT:-dev}/camera-mocker:/data/camera-mocker:ro
     restart: unless-stopped
 
   postgres:
     image: docker.io/postgres:16
     container_name: cambot-postgres
     environment:
-      POSTGRES_DB: "${POSTGRES_DB:-cambot}"
-      POSTGRES_USER: "${POSTGRES_USER:-cambot}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-cambot}"
+      - POSTGRES_DB=${POSTGRES_DB:-cambot}
+      - POSTGRES_USER=${POSTGRES_USER:-cambot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-cambot}
     volumes:
       - cambot-postgres-data:/var/lib/postgresql/data
+      # Init SQL runs only when /var/lib/postgresql/data is empty/new.
+      - ../../apps/contracts/postgres/schema/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro,Z
+      - ../../apps/contracts/postgres/seed/dev.sql:/docker-entrypoint-initdb.d/002_dev_seed.sql:ro,Z
     restart: unless-stopped
 
 volumes:
