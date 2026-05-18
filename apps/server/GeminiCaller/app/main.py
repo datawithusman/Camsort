@@ -49,18 +49,18 @@ def model(payload):
     data=r.json(); return data.get('result', data) if isinstance(data,dict) else data
 
 def first_pass(cam_id,prompt,b64,mime):
-    if os.getenv('GEMINI_MODE','fake').lower()!='real':
-        s=abs(hash((cam_id,prompt)))%101
-        return {'camId':cam_id,'include':s>=30,'firstPassPromptScore':s,'operatorPriorityScore':min(100,max(0,s+random.randint(-12,12))),'operatorAction':'Review this camera.' if s>=30 else 'No immediate action.','reason':'Fake first-pass result.'}
+    # if os.getenv('GEMINI_MODE','fake').lower()!='real':
+    #     s=abs(hash((cam_id,prompt)))%101
+    #     return {'camId':cam_id,'include':s>=30,'firstPassPromptScore':s,'operatorPriorityScore':min(100,max(0,s+random.randint(-12,12))),'operatorAction':'Review this camera.' if s>=30 else 'No immediate action.','reason':'Fake first-pass result.'}
     res=model({'requestType':'firstPassEvaluateCamera','camId':cam_id,'operatorPrompt':prompt,'cameraSnapshot':{'mimeType':mime,'base64':b64},'returnShape':{'camId':'string','include':'boolean','firstPassPromptScore':'number 0-100','operatorPriorityScore':'number 0-100','operatorAction':'string','reason':'string'}})
     return res if isinstance(res,dict) else {}
 
 def second_pass(prompt, rows):
-    if os.getenv('GEMINI_MODE','fake').lower()!='real':
-        out=[]
-        for rank,r in enumerate(sorted(rows,key=lambda x:(x.get('firstPassPromptScore') or 0,x.get('operatorPriorityScore') or 0),reverse=True),1):
-            out.append({'camId':r['cameraId'],'firstPassResultId':r['id'],'include':r.get('include',True),'globalRank':rank,'promptScore':r.get('firstPassPromptScore') or 0,'operatorPriorityScore':r.get('operatorPriorityScore') or 0,'operatorAction':r.get('operatorAction') or 'Review this camera.','reason':r.get('reason') or 'Ranked by fake second pass.'})
-        return out
+    # if os.getenv('GEMINI_MODE','fake').lower()!='real':
+    #     out=[]
+    #     for rank,r in enumerate(sorted(rows,key=lambda x:(x.get('firstPassPromptScore') or 0,x.get('operatorPriorityScore') or 0),reverse=True),1):
+    #         out.append({'camId':r['cameraId'],'firstPassResultId':r['id'],'include':r.get('include',True),'globalRank':rank,'promptScore':r.get('firstPassPromptScore') or 0,'operatorPriorityScore':r.get('operatorPriorityScore') or 0,'operatorAction':r.get('operatorAction') or 'Review this camera.','reason':r.get('reason') or 'Ranked by fake second pass.'})
+    #     return out
     res=model({'requestType':'secondPassRankCameraResults','operatorPrompt':prompt,'firstPassResults':rows,'returnShape':[{'camId':'string','firstPassResultId':'string','include':'boolean','globalRank':'integer','promptScore':'number 0-100','operatorPriorityScore':'number 0-100','operatorAction':'string','reason':'string'}]})
     if isinstance(res,dict) and isinstance(res.get('results'),list): return res['results']
     return res if isinstance(res,list) else []
