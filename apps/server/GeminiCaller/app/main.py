@@ -95,6 +95,9 @@ def process(op):
         except Exception as e: print('first pass error', cam_id, e, flush=True)
         execsql("UPDATE operations SET processed_cameras=:p, first_pass_result_count=:c, actual_gemini_calls=:calls WHERE id=:id", {'p':i,'c':len(rows),'calls':calls,'id':opid})
         if delay: time.sleep(delay/1000)
+    if not rows:
+        execsql("UPDATE operations SET status='failed', first_pass_status='failed', second_pass_status='skipped', error_message='No first-pass results were created. Check GeminiCaller logs for camera snapshot/image fetch errors.', actual_gemini_calls=:calls, completed_at=now() WHERE id=:id", {'id':opid, 'calls':calls})
+        return
     execsql("UPDATE operations SET first_pass_status='completed', second_pass_status='running' WHERE id=:id", {'id':opid})
     ranked=second_pass(pr['promptText'], rows); calls+=1; count=0; matched=0
     for item in ranked:

@@ -25,6 +25,11 @@ def many(sql, params=None):
     with connect() as c:
         return rows_to_dicts(c.execute(text(sql), params or {}).fetchall())
 
+def add_filter(parts: list[str], params: JsonObject, column: str, name: str, value: Any):
+    if value is not None:
+        parts.append(f"{column}=:{name}")
+        params[name] = value
+
 def cam(path, **params):
     url = cam_base() + path
     try:
@@ -206,7 +211,13 @@ def estimate(prompt_id, camera_group_id):
 def estimate_operation(p: JsonObject): return estimate(p["promptId"], p["cameraGroupId"])
 @app.get("/operations")
 def list_operations(prompt_id: str|None=Query(default=None, alias="promptId"), camera_group_id: str|None=Query(default=None, alias="cameraGroupId"), status: str|None=None, limit:int=50, offset:int=0):
-    return {"operations": many("SELECT * FROM operations WHERE (:pid IS NULL OR prompt_id=:pid) AND (:gid IS NULL OR camera_group_id=:gid) AND (:status IS NULL OR status=:status) ORDER BY created_at DESC LIMIT :limit OFFSET :offset", {"pid":prompt_id,"gid":camera_group_id,"status":status,"limit":limit,"offset":offset})}
+    filters: list[str] = []
+    params: JsonObject = {"limit": limit, "offset": offset}
+    add_filter(filters, params, "prompt_id", "pid", prompt_id)
+    add_filter(filters, params, "camera_group_id", "gid", camera_group_id)
+    add_filter(filters, params, "status", "status", status)
+    where = " WHERE " + " AND ".join(filters) if filters else ""
+    return {"operations": many(f"SELECT * FROM operations{where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset", params)}
 @app.post("/operations", status_code=201)
 def create_operation(p: JsonObject):
     e=estimate(p["promptId"], p["cameraGroupId"])
@@ -218,17 +229,30 @@ def get_operation(operation_id: str):
     return r
 @app.get("/operations/{operation_id}/first-pass-results")
 def first_results(operation_id: str, include: bool|None=Query(default=None)):
-    get_operation(operation_id); return {"results": many("SELECT * FROM operation_first_pass_results WHERE operation_id=:id AND (:include IS NULL OR include=:include) ORDER BY first_pass_prompt_score DESC, operator_priority_score DESC", {"id":operation_id,"include":include})}
+    get_operation(operation_id)
+    filters = ["operation_id=:id"]
+    params: JsonObject = {"id": operation_id}
+    add_filter(filters, params, "include", "include", include)
+    return {"results": many(f"SELECT * FROM operation_first_pass_results WHERE {' AND '.join(filters)} ORDER BY first_pass_prompt_score DESC, operator_priority_score DESC", params)}
 @app.get("/operations/{operation_id}/second-pass-results")
 def second_results(operation_id: str, include: bool|None=Query(default=None)):
-    get_operation(operation_id); return {"results": many("SELECT * FROM operation_second_pass_results WHERE operation_id=:id AND (:include IS NULL OR include=:include) ORDER BY global_rank ASC NULLS LAST, prompt_score DESC", {"id":operation_id,"include":include})}
+    get_operation(operation_id)
+    filters = ["operation_id=:id"]
+    params: JsonObject = {"id": operation_id}
+    add_filter(filters, params, "include", "include", include)
+    return {"results": many(f"SELECT * FROM operation_second_pass_results WHERE {' AND '.join(filters)} ORDER BY global_rank ASC NULLS LAST, prompt_score DESC", params)}
 @app.get("/prompt-results/latest/first-pass")
 def latest_first(prompt_id: str=Query(alias="promptId"), camera_group_id: str=Query(alias="cameraGroupId")): return {"results": many("SELECT * FROM latest_first_pass_results WHERE prompt_id=:pid AND camera_group_id=:gid ORDER BY first_pass_prompt_score DESC", {"pid":prompt_id,"gid":camera_group_id})}
 @app.get("/prompt-results/latest/second-pass")
 def latest_second(prompt_id: str=Query(alias="promptId"), camera_group_id: str=Query(alias="cameraGroupId")): return {"results": many("SELECT * FROM latest_second_pass_results WHERE prompt_id=:pid AND camera_group_id=:gid ORDER BY global_rank ASC NULLS LAST, prompt_score DESC", {"pid":prompt_id,"gid":camera_group_id})}
 
 @app.get("/operator-queue")
-def queue(status: str|None=None, limit:int=50, offset:int=0): return {"items": many("SELECT * FROM operator_queue_items WHERE (:status IS NULL OR status=:status) ORDER BY CASE status WHEN 'queued' THEN 0 WHEN 'acknowledged' THEN 1 WHEN 'completed' THEN 2 WHEN 'dismissed' THEN 3 ELSE 4 END, operator_priority_score DESC, prompt_score DESC, created_at ASC LIMIT :limit OFFSET :offset", {"status":status,"limit":limit,"offset":offset})}
+def queue(status: str|None=None, limit:int=50, offset:int=0):
+    filters: list[str] = []
+    params: JsonObject = {"limit": limit, "offset": offset}
+    add_filter(filters, params, "status", "status", status)
+    where = " WHERE " + " AND ".join(filters) if filters else ""
+    return {"items": many(f"SELECT * FROM operator_queue_items{where} ORDER BY CASE status WHEN 'queued' THEN 0 WHEN 'acknowledged' THEN 1 WHEN 'completed' THEN 2 WHEN 'dismissed' THEN 3 ELSE 4 END, operator_priority_score DESC, prompt_score DESC, created_at ASC LIMIT :limit OFFSET :offset", params)}
 @app.post("/operator-queue", status_code=201)
 def create_queue_item(p: JsonObject):
     rid=p.get("secondPassResultId")
