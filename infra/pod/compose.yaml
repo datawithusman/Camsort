@@ -81,9 +81,9 @@ services:
     image: docker.io/postgres:16
     container_name: cambot-postgres
     environment:
-      - POSTGRES_DB="${POSTGRES_DB:-cambot}"
-      - POSTGRES_USER="${POSTGRES_USER:-cambot}"
-      - POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-cambot}"
+      - POSTGRES_DB=${POSTGRES_DB:-cambot}
+      - POSTGRES_USER=${POSTGRES_USER:-cambot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-cambot}
     volumes:
       - cambot-postgres-data:/var/lib/postgresql/data
       # Init SQL runs only when /var/lib/postgresql/data is empty/new.
