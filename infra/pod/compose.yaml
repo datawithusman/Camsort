@@ -48,12 +48,13 @@ services:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
       CAM_BOT_DEFAULT_GEMINI_MODE=fake
-      CAM_BOT_DEFAULT_GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
-      CAM_BOT_DEFAULT_GEMINI_API_KEY=AIzaSyBiW1fMVsLunuXmThGkQz9lzzkbd5uarRU
+      CAM_BOT_DEFAULT_GEMINI_API_URL=${CAM_BOT_DEFAULT_GEMINI_URL}
+      CAM_BOT_DEFAULT_GEMINI_API_KEY=${CAM_BOT_DEFAULT_GEMINI_API_KEY}
       CAM_BOT_DEFAULT_GEMINI_API_KEY_QUERY_PARAM=key
       CAM_BOT_DEFAULT_GEMINI_API_TIMEOUT_SECONDS=60
       CAM_BOT_DEFAULT_GEMINI_USE_RESPONSE_SCHEMA=true
       CAM_BOT_DEFAULT_BACKGROUND_WORKER_INTERVAL_S=5
+      DATABASE_URL=postgresql://cambot:cambot@postgres:5432/cambot
     depends_on:
       - rest-api
       - camera-system-mocker-rest-api
