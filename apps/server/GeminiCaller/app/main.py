@@ -42,7 +42,7 @@ def img_url(p):
     return cambase()+p
 
 def model(payload):
-    if os.getenv('GEMINI_MODE','fake').lower()!='real': raise RuntimeError('fake')
+    # if os.getenv('GEMINI_MODE','fake').lower()!='real': raise RuntimeError('fake')
     url=os.getenv('GEMINI_API_URL'); key=os.getenv('GEMINI_API_KEY')
     if not url or not key: raise RuntimeError('GEMINI_API_URL and GEMINI_API_KEY required')
     r=requests.post(url,headers={'Content-Type':'application/json','Authorization':f'Bearer {key}'},json=payload,timeout=float(os.getenv('GEMINI_API_TIMEOUT_SECONDS','90'))); r.raise_for_status()

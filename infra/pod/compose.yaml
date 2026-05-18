@@ -47,7 +47,6 @@ services:
     env_file:
       - ../../secrets/${ENVIRONMENT:-dev}/podman/.env
     environment:
-      - CAM_BOT_DEFAULT_GEMINI_MODE=fake
       - CAM_BOT_DEFAULT_GEMINI_API_URL=${CAM_BOT_DEFAULT_GEMINI_URL}
       - CAM_BOT_DEFAULT_GEMINI_API_KEY=${CAM_BOT_DEFAULT_GEMINI_API_KEY}
       - CAM_BOT_DEFAULT_GEMINI_API_KEY_QUERY_PARAM=key
