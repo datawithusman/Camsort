@@ -16,6 +16,37 @@ from sqlalchemy import create_engine, text
 JsonObject = dict[str, Any]
 
 
+class MalformedGeminiJsonError(RuntimeError):
+    def __init__(self, message: str, raw_text: str = "", attempts: int = 0):
+        super().__init__(message)
+        self.raw_text = raw_text
+        self.attempts = attempts
+
+
+def malformed_json_max_attempts() -> int:
+    raw = env_first(
+        "GEMINI_MALFORMED_JSON_MAX_ATTEMPTS",
+        "CAM_BOT_GEMINI_MALFORMED_JSON_MAX_ATTEMPTS",
+        default="5",
+    )
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 5
+
+
+def malformed_json_retry_delay_seconds() -> float:
+    raw = env_first(
+        "GEMINI_MALFORMED_JSON_RETRY_DELAY_SECONDS",
+        "CAM_BOT_GEMINI_MALFORMED_JSON_RETRY_DELAY_SECONDS",
+        default="1",
+    )
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return 1.0
+
+
 def db_url() -> str:
     u = os.getenv("DATABASE_URL")
     if not u:
@@ -164,7 +195,7 @@ def parse_json_text(s: str) -> Any:
         return json.loads(s[start : end + 1])
 
 
-def gemini_generate(payload: JsonObject) -> Any:
+def gemini_generate(payload: JsonObject, context_label: str = "Gemini") -> Any:
     url = gemini_api_url()
     key = gemini_api_key()
     if not url or not key:
@@ -175,13 +206,36 @@ def gemini_generate(payload: JsonObject) -> Any:
         "X-goog-api-key": key,
     }
 
-    r = requests.post(url, headers=headers, json=payload, timeout=gemini_timeout_seconds())
-    if r.status_code >= 400:
-        raise RuntimeError(f"Gemini HTTP {r.status_code}: {r.text[:1000]}")
+    attempts = malformed_json_max_attempts()
+    retry_delay = malformed_json_retry_delay_seconds()
+    last_text_out = ""
+    last_error: Exception | None = None
 
-    data = r.json()
-    text_out = extract_gemini_text(data)
-    return parse_json_text(text_out)
+    for attempt in range(1, attempts + 1):
+        r = requests.post(url, headers=headers, json=payload, timeout=gemini_timeout_seconds())
+        if r.status_code >= 400:
+            raise RuntimeError(f"Gemini HTTP {r.status_code}: {r.text[:1000]}")
+
+        data = r.json()
+        text_out = extract_gemini_text(data)
+        last_text_out = text_out
+
+        try:
+            return parse_json_text(text_out)
+        except json.JSONDecodeError as e:
+            last_error = e
+            print(
+                f"{context_label} malformed JSON attempt {attempt}/{attempts}: {e}",
+                flush=True,
+            )
+            if attempt < attempts and retry_delay:
+                time.sleep(retry_delay)
+
+    raise MalformedGeminiJsonError(
+        f"{context_label} returned malformed JSON after {attempts} attempt(s): {last_error}",
+        raw_text=last_text_out,
+        attempts=attempts,
+    )
 
 
 def clamp_score(v: Any) -> float:
@@ -231,7 +285,24 @@ Rules:
         },
     }
 
-    res = gemini_generate(payload)
+    try:
+        res = gemini_generate(payload, context_label=f"first pass {cam_id}")
+    except MalformedGeminiJsonError as e:
+        return {
+            "camId": cam_id,
+            "include": True,
+            "firstPassPromptScore": 100.0,
+            "operatorPriorityScore": 100.0,
+            "operatorAction": "MALFORMED: Gemini returned invalid JSON after retries.",
+            "reason": str(e),
+            "raw": {
+                "errorType": "MALFORMED_JSON",
+                "message": str(e),
+                "attempts": e.attempts,
+                "rawText": e.raw_text,
+            },
+        }
+
     if not isinstance(res, dict):
         raise RuntimeError(f"Gemini first-pass response was not an object: {type(res).__name__}")
 
@@ -304,7 +375,39 @@ Rules:
         },
     }
 
-    res = gemini_generate(payload)
+    try:
+        res = gemini_generate(payload, context_label="second pass")
+    except MalformedGeminiJsonError as e:
+        print(f"second pass malformed JSON fallback: {e}", flush=True)
+        sorted_rows = sorted(
+            rows,
+            key=lambda r: max(
+                float(r.get("firstPassPromptScore") or 0),
+                float(r.get("operatorPriorityScore") or 0),
+            ),
+            reverse=True,
+        )
+        return [
+            {
+                "camId": r["cameraId"],
+                "firstPassResultId": r["id"],
+                "include": True,
+                "globalRank": i,
+                "promptScore": 100.0 if str(r.get("operatorAction") or "").startswith("MALFORMED") else clamp_score(r.get("firstPassPromptScore", 0)),
+                "operatorPriorityScore": 100.0 if str(r.get("operatorAction") or "").startswith("MALFORMED") else clamp_score(r.get("operatorPriorityScore", 0)),
+                "operatorAction": str(r.get("operatorAction") or "MALFORMED: Gemini second-pass returned invalid JSON after retries."),
+                "reason": str(r.get("reason") or str(e)),
+                "raw": {
+                    "errorType": "MALFORMED_JSON_SECOND_PASS_FALLBACK",
+                    "message": str(e),
+                    "attempts": e.attempts,
+                    "rawText": e.raw_text,
+                    "firstPassResult": r,
+                },
+            }
+            for i, r in enumerate(sorted_rows, 1)
+        ]
+
     if isinstance(res, dict) and isinstance(res.get("results"), list):
         out = res["results"]
     elif isinstance(res, list):
@@ -312,23 +415,53 @@ Rules:
     else:
         raise RuntimeError(f"Gemini second-pass response had unexpected shape: {type(res).__name__}")
 
+    malformed_by_id = {
+        str(r["id"])
+        for r in rows
+        if str(r.get("operatorAction") or "").startswith("MALFORMED")
+    }
+    malformed_by_cam = {
+        str(r["cameraId"])
+        for r in rows
+        if str(r.get("operatorAction") or "").startswith("MALFORMED")
+    }
+
     normalized: list[JsonObject] = []
     for i, item in enumerate(out, 1):
         if not isinstance(item, dict):
             continue
+
+        cam_id = str(item.get("camId") or "")
+        first_pass_result_id = str(item.get("firstPassResultId") or "")
+        is_malformed = first_pass_result_id in malformed_by_id or cam_id in malformed_by_cam
+
         normalized.append(
             {
-                "camId": str(item.get("camId") or ""),
-                "firstPassResultId": str(item.get("firstPassResultId") or ""),
-                "include": bool(item.get("include", True)),
+                "camId": cam_id,
+                "firstPassResultId": first_pass_result_id,
+                "include": True if is_malformed else bool(item.get("include", True)),
                 "globalRank": int(item.get("globalRank") or i),
-                "promptScore": clamp_score(item.get("promptScore", 0)),
-                "operatorPriorityScore": clamp_score(item.get("operatorPriorityScore", 0)),
-                "operatorAction": str(item.get("operatorAction") or "No immediate action."),
+                "promptScore": 100.0 if is_malformed else clamp_score(item.get("promptScore", 0)),
+                "operatorPriorityScore": 100.0 if is_malformed else clamp_score(item.get("operatorPriorityScore", 0)),
+                "operatorAction": "MALFORMED: Gemini returned invalid JSON after retries."
+                if is_malformed
+                else str(item.get("operatorAction") or "No immediate action."),
                 "reason": str(item.get("reason") or "No reason returned by Gemini."),
                 "raw": item,
+                "_malformed": is_malformed,
             }
         )
+
+    normalized.sort(
+        key=lambda x: (
+            0 if x.get("_malformed") else 1,
+            int(x.get("globalRank") or 999999),
+        )
+    )
+    for i, item in enumerate(normalized, 1):
+        item["globalRank"] = i
+        item.pop("_malformed", None)
+
     return normalized
 
 
