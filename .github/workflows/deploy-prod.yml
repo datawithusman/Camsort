@@ -10,4 +10,8 @@ jobs:
     uses: ./.github/workflows/deploy-core.yml
     with:
       cambot_environment: prod
-    secrets: inherit
+    secrets:
+      DEPLOY_DIR: ${{ secrets.DEPLOY_DIR || vars.DEPLOY_DIR }}
+      HOST: ${{ secrets.HOST || vars.HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER || secrets.USER || vars.DEPLOY_USER || vars.USER }}
+      SSH_KEY: ${{ secrets.SSH_KEY }}

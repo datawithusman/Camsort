@@ -6,6 +6,15 @@ on:
       cambot_environment:
         required: true
         type: string
+    secrets:
+      DEPLOY_DIR:
+        required: true
+      HOST:
+        required: true
+      DEPLOY_USER:
+        required: true
+      SSH_KEY:
+        required: true
 
 jobs:
   deploy:
@@ -15,7 +24,7 @@ jobs:
     env:
       DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
       HOST: ${{ secrets.HOST }}
-      DEPLOY_USER: ${{ secrets.USER }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       CAMBOT_ENVIRONMENT: ${{ inputs.cambot_environment }}
 
     steps:
@@ -39,7 +48,7 @@ jobs:
           fi
 
           if [ -z "$DEPLOY_USER" ]; then
-            echo "USER is missing."
+            echo "DEPLOY_USER is missing."
             exit 1
           fi
 
